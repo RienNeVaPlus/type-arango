@@ -14,7 +14,31 @@ export class User extends Model {
 }
 ```
 
+These schemas can be shared accross your environments (eg. `frontend`, `backend`, `foxx service` etc).
+ 
+
+## Setup
+#### Setup ArangoDB Foxx service
+If you don't have a foxx service running yet, you can create one by using [arangodb-typescript-setup](https://github.com/RienNeVaPlus/arangodb-typescript-setup)
+
+#### Install
+```
+npm i --save-dev type-arango
+```
+
+#### Initialize
+```ts
+import typeArango from 'type-arango';
+
+// has to be executed before any decorator is used or
+typeArango({
+	pluralizeCollectionName: true,
+	prefixCollectionName: false // maps collection names with module.context.collectionName
+});
+```
+
 ## Todos
+- ☑ Allow to be run in all environments / activate only in foxx
 - ☑ Create collections using `@Collection`
 - ☑ Create indexes using `@Index`
 - ☐ ORM
