@@ -1,6 +1,6 @@
-# type-arango
+# type-arango 🥑
 
-Tools for [ArangoDB](https://www.arangodb.com) [Foxx Apps](https://docs.arangodb.com/3.4/Manual/Foxx/) when working with TypeScript.
+Tools and decorators for [ArangoDB](https://www.arangodb.com) [Foxx Apps](https://docs.arangodb.com/3.4/Manual/Foxx/) when working with TypeScript.
 
 ## Example
 
