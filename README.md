@@ -17,7 +17,7 @@ With the decorators, a single entity can:
 ## Example
 
 ```ts
-import {Collection, Document, Field, Index, Email, Int } from 'type-arango'
+import {Collection, Route, Document, Field, Index, Email, Int } from 'type-arango'
 import {Address} from './entity/address'
 
 @Collection({keyOptions:{type:'autoincrement'}})
