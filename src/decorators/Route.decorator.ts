@@ -50,11 +50,11 @@ export const Route = {
 		opt?: RouteOptions
 	) => {
 		return function(prototype: any): any {
+			route('delete', deletersOrFunctionOrOptions, opt)(prototype);
+			route('put', updatersOrFunctionOrOptions, opt)(prototype);
+			route('patch', updatersOrFunctionOrOptions, opt)(prototype);
 			route('post', creatorsOrFunctionOrOptions, opt)(prototype);
 			route('get', readersOrFunctionOrOptions, opt)(prototype);
-			route('patch', updatersOrFunctionOrOptions, opt)(prototype);
-			route('put', updatersOrFunctionOrOptions, opt)(prototype);
-			route('delete', deletersOrFunctionOrOptions, opt)(prototype);
 			return prototype;
 		};
 	}

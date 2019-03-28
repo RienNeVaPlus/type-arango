@@ -6,18 +6,27 @@ import {removeUndefined} from '../utils';
 import {Route, RouteOptions} from ".";
 import joi, {SchemaMap} from 'joi';
 
+/**
+ * Creates a new Collection for a decorated class
+ */
 export function createFromContainer(someClass: Collection): Collection {
 	let c = new Collection(someClass);
 	collections.push(c);
 	return c;
 }
 
+/**
+ * Returns the respective collection instance for a decorated class
+ */
 export function getFromContainer(someClass: any): Collection {
 	let col = collections.find(c => someClass === c.prototype);
 	if(col) return col;
 	return createFromContainer(someClass);
 }
 
+/**
+ * Creates a joi type for a native type
+ */
 export function typeToJoi(type: any){
 	let j;
 	switch(type){

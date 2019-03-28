@@ -46,7 +46,7 @@ export class User extends Document {
 ```
 
 
-## Setup
+## Getting started
 ### 1. Setup ArangoDB Foxx service
 If you don't have a foxx service running yet, you can create one by using [arangodb-typescript-setup](https://github.com/RienNeVaPlus/arangodb-typescript-setup).
 

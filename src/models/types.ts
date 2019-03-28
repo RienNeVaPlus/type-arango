@@ -21,7 +21,6 @@ export interface AuthorizedMetadata {
 
 export interface IndexMetadata extends ArangoDB.IndexDescription<any> {}
 
-
 export interface FieldMetadata {
 	type: any;
 	metadata: any;

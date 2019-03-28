@@ -1,5 +1,3 @@
-// import {validate} from 'class-validator';
-
 export class Document {
 	constructor(
 		public _key: string,

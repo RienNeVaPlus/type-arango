@@ -5,7 +5,6 @@ import {removeUndefined, filterKeys} from "../utils";
 import {db} from '@arangodb';
 import joi from 'joi';
 
-// import joi from 'joi';
 let mime: string[] = ['application/json'];
 
 export function createRoutes(router: Foxx.Router){
