@@ -14,6 +14,7 @@ With the decorators, a single entity can:
 
 **⚠ Warning: This repo is in active development and not completed yet.**
 
+[![last-commit][github-last-commit]][github-last-commit-url]
 [![version][github-version]][github-version-url]
 [![npm][npm-badge]][npm-badge-url]
 [![license][npm-license]][npm-license-url]
@@ -143,6 +144,8 @@ type-arango is inspired by [type-graphql](https://github.com/19majkel94/type-gra
 
 [github-version]: https://img.shields.io/github/package-json/v/riennevaplus/type-arango.svg
 [github-version-url]: https://github.com/RienNeVaPlus/type-arango/blob/master/package.json
+[github-last-commit]: https://img.shields.io/github/last-commit/riennevaplus/type-arango.svg
+[github-last-commit-url]: https://github.com/RienNeVaPlus/type-arango/commits/master
 [npm-badge]: https://img.shields.io/npm/v/type-arango.svg
 [npm-badge-url]: https://www.npmjs.com/package/type-arango
 [npm-license]: https://img.shields.io/npm/l/type-arango.svg
