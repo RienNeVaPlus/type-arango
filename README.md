@@ -14,6 +14,11 @@ With the decorators, a single entity can:
 
 **⚠ Warning: This repo is in active development and not completed yet.**
 
+[![version][github-version]][github-version-url]
+[![npm][npm-badge]][npm-badge-url]
+[![license][npm-license]][npm-license-url]
+![size][shields-size]
+
 ## Example
 
 ```ts
@@ -134,3 +139,12 @@ User.query(`FOR x IN # FILTER x._key == 1 RETURN x`);
 
 ## Credits
 type-arango is inspired by [type-graphql](https://github.com/19majkel94/type-graphql).
+
+
+[github-version]: https://img.shields.io/github/package-json/v/riennevaplus/type-arango.svg
+[github-version-url]: https://github.com/RienNeVaPlus/type-arango/blob/master/package.json
+[npm-badge]: https://img.shields.io/npm/v/type-arango.svg
+[npm-badge-url]: https://www.npmjs.com/package/type-arango
+[npm-license]: https://img.shields.io/npm/l/type-arango.svg
+[npm-license-url]: https://github.com/ionic-team/stencil/blob/master/LICENSE
+[shields-size]: https://img.shields.io/github/repo-size/riennevaplus/type-arango.svg
