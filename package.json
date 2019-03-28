@@ -1,10 +1,14 @@
 {
   "name": "type-arango",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "ArangoDB Decorators and Utilities for TypeScript",
-  "main": "src/index.js",
-  "jsnext:main": "src/index.js",
-  "types": "src/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "jsnext:main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc -w"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/RienNeVaPlus/type-arango.git"
@@ -20,7 +24,13 @@
   "license": "MIT",
   "devDependencies": {
     "@types/arangodb": "^3.4.9",
+    "@types/joi": "^14.3.2",
     "@types/node": "^11.11.7",
+    "joi": "^14.3.1",
+    "reflect-metadata": "^0.1.13",
     "typescript": "^3.3.4000"
+  },
+  "dependencies": {
+    "class-validator": "^0.9.1"
   }
 }

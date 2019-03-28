@@ -1,20 +1,34 @@
 import {isFoxx} from './utils';
+import {Collection, Route} from './models';
 
-export interface Opt {
+interface Opt {
 	pluralizeCollectionName?: boolean;
 	prefixCollectionName?: boolean;
+	stripDocumentId?: boolean;
+	stripDocumentKey?: boolean;
+	stripDocumentRev?: boolean;
 }
 
-export * from './decorators/collection.decorator';
-export * from './model/model';
-export * from './decorators/index.decorator';
+export {Document,createRoutes} from './models';
+export {Collection,Route,Field,Index,Authorized} from './decorators';
+export * from './scalars';
+
 export let isActive: boolean = false;
+
 export let opt: Opt = {
 	pluralizeCollectionName: true,
-	prefixCollectionName: false
+	prefixCollectionName: false,
+	stripDocumentId: true,
+	stripDocumentRev: true,
+	stripDocumentKey: false
 };
 
-export default function initializeTypeArango(options: Opt){
-	opt = Object.assign(opt, options);
+export let collections: Collection[] = [];
+export let routes: Route[] = [];
+
+export function initTypeArango(options: Opt): boolean {
 	isActive = isFoxx();
+	if(!isActive) return false;
+	opt = Object.assign(opt, options);
+	return true;
 }
