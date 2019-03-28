@@ -47,12 +47,12 @@ export class User extends Document {
 
 
 ## Setup
-#### 1. Setup ArangoDB Foxx service
+### 1. Setup ArangoDB Foxx service
 If you don't have a foxx service running yet, you can create one by using [arangodb-typescript-setup](https://github.com/RienNeVaPlus/arangodb-typescript-setup).
 
 type-arango requires ArangoDB `3.4.4` or newer.
 
-#### 2. Install `type-arango`
+### 2. Install `type-arango`
 ```
 npm i --save-dev type-arango
 ```
@@ -62,9 +62,9 @@ yarn add --dev type-arango
 ```
 
 
-#### 3. Initialize `type-arango`
+### 3. Initialize `type-arango`
 
-`initTypeArango()` has to be called **before** any decorator can be used. It returns `true` when the current environment is Foxx.
+In order for the decorators to work, `initTypeArango()` has to be called **before** any entity is parsed. It returns `true` when the current environment is Foxx.
 
 ##### shared/entities/index.ts
 ```ts
@@ -82,10 +82,10 @@ initTypeArango({
 export * from './user';
 ```
 
-#### 4. Create routes
-##### foxx-service/main.ts
+### 4. Create routes
 When using the `@Route` decorator, it is required to provide the `Foxx.Router` to type-arango by calling `createRoutes(router)`.
 
+##### foxx-service/main.ts
 ```ts
 import createRouter from '@arangodb/foxx/router';
 import {createRoutes} from 'type-arango';
