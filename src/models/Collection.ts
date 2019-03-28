@@ -98,8 +98,5 @@ export class Collection {
 					break;
 			}
 		}
-
-		console.log('schema is', this.schema);
-
 	}
 }

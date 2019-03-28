@@ -66,7 +66,7 @@ yarn add --dev type-arango
 
 In order for the decorators to work, `initTypeArango()` has to be called **before** any entity is parsed. It returns `true` when the current environment is Foxx.
 
-##### shared/entities/index.ts
+#### shared/entities/index.ts
 ```ts
 import { initTypeArango } from 'type-arango';
 
@@ -85,7 +85,7 @@ export * from './user';
 ### 4. Create routes
 When using the `@Route` decorator, it is required to provide the `Foxx.Router` to type-arango by calling `createRoutes(router)`.
 
-##### foxx-service/main.ts
+#### foxx-service/main.ts
 ```ts
 import createRouter from '@arangodb/foxx/router';
 import {createRoutes} from 'type-arango';

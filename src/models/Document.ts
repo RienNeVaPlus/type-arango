@@ -6,11 +6,4 @@ export class Document {
 		public _id: string,
 		public _rev: string
 	) {}
-	
-	// async validate(){
-	// 	// let errors = await validate(this);
-	// }
-
-	static get(){
-		console.log('test');}
 }

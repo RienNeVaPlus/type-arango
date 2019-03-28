@@ -1,6 +1,6 @@
 {
   "name": "type-arango",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ArangoDB Decorators and Utilities for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,8 +29,5 @@
     "joi": "^14.3.1",
     "reflect-metadata": "^0.1.13",
     "typescript": "^3.3.4000"
-  },
-  "dependencies": {
-    "class-validator": "^0.9.1"
   }
 }
