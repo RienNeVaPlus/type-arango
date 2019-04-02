@@ -13,7 +13,7 @@ So if you are looking for examples that are compatible with the version you use,
 
 ## tsconfig.json
 It is recommended to use the folling `compilerOptions` when making use of the syntactic
- sugar argument function syntax (`roles => ['abc']`).
+ sugar argument function syntax (for example `roles => ['abc']`).
 
 
 | compilerOption                | value     |
