@@ -1,3 +1,3 @@
-export function argumentResolve(arg: Function | any): any {
-	return typeof arg === 'function' ? arg() : arg;
+export function argumentResolve(val: Function | any, arg?: any) {
+	return typeof val === 'function' ? val(arg) : val;
 }

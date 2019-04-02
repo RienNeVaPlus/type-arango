@@ -1,4 +1,5 @@
-export * from './Collection';
-export * from './Document';
-export * from './Route';
-// export * from './ScalarType';
+export * from './Collection.model';
+export * from './Document.model';
+export * from './Route.model';
+export * from './Scalar.model';
+export * from './Logger.model';

@@ -1,13 +1,13 @@
 {
   "name": "type-arango",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "ArangoDB Decorators and Utilities for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "jsnext:main": "src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "start": "tsc -w"
+    "start": "tsc -w",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -23,7 +23,7 @@
   ],
   "author": "RienNeVaPlus",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@types/arangodb": "^3.4.9",
     "@types/joi": "^14.3.2",
     "@types/node": "^11.11.7",

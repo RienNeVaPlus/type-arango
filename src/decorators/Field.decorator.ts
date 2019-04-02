@@ -1,38 +1,57 @@
-import {getFromContainer} from '../models';
+import {getCollectionForContainer} from '../models';
 import {isActive} from '../index';
-import {TypeValue} from './types';
 import {SymbolKeysNotSupportedError} from '../errors';
-import {FieldMetadata, Roles} from '../models/types';
-import {argumentResolve, removeUndefined} from '../utils';
+import {argumentResolve, removeUndefined, toJoi} from '../utils';
+import {FieldMetadata, Roles, ValidateSchema, ValidateSchemaFunc} from '../types';
 
-type ReturnTypeFunc = (returns?: void) => TypeValue;
+// type ReturnTypeFunc = (returns?: void) => TypeValue;
 type ReadersFunc = (returns?: void) => Roles;
 type WritersFunc = (returns?: void) => Roles;
 
+export function Field(): PropertyDecorator;
+export function Field(inputSchemaOrFunction: ValidateSchema | ValidateSchemaFunc): PropertyDecorator;
+export function Field(readersArrayOrFunction: ReadersFunc | Roles): PropertyDecorator;
 export function Field(
-	returnTypeOrFunction?: ReturnTypeFunc | TypeValue,
+	inputSchemaOrFunction: ValidateSchema | ValidateSchemaFunc,
+	readersArrayOrFunction: ReadersFunc | Roles
+): PropertyDecorator;
+export function Field(
+	readersArrayOrFunction: ReadersFunc | Roles,
+	writersArrayOrFunction?: WritersFunc | Roles
+): PropertyDecorator;
+export function Field(
+	inputSchemaOrFunction: ValidateSchema | ValidateSchemaFunc,
+	readersArrayOrFunction: ReadersFunc | Roles,
+	writersArrayOrFunction?: WritersFunc | Roles
+): PropertyDecorator;
+export function Field(
+	inputSchemaOrReadersOrFunction?: ValidateSchema | ValidateSchemaFunc | ReadersFunc | Roles,
 	readersArrayOrFunction?: ReadersFunc | Roles,
-	writersArrayOrFunction?: WritersFunc | Roles): PropertyDecorator
-{
+	writersArrayOrFunction?: WritersFunc | Roles
+): PropertyDecorator {
 	return (prototype, field) => {
 		if(!isActive) return;
-		if(typeof field === 'symbol') {
+		if(typeof field === 'symbol')
 			throw new SymbolKeysNotSupportedError();
-		}
 
-		const metadata = Reflect.getMetadata("design:type", prototype, field);
-		const type: TypeValue = argumentResolve(returnTypeOrFunction) || metadata;
-		const readers: Roles = argumentResolve(readersArrayOrFunction);
-		const writers: Roles = argumentResolve(writersArrayOrFunction);
+		const metadata = Reflect.getMetadata('design:type', prototype, field);
+		const joi = toJoi(metadata);
+
+		let schema = argumentResolve(inputSchemaOrReadersOrFunction, joi) || joi;
+		let readers = argumentResolve(readersArrayOrFunction);
+		let writers = argumentResolve(writersArrayOrFunction);
+
+		if(Array.isArray(schema)){
+			writers = readers;
+			readers = schema;
+			schema = joi;
+		}
 
 		let obj: FieldMetadata = {
 			metadata,
-			type
+			schema
 		};
-		if(readers){
-			obj.authorized = removeUndefined({readers:readers,writers});
-		}
-
-		getFromContainer(prototype.constructor).addMetadata('field', field, obj);
+		if(readers) obj.authorized = removeUndefined({readers:readers,writers});
+		getCollectionForContainer(prototype.constructor).addMetadata('field', field, obj);
 	}
 }

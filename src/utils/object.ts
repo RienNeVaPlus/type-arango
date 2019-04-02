@@ -3,8 +3,8 @@ export function removeUndefined(obj: any){
 	return obj;
 }
 
-export function filterKeys(obj: any, valid?: string[]){
+export function pick<T, K extends keyof T>(obj: T, valid?: K[]): Pick<T, K> {
 	if(!valid) return obj;
-	Object.keys(obj).forEach(key => !valid.includes(key) && delete obj[key]);
+	Object.keys(obj).forEach(key => !valid.includes(key as K) && delete (<any>obj)[key]);
 	return obj;
 }

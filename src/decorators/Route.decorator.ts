@@ -5,59 +5,216 @@
  * - @Route.PATCH(roles) - update / merge entity
  * - @Route.PUT(roles) - replace entity
  * - @Route.DELETE(roles) - remove entity
+ * - @Route.all(creators, readers, updaters, deleters) - all routes
  */
 import {isActive} from '../index';
-import {RouteMethod} from './types';
-import {getFromContainer, RouteOptions} from '../models';
-import {RolesFunc, Roles} from '../models/types';
-import {argumentResolve} from '../utils';
+import {getCollectionForContainer, Route as RouteModel} from '../models';
+import {argumentResolve, removeUndefined} from '../utils';
+import {ClassAndMethodDecorator, Roles, RolesFunc, RouteMetadata, RouteMethod, RouteOpt} from '../types';
+import {SymbolKeysNotSupportedError} from '../errors';
+import * as Joi from 'joi';
+import {Schema} from 'joi';
+
+export type PathFunc = (returns: string) => any;
+type SchemaFunc = (returns: typeof Joi) => typeof Joi | boolean;
+
+type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt;
+type ArgSchemaOrRolesOrOpt = boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt;
+type ArgRolesOrOpt = Roles | RolesFunc | RouteOpt;
 
 function route(
 	method: RouteMethod,
-	rolesOrFunctionOrOptions: Roles | RolesFunc | RouteOptions,
-	opt?: RouteOptions
-): ClassDecorator {
-	return function(prototype: any): any {
-		if(isActive){
-			opt = rolesOrFunctionOrOptions === 'object' ? rolesOrFunctionOrOptions :
-				Object.assign(opt||{}, {
-					roles: argumentResolve(rolesOrFunctionOrOptions),
-				});
+	pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
+	schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
+	rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+	options?: RouteOpt
+): ClassAndMethodDecorator {
+	return function(prototype: any, propertyKey?: string | symbol): any {
+		if (!isActive) return;
+		if(typeof propertyKey === 'symbol')
+			throw new SymbolKeysNotSupportedError();
 
-			getFromContainer(prototype).addRoute(method, opt);
+		const col = getCollectionForContainer(prototype);
+		let opt = argumentResolve(pathOrRolesOrFunctionOrOptions);
+
+		opt = Object.assign({},
+			typeof opt === 'string' ? {path:opt} : Array.isArray(opt)  ? {roles:opt} : opt || {}
+		);
+
+		let schema = argumentResolve(schemaOrRolesOrFunctionOrOptions, Joi);
+		let roles = argumentResolve(rolesOrFunctionOrOptions);
+
+		// parse schema argument
+		if(Array.isArray(schema))
+			opt.roles = schema;
+		else if(schema === true)
+			schema = col.joi;
+		else if(schema === false)
+			schema = null;
+
+		if(schema){
+			if(schema.isJoi) {
+				if(method === 'get') opt.queryParams = [schema];
+				else opt.body = [schema];
+			}
+			else if(typeof schema === 'object'){
+				opt = Object.assign(schema, opt);
+			}
 		}
+
+		if(Array.isArray(roles))
+			opt.roles = roles;
+
+		if(options)
+			opt = Object.assign(options, opt);
+
+		// is MethodDecorator, replace callback with method
+		if(propertyKey) {
+			opt.handler = prototype[propertyKey];
+			opt.handlerName = propertyKey;
+		}
+		// is ClassDecorator, save roles to collection
+		else if(opt.roles && opt.roles.length) {
+			if(method === 'post') col.addRoles('creators', opt.roles);
+			else if(method === 'get') col.addRoles('readers', opt.roles);
+			else if(method === 'delete') col.addRoles('deleters', opt.roles);
+			else col.addRoles('updaters', opt.roles);
+		}
+
+		if(opt.path) {
+			opt = RouteModel.parsePath(opt, col.name);
+		}
+
+		const data: RouteMetadata = removeUndefined({method,opt});
+
+		col.addMetadata('route', propertyKey || '', data);
+
 		return prototype;
 	}
 }
 
 export const Route = {
-	get: (rolesOrFunctionOrOptions: Roles | RolesFunc | RouteOptions, opt?: RouteOptions) =>
-		route('get', rolesOrFunctionOrOptions, opt),
-	post: (rolesOrFunctionOrOptions: Roles | RolesFunc | RouteOptions, opt?: RouteOptions) =>
-		route('post', rolesOrFunctionOrOptions, opt),
-	patch: (rolesOrFunctionOrOptions: Roles | RolesFunc | RouteOptions, opt?: RouteOptions) =>
-		route('patch', rolesOrFunctionOrOptions, opt),
-	put: (rolesOrFunctionOrOptions: Roles | RolesFunc | RouteOptions, opt?: RouteOptions) =>
-		route('put', rolesOrFunctionOrOptions, opt),
-	delete: (rolesOrFunctionOrOptions: Roles | RolesFunc | RouteOptions, opt?: RouteOptions) =>
-		route('delete', rolesOrFunctionOrOptions, opt),
+	GET: (
+		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
+		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
+		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		options?: RouteOpt
+	) => route('get',
+		pathOrRolesOrFunctionOrOptions,
+		schemaOrRolesOrFunctionOrOptions,
+		rolesOrFunctionOrOptions,
+		options),
+	POST: (
+		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
+		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
+		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		options?: RouteOpt
+	) => route('post',
+		pathOrRolesOrFunctionOrOptions,
+		schemaOrRolesOrFunctionOrOptions,
+		rolesOrFunctionOrOptions,
+		options),
+	PATCH: (
+		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
+		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
+		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		options?: RouteOpt
+	) => route('patch',
+		pathOrRolesOrFunctionOrOptions,
+		schemaOrRolesOrFunctionOrOptions,
+		rolesOrFunctionOrOptions,
+		options),
+	PUT: (
+		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
+		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
+		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		options?: RouteOpt
+	) => route('put',
+		pathOrRolesOrFunctionOrOptions,
+		schemaOrRolesOrFunctionOrOptions,
+		rolesOrFunctionOrOptions,
+		options),
+	DELETE: (
+		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
+		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
+		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		options?: RouteOpt
+	) => route('delete',
+		pathOrRolesOrFunctionOrOptions,
+		schemaOrRolesOrFunctionOrOptions,
+		rolesOrFunctionOrOptions,
+		options),
 
-	all: (
-		creatorsOrFunctionOrOptions: Roles | RolesFunc | RouteOptions,
-		readersOrFunctionOrOptions: Roles | RolesFunc | RouteOptions,
-		updatersOrFunctionOrOptions: Roles | RolesFunc | RouteOptions,
-		deletersOrFunctionOrOptions: Roles | RolesFunc | RouteOptions,
-		opt?: RouteOptions
+	enable: (
+		rolesOrCreatorsOrFunction: Roles | RolesFunc = [],
+		readersOrFunction?: Roles | RolesFunc,
+		updatersOrFunction?: Roles | RolesFunc,
+		deletersOrFunction?: Roles | RolesFunc
 	) => {
 		return function(prototype: any): any {
-			route('delete', deletersOrFunctionOrOptions, opt)(prototype);
-			route('put', updatersOrFunctionOrOptions, opt)(prototype);
-			route('patch', updatersOrFunctionOrOptions, opt)(prototype);
-			route('post', creatorsOrFunctionOrOptions, opt)(prototype);
-			route('get', readersOrFunctionOrOptions, opt)(prototype);
+			const col = getCollectionForContainer(prototype);
+
+			let creators = argumentResolve(rolesOrCreatorsOrFunction);
+			let readers = argumentResolve(readersOrFunction);
+			let updaters = argumentResolve(updatersOrFunction);
+			let deleters = argumentResolve(deletersOrFunction);
+
+			// call (globalRoles)
+			if(!readers && !updaters && !deleters){
+				readers = creators;
+				updaters = creators;
+				deleters = creators;
+			}
+
+			col.addRoles('creators', creators);
+			col.addRoles('readers', readers);
+			col.addRoles('updaters', updaters);
+			col.addRoles('deleters', deleters);
+
+			if(col.completed) col.processMetadata();
+		}
+	},
+
+	all: (
+		rolesOrCreatorsOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
+		readersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
+		updatersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
+		deletersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
+		globalOptions?: RouteOpt
+	) => {
+		return function(prototype: any): any {
+			let creators = argumentResolve(rolesOrCreatorsOrFunctionOrOptions);
+			let readers = argumentResolve(readersOrFunctionOrOptions);
+			let updaters = argumentResolve(updatersOrFunctionOrOptions);
+			let deleters = argumentResolve(deletersOrFunctionOrOptions);
+
+			// call (opt)
+			if(creators && !Array.isArray(creators)){
+				globalOptions = creators;
+				creators = undefined;
+			}
+
+			// call (globalRoles, opt?)
+			if((!readers || !Array.isArray(readers)) && !updaters && !deleters){
+				if(readers) globalOptions = readers;
+				readers = creators;
+				updaters = creators;
+				deleters = creators;
+			}
+
+			// setup routes
+			route('delete', deleters, globalOptions)(prototype);
+			route('put', updaters, globalOptions)(prototype);
+			route('patch', updaters, globalOptions)(prototype);
+			route('post', creators, globalOptions)(prototype);
+			route('get', readers, globalOptions)(prototype);
+
+			const col = getCollectionForContainer(prototype);
+			if(col.completed) col.processMetadata();
+
 			return prototype;
 		};
 	}
 	// TODO?
-	// search: (opt: RouteOptions) => route('get', opt)
+	// search: (opt: RouteOpt) => route('get', opt)
 };
