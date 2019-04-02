@@ -24,6 +24,8 @@ It is recommended to use the folling `compilerOptions` when making use of the sy
 
 *`Arguments` can be provided without the function syntax (`['abc']` instead of `roles => ['abc']`).*
 
+<h4 align="center"><sub>🥑</sub></h4>
+
 ## Basics
 
 - [basic](./1-basic) - quick setup of defining `entities` using `@Collection`, `@Index`, `@Field` & `Route.all`
