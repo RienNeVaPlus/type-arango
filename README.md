@@ -24,7 +24,7 @@
 - **Field-based Authorization** with `reader` and `writer` roles
 - **Route-based Authorization** with `creators`, `readers`, `updaters` and `deleters`
 - **[CRUD like](#crud-like) Route Setup** with `@Route.all(roles)`
-- **Custom Routes** with `@Route.GET(path => 'add/:feature=string?id=number)` and access roles
+- **Custom Routes** with `@Route.GET(path => 'add/:feature=string?id=number')` input schemas and access roles
 - **Validate Input Data** by describing the entity or providing joi schemas for routes
 - **Request specific fields** by providing a `keys` parameter to the endpoint (like SQL SELECT)
 - **Logging integrated** for an easy setup and debugging

@@ -13,10 +13,10 @@ import { Field, Collection, Authorized, Route, Index, RouteArgs } from '../../..
 
 @Collection({name:'users'})
 @Route.all(
-	creators => ['guest'],					// POST
+	creators => ['guest'],			// POST
 	readers => ['viewer','admin'],	// GET
 	updaters => ['viewer','admin'],	// PATCH & PUT
-	deleters => ['admin']						// DELETE
+	deleters => ['admin']			// DELETE
 )
 export class User {
 	@Authorized(readers => ['viewer'], writers => ['admin'])
