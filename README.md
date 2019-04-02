@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./logo.jpg" alt="TypeArango" />
+  <img src="./logo.png" alt="TypeArango" />
 </p>
 
 # type-arango 🥑
