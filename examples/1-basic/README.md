@@ -12,7 +12,7 @@ and delete documents within the collection.
 
 **[./shared/User.entity.ts]()**:
 ```ts
-import { Field, Collection, Route, Index, RouteArgs } from '../../../src';
+import { Field, Collection, Route, Index, RouteArgs } from 'type-arango';
 
 @Collection()
 @Route.all()
@@ -20,7 +20,7 @@ export class User {
 	@Field() name: string;
 	
 	@Index()
-	@Field(type => type.email())
+	@Field(string => string.email())
 	email: string;
 }
 ```

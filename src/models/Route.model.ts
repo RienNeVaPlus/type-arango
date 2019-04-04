@@ -76,7 +76,7 @@ export class Route {
 			}
 		}
 
-		const query = path.substr(path.indexOf('?') + 1);
+		const query = path.includes('?') ? path.substr(path.indexOf('?') + 1) : '';
 		path = opt.path = path.substr(0, path.length - query.length - 1);
 
 		// pathParams
@@ -97,7 +97,7 @@ export class Route {
 		if(opt.queryParams) logger.debug('Added `pathParams` %o',opt.queryParams);
 
 		// queryParams
-		query.split('&').forEach(part => {
+		query.split('&').filter(f => f).forEach(part => {
 			const scalar = new Scalar(part);
 			opt.queryParams = toArray(opt.queryParams).concat([[
 				scalar.name, scalar.joi, scalar.requiredIcon + ' ' + (scalar.isRequired
