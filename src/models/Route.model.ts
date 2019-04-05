@@ -64,7 +64,6 @@ export class Route {
 		if(!path) return opt;
 
 		logger.debug('Parsing route path: %s',path);
-
 		path = path.startsWith('/') ? path.substr(1) : path;
 
 		if(collectionName){
@@ -77,7 +76,7 @@ export class Route {
 		}
 
 		const query = path.includes('?') ? path.substr(path.indexOf('?') + 1) : '';
-		path = opt.path = path.substr(0, path.length - query.length - 1);
+		path = opt.path = query ? path.substr(0, path.length - query.length - 1) : path;
 
 		// pathParams
 		let str = path;
