@@ -205,7 +205,7 @@ export class Route {
 			summary = opt.summary ? opt.summary : 'Calls '+handlerId;
 			description = '**👁️️️️️ Handler:** `'+handlerId+'`<br/><br/>'
 				+ (config.exposeRouteFunctionsToSwagger
-					? '<pre>AAA'+collection.documentName+'.'+(handler.toString())+'</pre><br/>' : '')
+					? '<pre>'+collection.documentName+'.'+(handler.toString())+'</pre><br/>' : '')
 				+ description;
 		}
 
