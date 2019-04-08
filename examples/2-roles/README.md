@@ -2,7 +2,7 @@
 
 An example of using the **access role system** of `type-arango`. Please have a look at the [basic example](../1-basic) first.
 
-When working with public endpoints it becomes necessary to protect the data.
+When working with public endpoints it becomes necessary to protect certain fields or routes.
 TypeArango provides a `role` system that can be integrated either with ArangoDBs
 built-in [session middleware](https://docs.arangodb.com/devel/Manual/Foxx/Reference/Sessions/) 
 or any other authentication system that can provide an array of roles (`string[]`).
@@ -51,7 +51,7 @@ Setup a basic `User` entity with [CRUD like](../../README.md#CRUD-like) and a cu
 2. `@Route.GET` creates a custom route GET `/users/custom?add=0` accessible by users with 
 the role `admin` or `support`.
 
-3. `@Route.POST` creates a custom route **not** bound to the entities namespace `users`
+3. `@Route.POST` creates a custom route **not** bound to the entities namespace `/users`
  (indicated by the starting `!` on the path) to `/noUsers`
 
 4. `@Route.DELETE` - or any route without a `path` - overrides the previously created route from `@Route.all`
@@ -63,7 +63,7 @@ import typeArango, { LogLevel } from 'type-arango'
 typeArango({
 	logLevel: LogLevel.Debug,
 	getUserRoles(req: Foxx.Request): Roles {
-		return req.session && req.session.data && req.session.data.roles || [];
+		return (req.session && req.session.data && req.session.data.roles || []).concat('guest');
 	},
 	getAuthorizedRoles(userRoles: Roles, accessRoles: Roles): Roles {
 		return userRoles.filter((role: string) => accessRoles.includes(role));
@@ -74,11 +74,11 @@ typeArango({
 export * from './User';
 ```
 
-The entities `index.ts` configures `typeArango` before it exports the `entites`.
+The `shared/index.ts` file configures `typeArango` before it exports the entities.
 
 1. Activate debug logs (view in `arangod`), for details, see [configuration](../../README.md#configuration).
-2. `getUserRoles` should always return the roles of the current user or `[]`.
-3. The example shown above equals the default configuration value. No need to provide it when 
+2. `getUserRoles` should always return the roles of the current user concatenated with the global role `guest`.
+3. The example above equals the default configuration value. No need to provide it when 
 `req.session.data.roles` can be populated.
 4. `getAuthorizedRoles` returns a subset of roles contained in `userRoles` and 
 `accessRoles`. The above is also the default value.

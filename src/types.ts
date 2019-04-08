@@ -13,6 +13,7 @@ import {
 	StringSchema,
 	ValidationOptions
 } from 'joi';
+import {enjoi} from './utils';
 
 // https://stackoverflow.com/questions/45306782/typescript-declaration-for-polymorphic-decorator
 export interface ClassAndMethodDecorator {
@@ -68,6 +69,7 @@ export interface Config {
 	pluralizeCollectionName: boolean;
 	prefixCollectionName: boolean;
 	exposeRouteFunctionsToSwagger: boolean;
+	addFieldWritersToFieldReaders: boolean;
 	stripDocumentId: boolean;
 	stripDocumentKey: boolean;
 	stripDocumentRev: boolean;
@@ -89,22 +91,33 @@ export interface Metadata<T> {
 	data: T
 }
 
-export interface AuthorizedRoles {
+export interface CollectionField {
+	[key: string]: FieldObject;
+}
+
+export interface FieldObject {
+	field: string;
+	roles?: FieldRoles;
+	schema?: Schema;
+	metadata: any;
+}
+
+export interface FieldRoles {
 	readers: Roles;
 	writers: Roles;
 }
 
-export interface RoleObject {
-	[key: string]: string[];
+export interface RoleFields {
+	read: string[];
+	write: string[];
 }
 
-export interface FieldRoles {
-	reader: RoleObject;
-	writer: RoleObject;
+export interface RoleObject {
+	[key: string]: RoleFields;
 }
 
 export interface AuthorizedMetadata {
-	authorized: AuthorizedRoles;
+	authorized: FieldRoles;
 }
 
 export interface IndexMetadata extends ArangoDB.IndexDescription<string | string[]> {}
@@ -117,15 +130,11 @@ export interface RouteMetadata {
 export interface FieldMetadata {
 	schema: Schema;
 	metadata: any;
-	authorized?: AuthorizedRoles;
-}
-
-export interface StructureValue extends FieldMetadata {
-	field: string;
+	roles?: FieldRoles;
 }
 
 export interface SchemaStructure {
-	[key: string]: StructureValue;
+	[key: string]: Schema;
 }
 
 export interface JoiContainer {
@@ -145,8 +154,9 @@ export type AnyJoiSchema = AnySchema
 	& ObjectSchema
 	& StringSchema
 	& LazySchema;
+export type Enjoi = typeof enjoi;
 export type ValidateSchema = Schema | JoiContainer;
-export type ValidateSchemaFunc = (returns: AnyJoiSchema) => AnyJoiSchema;
+export type ValidateSchemaFunc = (returns: AnyJoiSchema, enjoi: Enjoi) => AnyJoiSchema;
 
 export interface RouteBaseOpt {
 	deprecated?: boolean,
@@ -168,16 +178,14 @@ export interface RouteOpt extends RouteBaseOpt {
 	handler?: (arg: RouteArgs) => any;
 }
 
-// req, res, collection, _key, roles, path, method,
-// 	deprecated, tags, summary, description
 export interface RouteArgs extends RouteBaseOpt {
 	req: Foxx.Request;
 	res: Foxx.Response;
 	collection: ArangoDB.Collection;
 	userRoles: string[];
 	requestedFields: string[];
-	send: (doc: any) => Foxx.Response; // send role specific response
-	json: () => any; // read role specific body
+	send: (doc: any, disableRoleStrip?: boolean) => Foxx.Response; // send role specific response
+	json: (disableRoleStrip?: boolean) => any; // read role specific body
 	path: string;
 	_key: string;
 	method: RouteMethod;
@@ -213,6 +221,6 @@ export interface RouteData {
 	deprecated?: boolean;
 	tags?: string[];
 	roles?: Roles;
-	fieldRoles: FieldRoles;
+	roleStripFields: RoleObject;
 	handler?: RouteHandler;
 }

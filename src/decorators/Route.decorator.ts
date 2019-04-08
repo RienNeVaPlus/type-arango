@@ -9,7 +9,7 @@
  */
 import {isActive} from '../index';
 import {getCollectionForContainer, Route as RouteModel} from '../models';
-import {argumentResolve, removeUndefined} from '../utils';
+import {argumentResolve, enjoi, removeUndefined} from '../utils';
 import {ClassAndMethodDecorator, Roles, RolesFunc, RouteMetadata, RouteMethod, RouteOpt} from '../types';
 import {SymbolKeysNotSupportedError} from '../errors';
 import * as Joi from 'joi';
@@ -41,16 +41,18 @@ function route(
 			typeof opt === 'string' ? {path:opt} : Array.isArray(opt)  ? {roles:opt} : opt || {}
 		);
 
-		let schema = argumentResolve(schemaOrRolesOrFunctionOrOptions, Joi);
+		let schema = argumentResolve(schemaOrRolesOrFunctionOrOptions, enjoi);
 		let roles = argumentResolve(rolesOrFunctionOrOptions);
 
 		// parse schema argument
-		if(Array.isArray(schema))
+		if(Array.isArray(schema)){
 			opt.roles = schema;
-		else if(schema === true)
-			schema = col.joi;
+			schema = null;
+		}
 		else if(schema === false)
 			schema = null;
+		else if(!schema)
+			schema = col.joi;
 
 		if(schema){
 			if(schema.isJoi) {
@@ -81,12 +83,11 @@ function route(
 			else col.addRoles('updaters', opt.roles);
 		}
 
-		if(opt.path) {
+		if(opt.path !== undefined) {
 			opt = RouteModel.parsePath(opt, col.name);
 		}
 
 		const data: RouteMetadata = removeUndefined({method,opt});
-
 		col.addMetadata('route', propertyKey || '', data);
 
 		return prototype;
@@ -215,6 +216,6 @@ export const Route = {
 			return prototype;
 		};
 	}
-	// TODO?
+	// TODO: implement search route for Entity.find()
 	// search: (opt: RouteOpt) => route('get', opt)
 };

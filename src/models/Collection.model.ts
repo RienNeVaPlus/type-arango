@@ -1,21 +1,21 @@
-import {collections, isActive, config, logger} from "../index";
-import {concatUnique, db, removeUndefined, toArray} from '../utils';
+import {collections, config, isActive, logger} from "../index";
+import {concatUnique, db, removeUndefined} from '../utils';
 import {
+	CollectionField,
 	CreateCollectionOptions,
 	FieldMetadata,
-	FieldRoles,
 	IndexMetadata,
 	Metadata,
 	MetadataId,
 	MetadataTypes,
+	RoleFields,
+	RoleObject,
 	Roles,
 	RouteMetadata,
-	SchemaStructure,
-	StructureValue
+	SchemaStructure
 } from '../types';
 import {getRouteForCollection, Route} from ".";
 import * as Joi from 'joi';
-import {Schema, SchemaMap} from 'joi';
 import {CannotRedeclareFieldError} from '../errors';
 
 export type RoleTypes = 'creators' | 'readers' | 'updaters' | 'deleters';
@@ -25,7 +25,7 @@ export interface CollectionRoles {
 	readers: Roles;
 	updaters: Roles;
 	deleters: Roles;
-	fields: FieldRoles;
+	_all: Roles;
 }
 
 /**
@@ -38,10 +38,17 @@ export function createFromContainer(someClass: any): Collection {
 }
 
 /**
+ * Finds a collection for a decorated class
+ */
+export function findCollectionForContainer(someClass: any): Collection | undefined {
+	return collections.find(c => someClass === c.prototype || someClass.prototype instanceof c.prototype);
+}
+
+/**
  * Returns the respective collection instance for a decorated class
  */
 export function getCollectionForContainer(someClass: any): Collection {
-	let col = collections.find(c => someClass === c.prototype || someClass.prototype instanceof c.prototype);
+	let col = findCollectionForContainer(someClass);
 	if(col) return col;
 	return createFromContainer(someClass);
 }
@@ -55,15 +62,16 @@ export class Collection {
 	public completed: boolean = false;
 	public opt?: CreateCollectionOptions;
 	public schema: SchemaStructure = {};
-	public joi?: Schema;
 	public routes: Route[] = [];
 	public roles: CollectionRoles = {
 		creators: [],
 		readers: [],
 		updaters: [],
 		deleters: [],
-		fields: {reader:{},writer:{}}
+		_all: []
 	};
+	public roleStripFields: RoleObject = {};
+	public field: CollectionField = {};
 
 	private metadata: Metadata<MetadataTypes>[] = [];
 
@@ -85,51 +93,18 @@ export class Collection {
 	}
 
 	public addRoles(key: RoleTypes, roles: Roles, onlyWhenEmpty: boolean = true){
-		if(roles.length && onlyWhenEmpty && !this.roles[key].length)
-			this.roles[key] = concatUnique(this.roles[key], roles);
+		if(onlyWhenEmpty && this.roles[key].length) return;
+		// if(roles.length && onlyWhenEmpty && !this.roles[key].length)
+		this.roles[key] = concatUnique(this.roles[key], roles);
+		this.roles._all = concatUnique(this.roles._all, roles);
 	}
 
 	public addMetadata(id: MetadataId, field: string, data: MetadataTypes): void {
 		this.metadata.push({id,field,data});
 	}
 
-	private buildJoi(): Schema {
-		let j: SchemaMap = {};
-		for(let key of Object.keys(this.schema)){
-			j[key] = this.schema[key].schema;
-		}
-
-		logger.debug('Build %s joi cache: %o', this.name, j);
-
-		return Joi.object().keys(j);
-	}
-
-	private buildFieldRoles(): FieldRoles {
-		let res: FieldRoles = {reader:{},writer:{}};
-		let unauthorizedReader: string[] = [];
-		let unauthorizedWriter: string[] = [];
-
-		const fields = Object.keys(this.schema);
-		for(let key of fields){
-			const { authorized } = this.schema[key];
-			if(!authorized){
-				unauthorizedReader.push(key);
-				unauthorizedWriter.push(key);
-				continue;
-			}
-
-			toArray(authorized.readers).forEach(role => res.reader[role] = concatUnique(res.reader[role], key));
-			toArray(authorized.writers).forEach(role => res.writer[role] = concatUnique(res.writer[role], key));
-		}
-
-		Object.keys(res.reader).forEach(role =>
-			res.reader[role] = concatUnique(res.reader[role], unauthorizedReader));
-		Object.keys(res.writer).forEach(role =>
-			res.writer[role] = concatUnique(res.writer[role], unauthorizedWriter));
-
-		logger.debug('Build %s roles cache for fields %o', this.name, res);
-
-		return res;
+	get joi(){
+		return Joi.object(this.schema);
 	}
 
 	processMetadata(opt: CreateCollectionOptions = {}){
@@ -154,9 +129,17 @@ export class Collection {
 			switch(id){
 				case 'field':
 					if(this.completed) throw new CannotRedeclareFieldError(field, this.documentName);
-					let obj: StructureValue = removeUndefined(Object.assign({field}, data as FieldMetadata));
-					this.schema[field] = Object.assign(this.schema[field] || {field}, obj);
-					logger.debug('Create field `%s.%s` with schema %o', this.name, field, obj);
+					let { schema, metadata, roles } = data as FieldMetadata;
+					if(roles) {
+						if(config.addFieldWritersToFieldReaders && roles.writers){
+							roles.readers = concatUnique(roles.readers, roles.writers);
+						}
+						this.roles._all = concatUnique(this.roles._all, roles.readers, roles.writers);
+					}
+					this.schema[field] = schema;
+					this.field[field] = removeUndefined({field,roles,metadata});
+
+					logger.debug('Create field `%s.%s`', this.name, field);
 					break;
 
 				case 'route':
@@ -166,7 +149,32 @@ export class Collection {
 			}
 		}
 
+		this.buildFieldRoles();
+
 		this.metadata = [];
+	}
+
+	/**
+	 * Builds an array of fields that can't be read or written for every role used in the collection
+	 * roleStripFields = {user:{read:[],write:['readOnlyField']}
+	 */
+	buildFieldRoles(){
+		logger.debug('Building %s roles cache', this.name);
+
+		const fields = Object.values(this.field);
+		// every role of the entity
+		for(let role of this.roles._all){
+			let roles: RoleFields = {read:[],write:[]};
+
+			// every field of the entity
+			for(let field of fields){
+				if(!field.roles) continue;
+				const { roles: {readers,writers} } = field;
+				if(readers && !readers.includes(role)) roles.read = concatUnique(roles.read, field.field);
+				if(writers && !writers.includes(role)) roles.write = concatUnique(roles.write, field.field);
+			}
+			this.roleStripFields[role] = roles;
+		}
 	}
 
 	/**
@@ -175,9 +183,9 @@ export class Collection {
 	complete(opt: CreateCollectionOptions = {}){
 		if(opt.name) this.name = opt.name;
 		this.opt = opt;
+
 		this.processMetadata(opt);
-		this.joi = this.buildJoi();
-		this.roles.fields = this.buildFieldRoles();
+
 		this.completed = true;
 		logger.info('Completed collection "%s"', this.name);
 	}

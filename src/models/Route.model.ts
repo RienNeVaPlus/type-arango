@@ -1,6 +1,6 @@
 import {Collection} from ".";
 import {config, logger, RouteArgs, routes} from '../index';
-import {concatUnique, db, pick, toArray} from "../utils";
+import {db, pick, toArray, concatUnique, omit} from "../utils";
 import {RouteData, RouteMethod, RouteOpt, RouteResponse} from '../types';
 import {Scalar} from './Scalar.model';
 import * as Joi from 'joi'
@@ -33,7 +33,7 @@ export class Route {
 		public opt: RouteOpt
 	){
 		this.isCustom = !!opt.path;
-		this.path = opt.path || Route.defaultPath(collection, method);
+		this.path = typeof opt.path === 'string' ? opt.path : Route.defaultPath(collection, method);
 
 		let { roles } = opt;
 
@@ -61,15 +61,16 @@ export class Route {
 
 	static parsePath(opt: RouteOpt, collectionName?: string): RouteOpt {
 		let { path } = opt;
-		if(!path) return opt;
+		if(path === undefined) return opt;
 
 		logger.debug('Parsing route path: %s',path);
 		path = path.startsWith('/') ? path.substr(1) : path;
 
 		if(collectionName){
 			// paths starting with ! aren't bound to the current scope
-			if(path.startsWith('!'))
+			if(path.startsWith('!')){
 				path = path.substr(1);
+			}
 			else if(!path.startsWith(collectionName)){
 				path = collectionName+'/'+opt.path;
 			}
@@ -215,7 +216,7 @@ export class Route {
 			body = [body, '📑 **Body schema**'];
 
 		const routeData: RouteData = {
-			router, method, name: collection.name, fieldRoles: collection.roles.fields, path,
+			router, method, name: collection.name, path, roleStripFields: collection.roleStripFields,
 			tags, summary, description, roles, response, errors, deprecated,
 			body, pathParams, queryParams, handler
 		};
@@ -230,7 +231,7 @@ export class Route {
 			router,
 		 	method,
 			roles,
-			fieldRoles,
+			roleStripFields,
 			name,
 			path,
 			tags,
@@ -271,8 +272,8 @@ export class Route {
 				// collect read- & writable fields
 				let fieldsRead: string[] = [], fieldsWrite: string[] = [];
 				for(let role of userRoles){
-					fieldsRead = concatUnique(fieldsRead, fieldRoles.reader[role]);
-					fieldsWrite = concatUnique(fieldsWrite, fieldRoles.writer[role] || []);
+					fieldsRead = concatUnique(fieldsRead, roleStripFields[role].read);
+					fieldsWrite = concatUnique(fieldsWrite, roleStripFields[role].write);
 				}
 
 				// build route argument
@@ -330,16 +331,18 @@ export class Route {
 	static send(
 		req: Foxx.Request,
 		res: Foxx.Response,
-		readFields: string[],
+		stripFields: string[],
 		requestedFields: string[],
-		doc: ArangoDB.Document
+		doc: ArangoDB.Document,
+		disableRoleStrip: boolean = false
 	): Foxx.Response {
 		if(config.stripDocumentKey && doc._key) delete doc._key;
 		if(config.stripDocumentId && doc._id) delete doc._id;
 		if(!['PATCH','PUT'].includes(req.method) && config.stripDocumentRev && doc._key)
 			delete doc._rev;
 
-		const resp = pick(requestedFields ? pick(doc, requestedFields) : doc, readFields);
+		let resp = pick(doc, requestedFields);
+		resp = disableRoleStrip ? resp : omit(resp, stripFields);
 		logger.debug('Send response %o', resp);
 
 		return res.send(resp);
@@ -348,8 +351,9 @@ export class Route {
 	/**
 	 * Returns a picked version containing only writable fields from `req.json()`
 	 */
-	static json(req: Foxx.Request, writeFields: string[]){
-		const json = pick(req.json(), writeFields);
+	static json(req: Foxx.Request, stripFields: string[], disableRoleStrip: boolean = false){
+		let json = req.json();
+		if(!disableRoleStrip) json = omit(json, stripFields);
 		logger.debug('Read input json() %o', json);
 		return json;
 	}

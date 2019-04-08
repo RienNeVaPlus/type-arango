@@ -47,7 +47,7 @@ typeArango({
 export * from './User';
 ```
 
-The entities `index.ts` configures `typeArango` before it exports the `entites`.
+The entities `index.ts` configures `typeArango` before it exports the entites.
 - `getAuthorizedRoles` returns `['admin']` for presentation purposes, **do not use this in a public environment.**
 - Activate debug logs (view in `arangod`)
 For details, see [configuration](../../README.md#configuration).
@@ -69,7 +69,7 @@ context.use(
 
 TypeArango requires the Foxx router in order to be able to setup the
 previously created routes. `createRoutes` is also responsible for managing the 
-`swagger` docs inside of ArangoDBs Web Interface.
+swagger docs inside of ArangoDBs Web Interface.
 
 ---
 The [next example](../2-roles) is about manging access scopes using the built in `roles` system.

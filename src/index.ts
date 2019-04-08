@@ -14,10 +14,11 @@ export let config: Config = {
 	stripDocumentId: true,
 	stripDocumentRev: true,
 	stripDocumentKey: false,
+	addFieldWritersToFieldReaders: true,
 	logLevel: LogLevel.Warn,
 	unauthorizedThrow: 'unauthorized',
 	getUserRoles(req: Foxx.Request): Roles {
-		return req.session && req.session.data && req.session.data.roles || [];
+		return (req.session && req.session.data && req.session.data.roles || []).concat('guest');
 	},
 	getAuthorizedRoles(userRoles: Roles, accessRoles: Roles): Roles {
 		return userRoles.filter((role: string) => accessRoles.includes(role));

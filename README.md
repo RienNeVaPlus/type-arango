@@ -143,20 +143,68 @@ Various examples of how to use TypeArango with certain features can be found in 
 
 ## Configuration
 
-The following settings are available:
+```ts
+/**
+ * Pluralize the collection name (class User => collection.users)
+ */
+pluralizeCollectionName: boolean = true;
 
-| Setting                        | type       | default        |
-| ------------------------------ | ---------- | -------------- |
-| pluralizeCollectionName        | `boolean`  | `true`         |
-| prefixCollectionName           | `boolean`  | `false`        |
-| exposeRouteFunctionsToSwagger  | `boolean`  | `true`         |
-| stripDocumentId                | `boolean`  | `true`         |
-| stripDocumentRev               | `boolean`  | `true`         |
-| stripDocumentKey               | `boolean`  | `false`        |
-| logLevel                       | `LogLevel` | `warn`         |
-| getUserRoles                   | ```(req: Foxx.Request) => string[]``` | Returns `req.session.data.roles` |
-| getAuthorizedRoles             | ```(provided: Role[], required: Role[]) => string[]``` | Returns the user roles that can be applied to the current route` 
-| unauthorizedThrow              | [`HttpStatus`](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes) | `unauthorized`         |
+/**
+ * Prefix the collection name by applying `module.context.collectionName` to it
+ */
+prefixCollectionName: boolean = false;
+
+/**
+ * Display the source of your routes in Swagger
+ */
+exposeRouteFunctionsToSwagger: boolean = true;
+
+/**
+ * Always add field writer roles to field reader roles
+ * By default an `@Authorized(readers => ['user'], writers => ['admin'])`
+ * evaluates to `readers = ['users','admin'], writers = ['admin']`
+ */
+addFieldWritersToFieldReaders: boolean = true;
+
+/**
+ * Whether to strip the `_id` key from documents
+ */
+stripDocumentId: boolean = true;
+
+/**
+ * Whether to strip the `_rev` key from documents
+ */
+stripDocumentRev: boolean = true;
+
+/**
+ * Whether to strip the `_key` key from documents
+ */
+stripDocumentKey: boolean = false;
+
+/**
+ * Available log levels are Error, Warn, Info, Debug
+ */
+logLevel: LogLevel = LogLevel.Warn;
+
+/**
+ * Returns the roles of the current viewer user
+ */
+getUserRoles = function(req: Foxx.Request): string[] {
+    return (req.session && req.session.data && req.session.data.roles || []).concat('guest');
+};
+
+/**
+ * Returns all authorized roles for a request
+ */
+getAuthorizedRoles = function(providedRoles: string[], requiredRoles: string[]): string[] {
+    return providedRoles.filter((role: string) => requiredRoles.includes(role));
+}
+
+/**
+ * HTTP Status to return when an unauthorized request occurs
+ */
+unauthorizedThrow: ArangoDB.HttpStatus = 'unauthorized';
+```
 
 ## *"CRUD like"*
 
@@ -178,7 +226,7 @@ The decorator `@Route.all` expects [CRUD](https://en.wikipedia.org/wiki/Create,_
 API Documentation will be available soon, until then have a look at the [examples](./examples) and the [decorator sources](./src/decorators).
 
 ## Credits
-- type-arango is heavily inspired by [type-graphql](https://github.com/19majkel94/type-graphql).
+- type-arango is heavily inspired by [type-graphql](https://github.com/19majkel94/type-graphql) and [typeorm](https://github.com/typeorm/typeorm).
 - Avocado drawing by [FreePik](https://www.freepik.com/free-photos-vectors/background)
 
 

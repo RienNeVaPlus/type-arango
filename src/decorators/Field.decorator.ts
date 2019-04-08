@@ -1,10 +1,9 @@
 import {getCollectionForContainer} from '../models';
 import {isActive} from '../index';
 import {SymbolKeysNotSupportedError} from '../errors';
-import {argumentResolve, removeUndefined, toJoi} from '../utils';
+import {argumentResolve, enjoi, removeUndefined, toJoi} from '../utils';
 import {FieldMetadata, Roles, ValidateSchema, ValidateSchemaFunc} from '../types';
 
-// type ReturnTypeFunc = (returns?: void) => TypeValue;
 type ReadersFunc = (returns?: void) => Roles;
 type WritersFunc = (returns?: void) => Roles;
 
@@ -34,10 +33,11 @@ export function Field(
 		if(typeof field === 'symbol')
 			throw new SymbolKeysNotSupportedError();
 
+		const col = getCollectionForContainer(prototype.constructor);
 		const metadata = Reflect.getMetadata('design:type', prototype, field);
 		const joi = toJoi(metadata);
 
-		let schema = argumentResolve(inputSchemaOrReadersOrFunction, joi) || joi;
+		let schema = argumentResolve(inputSchemaOrReadersOrFunction, joi, enjoi) || joi;
 		let readers = argumentResolve(readersArrayOrFunction);
 		let writers = argumentResolve(writersArrayOrFunction);
 
@@ -51,7 +51,7 @@ export function Field(
 			metadata,
 			schema
 		};
-		if(readers) obj.authorized = removeUndefined({readers:readers,writers});
-		getCollectionForContainer(prototype.constructor).addMetadata('field', field, obj);
+		if(readers) obj.roles = removeUndefined({readers:readers,writers});
+		col.addMetadata('field', field, obj);
 	}
 }
