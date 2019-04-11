@@ -31,7 +31,5 @@
     "reflect-metadata": "^0.1.13",
     "typescript": "^3.3.4000"
   },
-  "devDependencies": {
-    "arangojs": "^6.10.0"
-  }
+  "devDependencies": {}
 }
