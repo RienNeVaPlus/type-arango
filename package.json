@@ -1,6 +1,6 @@
 {
   "name": "type-arango",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "ArangoDB Decorators and Utilities for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
