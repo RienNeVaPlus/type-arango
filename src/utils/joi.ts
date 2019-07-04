@@ -1,77 +1,112 @@
+import * as Joi from 'joi';
 import {Schema} from 'joi';
-import * as Joi from 'joi'
-import {findCollectionForContainer} from '../models';
+import {findDocumentForContainer, getDocumentForContainer} from '../models';
+import {isObject} from '.';
+
+type Presence = 'required' | 'optional';
 
 /**
  * Convert type or alias to joi
  */
-export function toJoi(inp: any, isArray: boolean = false): Schema {
-	if(isArray){
-		return Joi.array().items(toJoi(inp));
-	}
-
-	const type = typeof inp;
-	if(inp && type === 'object' && inp.isJoi)
+export function toJoi(inp: any, presence: Presence = 'optional'){
+	if(inp && inp.isJoi)
 		return inp;
 
-	let j;
-	switch(inp){
-		default:
-			// if(inp.prototype){
-			// 	let i = new inp;
-			// 	return Joi.string();
-			// }
-			return Joi.string();
-		case String:
-		case 'string': return Joi.string();
+	let j: Schema = Joi.any();
 
-		case Array:
-		case 'array': return Joi.array();
+	if(!inp){}
+	else if(isObject(inp)){
+		if(inp.prototype){
+			const doc = getDocumentForContainer(inp);
+			if(doc) j = Joi.object().keys(doc.schema);
+		} else {
+			Object.keys(inp).forEach(k => inp[k] = toJoi(inp[k]));
+			j = Joi.object().keys(inp);
+		}
+	} else if(Array.isArray(inp)){
+		j = Joi.any().valid(...inp);
+	} else {
+		switch(inp){
+			default:
+				if(!inp) break;
 
-		case Boolean:
-		case 'boolean': return Joi.boolean();
+				if(inp.prototype){
+					const doc = getDocumentForContainer(inp);
+					if(doc) j = Joi.object().keys(doc.schema); break;
+				}
 
-		case 'binary': return Joi.binary();
+				j = Joi.any();
+				break;
 
-		case Date:
-		case 'date': return Joi.date();
+			case String:
+			case 'string': j = Joi.string(); break;
 
-		case Function:
-		case 'func':
-		case 'function': return Joi.func();
+			case Number:
+			case 'number': j = Joi.number(); break;
 
-		case Number:
-		case 'number': return Joi.number();
+			case Array:
+			case 'array': j = Joi.array(); break;
 
-		case Object:
-		case 'object':
-			return Joi.object();
+			case Boolean:
+			case 'boolean': j = Joi.boolean(); break;
 
-		case 'any': return Joi.any();
+			case 'binary': j = Joi.binary(); break;
 
-		case 'alternatives': return Joi.alternatives();
+			case Date:
+			case 'date': j = Joi.date(); break;
+
+			case Function:
+			case 'func':
+			case 'function':
+				j = Joi.func(); break;
+
+			case Object:
+			case 'object':
+				j = Joi.object(); break;
+
+			case 'any': j = Joi.any(); break;
+
+			case 'alternatives': j = Joi.alternatives(); break;
+		}
 	}
+
+	if(presence === 'required'){
+		j = j.required();
+	}
+
 	return j;
 }
 
 /**
  * Enhance joi a little
  */
-export function enjoi(inp?: string | any){
+export function enjoi(inp?: string | any, presence: Presence = 'optional') {
 	if(inp === undefined)
 		return Joi;
 
 	const type = typeof inp;
 
-	if(type === 'object'){
-		Object.keys(inp).forEach(k => inp[k] = toJoi(inp[k]));
-		return Joi.object().keys(inp);
+	if(isObject(inp)){
+		return toJoi(inp, presence);
 	}
 
 	if(type === 'function'){
-		const col = findCollectionForContainer(inp);
-		return col ? col.schema : toJoi(inp);
+		const doc = findDocumentForContainer(inp);
+		return doc ? doc.schema : toJoi(inp, presence);
 	}
 
 	return toJoi(inp);
+}
+
+export function joiDefaults(obj: any, override: any = {}){
+	return obj._inner.children.reduce((res: any, child: any) => {
+		const key = child.key;
+		if(child.schema._type == 'object'){
+			res[key] = joiDefaults(child.schema, override[key]);
+		} else {
+			if(override[key] || child.schema._flags.default)
+				res[key] = override[key] || child.schema._flags.default;
+		}
+		return res;
+	}, {});
 }

@@ -1,22 +1,19 @@
-import {collections, config, isActive, logger} from "../index";
-import {concatUnique, db, removeUndefined} from '../utils';
+import {collections, config, Entities, isActive, logger} from "../index";
+import {Document, getDocumentForContainer, Route as RouteModel, Scalar} from './index';
+import {argumentResolve, concatUnique, db, enjoi, isObject, queryBuilder} from '../utils';
 import {
-	CollectionField,
 	CreateCollectionOptions,
-	FieldMetadata,
-	IndexMetadata,
-	Metadata,
-	MetadataId,
-	MetadataTypes,
-	RoleFields,
+	DecoratorIds,
+	DecoratorStorage,
+	QueryOpt,
 	RoleObject,
 	Roles,
-	RouteMetadata,
+	RouteOpt,
+	RoutePathParam,
 	SchemaStructure
 } from '../types';
-import {getRouteForCollection, Route} from ".";
+import {getRouteForCollection} from ".";
 import * as Joi from 'joi';
-import {CannotRedeclareFieldError} from '../errors';
 
 export type RoleTypes = 'creators' | 'readers' | 'updaters' | 'deleters';
 
@@ -25,13 +22,12 @@ export interface CollectionRoles {
 	readers: Roles;
 	updaters: Roles;
 	deleters: Roles;
-	_all: Roles;
 }
 
 /**
  * Creates a new Collection for a decorated class
  */
-export function createFromContainer(someClass: any): Collection {
+function createCollectionFromContainer(someClass: any): Collection {
 	let c = new Collection(someClass);
 	collections.push(c);
 	return c;
@@ -41,7 +37,7 @@ export function createFromContainer(someClass: any): Collection {
  * Finds a collection for a decorated class
  */
 export function findCollectionForContainer(someClass: any): Collection | undefined {
-	return collections.find(c => someClass === c.prototype || someClass.prototype instanceof c.prototype);
+	return collections.find(c => someClass === c.Class || someClass.prototype instanceof c.Class);
 }
 
 /**
@@ -50,7 +46,7 @@ export function findCollectionForContainer(someClass: any): Collection | undefin
 export function getCollectionForContainer(someClass: any): Collection {
 	let col = findCollectionForContainer(someClass);
 	if(col) return col;
-	return createFromContainer(someClass);
+	return createCollectionFromContainer(someClass);
 }
 
 /**
@@ -58,135 +54,217 @@ export function getCollectionForContainer(someClass: any): Collection {
  */
 export class Collection {
 	public name: string;
-	public documentName: string;
+	public db: ArangoDB.Collection;
 	public completed: boolean = false;
 	public opt?: CreateCollectionOptions;
 	public schema: SchemaStructure = {};
-	public routes: Route[] = [];
+	public routes: RouteModel[] = [];
 	public roles: CollectionRoles = {
 		creators: [],
 		readers: [],
 		updaters: [],
-		deleters: [],
-		_all: []
+		deleters: []
 	};
-	public roleStripFields: RoleObject = {};
-	public field: CollectionField = {};
+	public doc?: Document<any>;
+	public roleStripAttributes: RoleObject = {};
+	private decorator: DecoratorStorage = {};
 
-	private metadata: Metadata<MetadataTypes>[] = [];
+	public get route(){
+		let { name } = this;
+		name = name.charAt(0).toLowerCase() + name.substr(1);
+
+		if(config.dasherizeRoutes)
+			name = name.replace(/[A-Z]/g, m => '-' + m.toLowerCase());
+
+		return name;
+	}
 
 	/**
 	 * Returns a valid collection name
 	 */
 	static toName(input: string){
-		input = input.endsWith('s') || !config.pluralizeCollectionName ? input : input + 's';
 		return config.prefixCollectionName ? module.context.collectionName(input) : input;
 	}
 
 	/**
 	 * Creates a new collection instance
 	 */
-	constructor(public prototype: any){
-		this.documentName = prototype.name;
-		this.name = Collection.toName(prototype.name.toLowerCase());
-		prototype._typeArangoCollection = this;
+	constructor(public Class: new () => typeof Entities){
+		this.name = Collection.toName(Class.name);
+		this.db = isActive ? db._collection(this.name) : null;
 	}
 
 	public addRoles(key: RoleTypes, roles: Roles, onlyWhenEmpty: boolean = true){
 		if(onlyWhenEmpty && this.roles[key].length) return;
 		// if(roles.length && onlyWhenEmpty && !this.roles[key].length)
 		this.roles[key] = concatUnique(this.roles[key], roles);
-		this.roles._all = concatUnique(this.roles._all, roles);
+		if(this.doc) this.doc!.roles = concatUnique(this.doc!.roles, roles);
+		else console.log('CANNOT ADD ROLES, DOCUMENT NOT READY');
 	}
 
-	public addMetadata(id: MetadataId, field: string, data: MetadataTypes): void {
-		this.metadata.push({id,field,data});
+	// public addMetadata(id: MetadataId, attribute: string, data: MetadataTypes): void {
+	// 	this.metadata.unshift({id,attribute,data});
+	// }
+
+	public decorate(decorator: DecoratorIds, data: any){
+		this.decorator[decorator] = [...(this.decorator[decorator]||[]), {...data,decorator}];
 	}
 
-	get joi(){
-		return Joi.object(this.schema);
+	get routeAuths(){
+		return (this.decorator['Route.auth']||[]).map(d => d.authorizeFunction).reverse();
 	}
 
-	processMetadata(opt: CreateCollectionOptions = {}){
+	get routeRoles(){
+		return (this.decorator['Route.roles']||[]).map(d => d.rolesFunction).reverse();
+	}
+
+	query(q: string | QueryOpt){
+		if(typeof q === 'string'){
+			return db._query(q);
+		}
+
+		if(!q.keep){
+			q.unset = [];
+			if(config.stripDocumentId) q.unset.push('_id');
+			if(config.stripDocumentRev) q.unset.push('_rev');
+			if(config.stripDocumentKey) q.unset.push('_key');
+		}
+
+		return db._query(queryBuilder(this.name, q));
+	}
+
+	finalize(){
+		const { Collection, Route } = this.decorator;
+
+		const { ofDocumentFunction, options = {} } = Collection![0];
+		if(options.name) this.name = options.name;
+
+		// const col = getCollectionForContainer(prototype);
+		// col.decorate('Route.auth', {prototype,authorizeFunction})
+		const doc = this.doc = getDocumentForContainer(argumentResolve(ofDocumentFunction));
+		doc.col = this;
+
 		if(isActive){
-			let col = db._collection(this.name);
-			if(!db._collection(this.name)){
+			// create collection
+			if(!this.db){
 				logger.info('Creating ArangoDB Collection "%s"', this.name);
-				col = db._createDocumentCollection(this.name, opt);
+				this.db = db._createDocumentCollection(this.name, options || {});
 			}
-			// process decorator metadata
-			for(let {id, field, data} of this.metadata){
-				switch(id){
-					case 'index':
-						logger.debug('Ensuring ArangoDB index on %s.%s with %o', this.name, field, data);
-						col.ensureIndex(data as IndexMetadata);
-						break;
+
+			// create indices
+			for(let {options} of doc.indexes!){
+				this.db.ensureIndex(options);
+			}
+		}
+
+		if(Route) for(let {
+			prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrFunction,
+			rolesOrSchemaOrFunction, options
+		} of Route){
+			const a: any = argumentResolve(pathOrRolesOrFunctionOrOptions);
+			let opt: RouteOpt = Object.assign({
+					queryParams: []
+				},
+				typeof a === 'string' ? {path:a} : Array.isArray(a)  ? {roles:a} : a || {}
+			);
+
+			let schema;
+			let roles;
+
+			// allow options for schema param
+			if(isObject(schemaOrRolesOrFunction)){
+				opt = Object.assign(schemaOrRolesOrFunction, opt);
+			} else {
+				schema = argumentResolve(schemaOrRolesOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+			}
+
+			// allow options for roles param
+			if(isObject(rolesOrSchemaOrFunction)){
+				opt = Object.assign(rolesOrSchemaOrFunction, opt);
+			} else {
+				roles  = argumentResolve(rolesOrSchemaOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+			}
+
+			if(Array.isArray(schema)){
+				opt.roles = schema;
+				schema = roles ? roles : null;
+			} else if(Array.isArray(roles)){
+				opt.roles = roles;
+			} else if(roles === false || schema === false){
+				schema = null;
+			}
+
+			if(options)
+				opt = Object.assign(options, opt);
+
+			if(opt.path !== undefined) {
+				opt = RouteModel.parsePath(opt, this.route);
+			}
+
+			if(schema) {
+				if(schema.isJoi){}
+				else {
+					// support anonymous object syntax (joi => ({my:'object'}))
+					schema = enjoi(schema) as typeof Joi;
+				}
+
+				// treat schema as queryParam or pathParam
+				if(schema._type === 'object'){
+					// allow optional request body but default to required()
+					schema = schema._flags.presence === 'optional' ? schema : schema.required();
+
+					// init params
+					opt.pathParams = opt.pathParams || [];
+					opt.queryParams = opt.queryParams || [];
+
+					// loop schema keys
+					for(const attr of schema._inner.children){
+						// attributes with a default value are optional
+						if(attr.schema._flags.default){
+							attr.schema._flags.presence = 'optional';
+						}
+
+						// check schema attr in pathParams
+						if(opt.pathParams.find(p => p[0] === attr.key)){
+							// override pathParam schema with route schema in order to specify more details
+							opt.pathParams = opt.pathParams.map(p => p[0] === attr.key ? [p[0], attr.schema, p[2]] as RoutePathParam : p);
+							// remove attr from schema
+							schema._inner.children = schema._inner.children.filter((a: any) => a.key !== attr.key);
+							continue;
+						}
+
+						if(method === 'get'){
+							const isRequired = attr.schema._flags.presence === 'required';
+							opt.queryParams = opt.queryParams.concat([[attr.key,
+								attr.schema, Scalar.iconRequired(isRequired) + ' ' + (isRequired
+										? '**Required'
+										: '**Optional'
+								) + ` query parameter**  \`[ ${attr.key}: ${attr.schema._type} ]\`
+				　 \`Example: ?${attr.key}=${attr.schema._type}\``
+							]]);
+						}
+						// else {
+						// 	opt.body = [schema];
+						// }
+					}
+
+					if(method !== 'get'){
+						opt.body = [schema];
+					}
 				}
 			}
-		}
 
-		for(let {id,field,data} of this.metadata){
-			switch(id){
-				case 'field':
-					if(this.completed) throw new CannotRedeclareFieldError(field, this.documentName);
-					let { schema, metadata, roles } = data as FieldMetadata;
-					if(roles) {
-						if(config.addFieldWritersToFieldReaders && roles.writers){
-							roles.readers = concatUnique(roles.readers, roles.writers);
-						}
-						this.roles._all = concatUnique(this.roles._all, roles.readers, roles.writers);
-					}
-					this.schema[field] = schema;
-					this.field[field] = removeUndefined({field,roles,metadata});
-
-					logger.debug('Create field `%s.%s`', this.name, field);
-					break;
-
-				case 'route':
-					const { method, opt } = data as RouteMetadata;
-					getRouteForCollection(method, opt, this);
-					break;
+			// is MethodDecorator, replace callback with method
+			if(attribute) {
+				opt.handler = prototype[attribute];
+				opt.handlerName = attribute;
 			}
+
+			getRouteForCollection(method, opt, this);
 		}
-
-		this.buildFieldRoles();
-
-		this.metadata = [];
-	}
-
-	/**
-	 * Builds an array of fields that can't be read or written for every role used in the collection
-	 * roleStripFields = {user:{read:[],write:['readOnlyField']}
-	 */
-	buildFieldRoles(){
-		logger.debug('Building %s roles cache', this.name);
-
-		const fields = Object.values(this.field);
-		// every role of the entity
-		for(let role of this.roles._all){
-			let roles: RoleFields = {read:[],write:[]};
-
-			// every field of the entity
-			for(let field of fields){
-				if(!field.roles) continue;
-				const { roles: {readers,writers} } = field;
-				if(readers && !readers.includes(role)) roles.read = concatUnique(roles.read, field.field);
-				if(writers && !writers.includes(role)) roles.write = concatUnique(roles.write, field.field);
-			}
-			this.roleStripFields[role] = roles;
-		}
-	}
-
-	/**
-	 * Complete setup
-	 */
-	complete(opt: CreateCollectionOptions = {}){
-		if(opt.name) this.name = opt.name;
-		this.opt = opt;
-
-		this.processMetadata(opt);
 
 		this.completed = true;
+		// this.complete();
 		logger.info('Completed collection "%s"', this.name);
 	}
 }

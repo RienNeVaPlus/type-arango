@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./logo.png" alt="TypeArango" />
+  <img src="./assets/logo.png" alt="TypeArango" />
 </p>
 
 <h5 align="center">
@@ -7,30 +7,40 @@
 </h5>
 
 <p align="center">
-	TypeArango creates and manages your ArangoDB <code>collections</code>, <code>routes</code> and <code>documents</code> by using a single,<br/>centralized entity system which can be consumed by any <strong>backend</strong>, 
+	TypeArango creates and manages ArangoDB <code>collections</code>, <code>documents</code> and <code>routes</code> by using a single,<br/>centralized entity system which can be consumed by any <strong>backend</strong>, 
 	<strong>frontend</strong>, and / or <strong>Foxx service</strong>.<br/><sub><i>No more need to maintain environment specific schemas.</i></sub>
 </p>
 
-<h2 align="center"><sup>🥑</sup></h2>
+![divider](./assets/divider.png)
 
-### Features
+### ⭐ Features
 - **Beautiful Code** thanks to decorators
 - **A single Schema** for all js or ts environments
-- **Manages ArangoDB Collections** by deriving their names from the entity class name
-- **Manages ArangoDB Indexes** by decorating fields with `@Index(type, options)`
-- **Auto Schema from Types** derives typing information into `joi` schemas
-- **Auto Documentation** optimized swagger docs from types and decorators
-- **Route Decorators** for creating and documenting `Foxx.Routes` by typing `@Route.POST(input => string())`.
-- **Field-based Authorization** with `reader` and `writer` roles
-- **Route-based Authorization** with `creators`, `readers`, `updaters` and `deleters`
-- **[CRUD like](#crud-like) Route Setup** with `@Route.all(roles)`
-- **Custom Routes** with `@Route.GET(path => 'add/:feature=string?id=number')` input schemas and access roles
-- **Validate Input Data** by describing the entity or providing joi schemas for routes
-- **Request specific fields** by providing a `keys` parameter to the endpoint (like SQL SELECT)
-- **Logging integrated** for an easy setup and debugging
-- **Quick start [examples](./examples)** included
+- **[Manages ArangoDB Collections](./API.md#collectionofdocument-options)** by deriving their information from entities classes
+- **[Manages ArangoDB Indexes](./API.md#indextype-options)** by decorating attributes with `@Index(type, options)`
+- **[Auto Schema from types](./API.md#-en-hanced-joi)** derives typing information into `joi` schemas
+- **[Auto Documentation](#-worlds-fastest-way-to-create-documented-endpoints)** optimized swagger docs from types and decorators
+- **[Route Decorators](./API.md#route--get-post-put-patch--delete)** for creating and documenting `Foxx.Routes` as simple as `@Route.POST(input => string())`.
+- **[Attribute-based authorization](./examples/2-roles)** with `reader` and `writer` roles
+- **[Route-based authorization](./API.md#routeenablecreators-readers-updaters-deleters)** with `creators`, `readers`, `updaters` and `deleters`
+- **[Request-based authorization](./API.md#routeauthfunct)** on entity- or global basis
+- **[CRUD like](./API.md#crud-like)** route setup with `@Route.all(roles)`
+- **[Custom Routes](./API.md#route--get-post-put-patch--delete)** with input schemas and access roles
+- **[Validate Input Data](./API.md#attributeschema-readers-writers)** by describing the entity or providing joi schemas for routes
+- **[Internationalize document values](./API.md#-typesi18n)** and return translated strings based upon the session or a parameter
+- **[Request specific attributes](./API.md#route--get-post-put-patch--delete)** only by providing a `attributes` parameter to the endpoint (like SQL SELECT)
+- **[Logging integrated](./API.md#-configuration)** for an easy setup and debugging
 
-> 🌞 **TypeArango is in active development and will receive additional features.**
+![divider](./assets/divider.small.png)
+
+### 💨 Shortcuts
+- 🛫 **[Getting started](#-getting-started)**
+- 📘 **[Tutorial Examples](./examples)**
+- 📗 **[API Reference](./API.md)**
+
+![divider](./assets/divider.small.png)
+
+🌞 **TypeArango is in development and will receive additional features.** **Contributors wanted** 🙋
 
 [![last-commit][github-last-commit]][github-last-commit-url]
 [![version][github-version]][github-version-url]
@@ -38,80 +48,110 @@
 [![license][npm-license]][npm-license-url]
 ![size][shields-size]
 
-## Example
+![divider](./assets/divider.png)
+
+### 📝 Example
+
+The example will setup a User entity stored inside a Users collection with a total of 6 documented routes.
+
+> Various other examples of how to use typeArango with certain features can be found in the 📘 **[examples](./examples)** folder.
 
 ```ts
-import { Collection, Route, Index, Field, Authorized } from 'type-arango'
+import {
+    Document, Entity, Collection, Entities, Route,
+    Authorized, Index, Related, Attribute
+} from 'type-arango'
 
-@Collection({keyOptions:{type:'autoincrement'}})
+// `User` document entity
+@Document()
+export class User extends Entity {
+    @Index(type => 'hash')
+    @Attribute(str => str.email())
+    email: string;
+    
+    @Attribute()
+    name: string;
+    
+    @Authorized(readers => ['viewer','admin'], writers => ['admin'])
+    @Attribute(nr => nr.min(0).max(100))
+    rating: number;
+    
+    @OneToMany(type => User)
+    friends: Related<User[]>
+}
+
+// `Users` collection
+@Collection(of => User)
 @Route.all(
     creators => ['guest'],
     readers => ['user','admin'],
     writers => ['viewer','admin'],
     deleters => ['admin']
 )
-export class User {
-    @Index(type => 'hash')
-    @Field(str => str.email())
-    email: string;
-    
-    @Field()
-    name: string;
-    
-    @Authorized(readers => ['viewer','admin'], writers => ['admin'])
-    @Field(nr => nr.min(0).max(100))
-    rating: number;
-    
-    @Route.POST(
-        path => 'add/:type=string?id=number',
-        body => body.string().min(5),
+export class Users extends Entities {
+    @Route.GET(
+        path => ':id/friends',
         roles => ['viewer']
-    ) static GET({json,send){
-        send(json());
+    ) static GET({req, json}: RouteArg){
+        const user = Users.findOne(req.param('id'));
+        return user.friends();
     }
 }
 ```
 
+![divider](./assets/divider.png)
 
-## Getting started
+### ⚡ Worlds fastest way to create documented endpoints
 
-### 1. Setup ArangoDB Foxx service
+TypeArango uses the provided entity types to validate and document routes, for example a simple `@Route.all` creates five fully documented routes with a role system in place. 
+
+![Swagger Screenshot](./assets/swagger.screen.png)
+<sub>*Screenshot from ArangoDBs Web Interface*</sub>
+
+![divider](./assets/divider.png)
+
+### 🛫 Getting started
+
+#### 1. Setup ArangoDB Foxx service
 
 If you don't have a foxx service running yet, you can create one by using 
 [arangodb-typescript-setup](https://github.com/RienNeVaPlus/arangodb-typescript-setup).
 
 TypeArango requires ArangoDB `3.4.4` or newer.
 
-### 2. Install `type-arango`
+![divider](./assets/divider.small.png)
 
-```
-npm i --save-dev type-arango
-```
-or
+#### 2. Install `type-arango`
+
 ```
 yarn add --dev type-arango
 ```
+or
+```
+npm i --save-dev type-arango
+```
+![divider](./assets/divider.small.png)
 
-### 3. Initialize TypeArango
+#### 3. Initialize TypeArango
 
 In order for the decorators to work, `typeArango()` has to be called **before**
-any entity is imported.
+any entity is imported and completed after the decorators have been applied.
 
 **shared/entities/index.ts**:
 ```ts
 import typeArango from 'type-arango'
 
-typeArango({
+const complete = typeArango({
     // Configuration
 });
 
 export * from './user';
+
+complete();
 ```
+![divider](./assets/divider.small.png)
 
-`typeArango()` should be called before the decorators are used. It returns the
-current configuration ([see below](#configuration) for details).
-
-### 4. Create routes
+#### 4. Create routes
 When using the `@Route` decorator, it is required to provide the `Foxx.Router`
 to TypeArango by calling `createRoutes(router)`.
 
@@ -125,110 +165,22 @@ import * as _Entities from 'shared/entities';
 
 // Create the foxx router and hand it to type-arango
 const router = createRoutes( createRouter() );
-
-// Custom routes work as they used to
-router.get(...);
 ```
 
 As the routes are built by the `@Route.*` decorators, it is required to import all
 entities before calling `createRoutes(Foxx.Router)`.
 
-The router can still be used to setup normal Foxx routes.
+![divider](./assets/divider.png)
 
+### 📚 Documentation
 
-## Examples
+Read the 📘 [examples](./examples) first, then dive into the 📗 [API Reference](./API.md).
 
-Various examples of how to use TypeArango with certain features can be found in the
-**[examples folder](./examples)** of this repository.
+![divider](./assets/divider.png)
 
-## Configuration
-
-```ts
-/**
- * Pluralize the collection name (class User => collection.users)
- */
-pluralizeCollectionName: boolean = true;
-
-/**
- * Prefix the collection name by applying `module.context.collectionName` to it
- */
-prefixCollectionName: boolean = false;
-
-/**
- * Display the source of your routes in Swagger
- */
-exposeRouteFunctionsToSwagger: boolean = true;
-
-/**
- * Always add field writer roles to field reader roles
- * By default an `@Authorized(readers => ['user'], writers => ['admin'])`
- * evaluates to `readers = ['users','admin'], writers = ['admin']`
- */
-addFieldWritersToFieldReaders: boolean = true;
-
-/**
- * Whether to strip the `_id` key from documents
- */
-stripDocumentId: boolean = true;
-
-/**
- * Whether to strip the `_rev` key from documents
- */
-stripDocumentRev: boolean = true;
-
-/**
- * Whether to strip the `_key` key from documents
- */
-stripDocumentKey: boolean = false;
-
-/**
- * Available log levels are Error, Warn, Info, Debug
- */
-logLevel: LogLevel = LogLevel.Warn;
-
-/**
- * Returns the roles of the current viewer user
- */
-getUserRoles = function(req: Foxx.Request): string[] {
-    return (req.session && req.session.data && req.session.data.roles || []).concat('guest');
-};
-
-/**
- * Returns all authorized roles for a request
- */
-getAuthorizedRoles = function(providedRoles: string[], requiredRoles: string[]): string[] {
-    return providedRoles.filter((role: string) => requiredRoles.includes(role));
-}
-
-/**
- * HTTP Status to return when an unauthorized request occurs
- */
-unauthorizedThrow: ArangoDB.HttpStatus = 'unauthorized';
-```
-
-## *"CRUD like"*
-
-The decorator `@Route.all` expects [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) roles but provides five instead of the expected four routes, this is intended because the `updateRoles` can either `PATCH` (update) or `PUT` (replace) an entity.
-
-
-| Method | [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) | Roles |
-| ------ | --------- | -------- |
-| GET    | Read      | readers  |
-| POST   | Create    | creators |
-| PATCH  | Update    | updaters |
-| PUT    | Update    | updaters |
-| DELETE | Delete    | deleters |
-
-> Note: Fields have only two access roles: `readers` and `writers`.
-
-## Documentation
-
-API Documentation will be available soon, until then have a look at the [examples](./examples) and the [decorator sources](./src/decorators).
-
-## Credits
-- type-arango is heavily inspired by [type-graphql](https://github.com/19majkel94/type-graphql) and [typeorm](https://github.com/typeorm/typeorm).
+### 🌻 Credits
+- type-arango is heavily inspired by [TypeORM](https://github.com/typeorm/typeorm) and [type-graphql](https://github.com/19majkel94/type-graphql).
 - Avocado drawing by [FreePik](https://www.freepik.com/free-photos-vectors/background)
-
 
 [github-version]: https://img.shields.io/github/package-json/v/riennevaplus/type-arango.svg
 [github-version-url]: https://github.com/RienNeVaPlus/type-arango/blob/master/package.json

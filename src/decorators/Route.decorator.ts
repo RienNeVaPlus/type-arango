@@ -8,88 +8,35 @@
  * - @Route.all(creators, readers, updaters, deleters) - all routes
  */
 import {isActive} from '../index';
-import {getCollectionForContainer, Route as RouteModel} from '../models';
-import {argumentResolve, enjoi, removeUndefined} from '../utils';
-import {ClassAndMethodDecorator, Roles, RolesFunc, RouteMetadata, RouteMethod, RouteOpt} from '../types';
+import {getCollectionForContainer} from '../models';
+import {argumentResolve} from '../utils';
+import {ClassAndMethodDecorator, Roles, RolesFunc, RouteAuthArg, RouteMethod, RouteOpt, RouteRoles} from '../types';
 import {SymbolKeysNotSupportedError} from '../errors';
 import * as Joi from 'joi';
 import {Schema} from 'joi';
 
 export type PathFunc = (returns: string) => any;
-type SchemaFunc = (returns: typeof Joi) => typeof Joi | boolean;
+type SchemaFunc = (enjoi: (type?: any) => typeof Joi | any, joi?: any) => typeof Joi | boolean | Object;
 
 type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt;
 type ArgSchemaOrRolesOrOpt = boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt;
-type ArgRolesOrOpt = Roles | RolesFunc | RouteOpt;
 
 function route(
 	method: RouteMethod,
 	pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-	schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
-	rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+	schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
+	rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
 	options?: RouteOpt
 ): ClassAndMethodDecorator {
-	return function(prototype: any, propertyKey?: string | symbol): any {
+	return function(prototype: any, attribute?: string | symbol): any {
 		if (!isActive) return;
-		if(typeof propertyKey === 'symbol')
+		if(typeof attribute === 'symbol')
 			throw new SymbolKeysNotSupportedError();
 
-		const col = getCollectionForContainer(prototype);
-		let opt = argumentResolve(pathOrRolesOrFunctionOrOptions);
-
-		opt = Object.assign({},
-			typeof opt === 'string' ? {path:opt} : Array.isArray(opt)  ? {roles:opt} : opt || {}
-		);
-
-		let schema = argumentResolve(schemaOrRolesOrFunctionOrOptions, enjoi);
-		let roles = argumentResolve(rolesOrFunctionOrOptions);
-
-		// parse schema argument
-		if(Array.isArray(schema)){
-			opt.roles = schema;
-			schema = null;
-		}
-		else if(schema === false)
-			schema = null;
-		else if(!schema)
-			schema = col.joi;
-
-		if(schema){
-			if(schema.isJoi) {
-				if(method === 'get') opt.queryParams = [schema];
-				else opt.body = [schema];
-			}
-			else if(typeof schema === 'object'){
-				opt = Object.assign(schema, opt);
-			}
-		}
-
-		if(Array.isArray(roles))
-			opt.roles = roles;
-
-		if(options)
-			opt = Object.assign(options, opt);
-
-		// is MethodDecorator, replace callback with method
-		if(propertyKey) {
-			opt.handler = prototype[propertyKey];
-			opt.handlerName = propertyKey;
-		}
-		// is ClassDecorator, save roles to collection
-		else if(opt.roles && opt.roles.length) {
-			if(method === 'post') col.addRoles('creators', opt.roles);
-			else if(method === 'get') col.addRoles('readers', opt.roles);
-			else if(method === 'delete') col.addRoles('deleters', opt.roles);
-			else col.addRoles('updaters', opt.roles);
-		}
-
-		if(opt.path !== undefined) {
-			opt = RouteModel.parsePath(opt, col.name);
-		}
-
-		const data: RouteMetadata = removeUndefined({method,opt});
-		col.addMetadata('route', propertyKey || '', data);
-
+		getCollectionForContainer(prototype).decorate('Route', {
+			prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrFunction,
+			rolesOrSchemaOrFunction, options
+		});
 		return prototype;
 	}
 }
@@ -97,54 +44,72 @@ function route(
 export const Route = {
 	GET: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
-		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
+		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
 		options?: RouteOpt
 	) => route('get',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunctionOrOptions,
-		rolesOrFunctionOrOptions,
+		schemaOrRolesOrFunction,
+		rolesOrSchemaOrFunction,
 		options),
 	POST: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
-		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
+		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
 		options?: RouteOpt
 	) => route('post',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunctionOrOptions,
-		rolesOrFunctionOrOptions,
+		schemaOrRolesOrFunction,
+		rolesOrSchemaOrFunction,
 		options),
 	PATCH: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
-		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
+		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
 		options?: RouteOpt
 	) => route('patch',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunctionOrOptions,
-		rolesOrFunctionOrOptions,
+		schemaOrRolesOrFunction,
+		rolesOrSchemaOrFunction,
 		options),
 	PUT: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
-		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
+		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
 		options?: RouteOpt
 	) => route('put',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunctionOrOptions,
-		rolesOrFunctionOrOptions,
+		schemaOrRolesOrFunction,
+		rolesOrSchemaOrFunction,
 		options),
 	DELETE: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunctionOrOptions?: ArgSchemaOrRolesOrOpt,
-		rolesOrFunctionOrOptions?: ArgRolesOrOpt,
+		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
+		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
 		options?: RouteOpt
 	) => route('delete',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunctionOrOptions,
-		rolesOrFunctionOrOptions,
+		schemaOrRolesOrFunction,
+		rolesOrSchemaOrFunction,
 		options),
+
+	auth: (
+		authorizeFunction: (arg: RouteAuthArg) => boolean
+	) => {
+		return function(prototype: any): any {
+			const col = getCollectionForContainer(prototype);
+			col.decorate('Route.auth', {prototype,authorizeFunction})
+		}
+	},
+
+	roles: (
+		rolesFunction: RouteRoles
+	) => {
+		return function(prototype: any): any {
+			const col = getCollectionForContainer(prototype);
+			col.decorate('Route.roles', {prototype,rolesFunction})
+		}
+	},
 
 	enable: (
 		rolesOrCreatorsOrFunction: Roles | RolesFunc = [],
@@ -172,7 +137,7 @@ export const Route = {
 			col.addRoles('updaters', updaters);
 			col.addRoles('deleters', deleters);
 
-			if(col.completed) col.processMetadata();
+			// if(col.completed) col.processMetadata();
 		}
 	},
 
@@ -210,12 +175,10 @@ export const Route = {
 			route('post', creators, globalOptions)(prototype);
 			route('get', readers, globalOptions)(prototype);
 
-			const col = getCollectionForContainer(prototype);
-			if(col.completed) col.processMetadata();
+			// const col = getCollectionForContainer(prototype);
+			// if(col.completed) col.processMetadata();
 
 			return prototype;
 		};
 	}
-	// TODO: implement search route for Entity.find()
-	// search: (opt: RouteOpt) => route('get', opt)
 };

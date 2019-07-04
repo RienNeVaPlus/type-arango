@@ -2,7 +2,7 @@ import typeArango, { LogLevel } from '../../../src'; // type-arango
 
 // config
 typeArango({
-	// fake user roles for the typescript-minimal example
+	// fake user roles for the sake of simplicity
 	getAuthorizedRoles(){ return ['admin'] },
 	// verbose
 	logLevel: LogLevel.Debug

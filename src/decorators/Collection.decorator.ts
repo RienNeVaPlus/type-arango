@@ -1,25 +1,17 @@
-// import {isActive} from '../index';
-import {getCollectionForContainer} from '../models';
-import {argumentResolve} from '../utils';
-import {CreateCollectionOptions, CollectionName} from '../types';
+import {CreateCollectionOptions} from '../types';
+import {Entity, getCollectionForContainer} from '../models';
 
-interface CollectionOpt extends CreateCollectionOptions {}
-type CollectionNameFunc = (returns: CollectionName) => CollectionName;
+type DocumentFunc = (returns: any) => typeof Entity;
 
-export function Collection(): ClassDecorator;
-export function Collection(name: CollectionName): ClassDecorator;
-export function Collection(nameFunction: CollectionNameFunc): ClassDecorator;
-export function Collection(options: CollectionOpt): ClassDecorator;
+export function Collection(ofDocument: typeof Entity): ClassDecorator;
+export function Collection(ofDocumentFunction: DocumentFunc): ClassDecorator;
+export function Collection(ofDocument: typeof Entity | DocumentFunc, options: CreateCollectionOptions): ClassDecorator;
 export function Collection(
-	nameOrNameFunctionOrOptions: CollectionName | CollectionNameFunc | CollectionOpt = {}
+	ofDocumentFunction: typeof Entity | DocumentFunc,
+	options?: CreateCollectionOptions
 ): ClassDecorator {
 	return (prototype: any) => {
-		const col = getCollectionForContainer(prototype);
-		let opt: string | CollectionOpt = argumentResolve(nameOrNameFunctionOrOptions, col.name);
-		if(typeof opt === 'string')
-			opt = {name:opt} as CollectionOpt;
-
-		col.complete(opt);
+		getCollectionForContainer(prototype).decorate('Collection', {prototype, ofDocumentFunction, options});
 		return prototype;
 	}
 }

@@ -1,40 +1,56 @@
 import {isFoxx} from './utils'
-import {Collection, Route, Logger} from './models'
+import {Collection, Document, Route, Logger, Entities, Entity, Type} from './models'
 import {RequiresFoxxEnvironmentError} from './errors'
-import {Roles, RouteArgs, LogLevel, Config} from './types';
+import {Roles, RouteArg, LogLevel, Config, Related, RouteRolesArg} from './types';
 
 export let logger: Logger = new Logger();
 export let collections: Collection[] = [];
+export let documents: Document<any>[] = [];
 export let routes: Route[] = [];
 export let isActive: boolean = isFoxx();
 export let config: Config = {
-	pluralizeCollectionName: true,
 	prefixCollectionName: false,
-	exposeRouteFunctionsToSwagger: true,
+	exposeRouteFunctionsToSwagger: false,
+	dasherizeRoutes: true,
 	stripDocumentId: true,
 	stripDocumentRev: true,
 	stripDocumentKey: false,
-	addFieldWritersToFieldReaders: true,
+	addAttributeWritersToReaders: true,
+	forClient: null,
+	fromClient: null,
 	logLevel: LogLevel.Warn,
-	unauthorizedThrow: 'unauthorized',
+	providedRolesDefault: ['guest'],
+	requiredRolesFallback: ['user'],
+	requiredWriterRolesFallback: ['admin'],
+	throwUnauthorized: 'unauthorized',
+	throwForbidden: 'forbidden',
 	getUserRoles(req: Foxx.Request): Roles {
-		return (req.session && req.session.data && req.session.data.roles || []).concat('guest');
+		return (req.session && req.session.data && req.session.data.roles || []).concat(config.providedRolesDefault);
 	},
 	getAuthorizedRoles(userRoles: Roles, accessRoles: Roles): Roles {
 		return userRoles.filter((role: string) => accessRoles.includes(role));
 	}
 };
 
-export {Document} from './models'
-export {Collection, Route, Field, Index, Authorized} from './decorators'
-export {RouteArgs, LogLevel, isFoxx}
+// export {Document} from './models'
+export {
+	Collection, Route, Description, Document, Nested, Attribute, Index,
+	OneToOne, OneToMany, Authorized
+} from './decorators'
+export {RouteArg, RouteRolesArg, LogLevel, Related, isFoxx, Entities, Entity, Type}
+
+export function complete(){
+	documents.forEach(doc => doc.finalize());
+	collections.forEach(col => col.finalize());
+}
 
 /**
  * TypeArango() - Sets the config of `type-arango`
  */
-export function configure(configuration?: Partial<Config>): Partial<Config> {
+export function configure(configuration?: Partial<Config>) {
 	logger.info('Configure:', configuration);
-	return configuration ? config = Object.assign(config, configuration) : config;
+	if(configuration) config = Object.assign(config, configuration);
+	return complete;
 }
 export default configure;
 

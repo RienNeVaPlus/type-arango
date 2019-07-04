@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@types/arangodb@^3.4.9":
-  version "3.4.9"
-  resolved "https://registry.yarnpkg.com/@types/arangodb/-/arangodb-3.4.9.tgz#352d9731452c5bc67a360ffd7b9b6a337fe9d5a1"
-  integrity sha512-iqCQoW+F1/gNnpK6b8n7d9pIYnLwplLPmomscNkkYELFU+OyTJs6WalUjlJIGyZCiRJnBRnYm9ju1f+1Yijl0A==
+"@types/arangodb@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/@types/arangodb/-/arangodb-3.5.0.tgz#2f88e6a66b32c5b019faa5071a06934044f19eac"
+  integrity sha512-SqotUzZ1I5tSGW/o7cLsnXLVZwX8eSXLnXQ1tel1jUaSbM/rA2KSxqWIq4ybOq5EmK3OWhgI8lC3Dvw03syaIQ==
   dependencies:
     "@types/graphql" "*"
     "@types/node" "*"

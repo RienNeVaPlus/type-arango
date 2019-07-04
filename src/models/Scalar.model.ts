@@ -1,5 +1,6 @@
 import {Schema} from "joi";
 import {toJoi} from "../utils";
+import * as Joi from 'joi';
 
 export type ScalarType = 'any' | 'string' | 'number' | 'boolean' | 'enum' | string;
 
@@ -18,6 +19,9 @@ export class Scalar {
 			let parts = type.split('=');
 			name = parts[0];
 			type = parts[1];
+		} else if(!name){
+			name = type;
+			type = 'string';
 		}
 
 		let isRequired = type.includes('!') || (name && name.includes('!')) ? true
@@ -30,7 +34,7 @@ export class Scalar {
 		if(isArray)
 			type = type.substr(0, type.length-2);
 
-		let joi = toJoi(type, isArray);
+		let joi = isArray ? Joi.array().items(toJoi(type)) : toJoi(type);
 		if(isRequired)
 			joi = joi.required();
 

@@ -1,16 +1,18 @@
 import {Collection} from ".";
-import {config, logger, RouteArgs, routes} from '../index';
-import {db, pick, toArray, concatUnique, omit} from "../utils";
-import {RouteData, RouteMethod, RouteOpt, RouteResponse} from '../types';
+import {config, logger, RouteArg, routes} from '../index';
+import {db, joiDefaults, omit, pick, toArray} from "../utils";
+import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg} from '../types';
 import {Scalar} from './Scalar.model';
 import * as Joi from 'joi'
+
+const {aql} = require('@arangodb');
 
 const REGEX_PATH_PARAM: RegExp = /:+([^=/?&]+)[=]?([^/?&]+)?/gi;
 const mime: string[] = ['application/json'];
 
 export function getRouteForCollection(method: RouteMethod, opt: RouteOpt = {}, collection: Collection): Route {
 	let route = routes.find(route => {
-		return route.collection === collection
+		return route.col === collection
 			&& route.method === method
 			&& (route.path === opt.path || (!opt.path && !route.isCustom))
 	});
@@ -29,31 +31,40 @@ export class Route {
 
 	constructor(
 		public method: RouteMethod,
-		public collection: Collection,
+		public col: Collection,
 		public opt: RouteOpt
 	){
 		this.isCustom = !!opt.path;
-		this.path = typeof opt.path === 'string' ? opt.path : Route.defaultPath(collection, method);
+		this.path = typeof opt.path === 'string' ? opt.path : Route.defaultPath(col, method);
 
-		let { roles } = opt;
+		// is ClassDecorator, save roles to collection
+		if(opt.roles && opt.roles.length) {
+			if(method === 'post') col.addRoles('creators', opt.roles);
+			else if(method === 'get') col.addRoles('readers', opt.roles);
+			else if(method === 'delete') col.addRoles('deleters', opt.roles);
+			else col.addRoles('updaters', opt.roles);
+		}
 
-		// try to get global roles
-		if(!roles){
-			if(method === 'get') opt.roles = collection.roles.readers;
-			else if(method === 'post') opt.roles = collection.roles.creators;
-			else if(method === 'delete') opt.roles = collection.roles.deleters;
-			else opt.roles = collection.roles.updaters;
+		// try to read from collection roles
+		if(!opt.roles){
+			if(method === 'get') opt.roles = col.roles.readers;
+			else if(method === 'post') opt.roles = col.roles.creators;
+			else if(method === 'delete') opt.roles = col.roles.deleters;
+			else opt.roles = col.roles.updaters;
+
+			if(!opt.roles.length)
+				opt.roles = opt.roles.concat(config.requiredRolesFallback||[]);
 		}
 	}
 
-	static defaultPath(collection: Collection, method: RouteMethod): string {
-		let path: string = collection.name+'/:_key';
+	static defaultPath(col: Collection, method: RouteMethod): string {
+		let path: string = col.route+'/:_key';
 
 		// remove `_key` from path when `allowUserKeys` isn't set to false or `type` is set to `autoincrement`
 		if(method === 'post'){
-			const keyOptions = collection.opt && collection.opt.keyOptions;
+			const keyOptions = col.opt && col.opt.keyOptions;
 			if(keyOptions && (keyOptions.allowUserKeys !== false || keyOptions.type === 'autoincrement'))
-				path = collection.name;
+				path = col.route;
 		}
 
 		return path;
@@ -94,7 +105,7 @@ export class Route {
 				　 \`Example: ${scalar.path}\``
 			]]);
 		}
-		if(opt.queryParams) logger.debug('Added `pathParams` %o',opt.queryParams);
+		if(opt.queryParams) logger.debug('Added `pathParams` %o', opt.queryParams);
 
 		// queryParams
 		query.split('&').filter(f => f).forEach(part => {
@@ -104,7 +115,7 @@ export class Route {
 					? '**Required'
 					: '**Optional'
 				) + ` query parameter**  \`[ ${scalar.name}: ${scalar} ]\`
-				　 \`Example: ${toArray(opt.queryParams).length?'&':'?'}${scalar.query}\``
+				　 \`Example: ?${scalar.query}\``
 			]]);
 		});
 		if(opt.queryParams) logger.debug('Added `queryParams` %o',opt.queryParams);
@@ -113,9 +124,9 @@ export class Route {
 	}
 
 	setup(router: Foxx.Router): Foxx.Endpoint {
-		const { isCustom, method, path, collection, opt } = this;
+		const { isCustom, method, path, col, opt } = this;
 		let {
-			response = {status:'ok', schema:collection.joi, mime} as RouteResponse,
+			response = {status:'ok', schema:col.doc!.joi, mime} as RouteResponse,
 			errors = [],
 			pathParams = [],
 			queryParams = [],
@@ -130,7 +141,7 @@ export class Route {
 		} = opt as RouteOpt;
 
 		// let body: RouteBody = opt.body;
-		let name: string = collection.documentName.toLowerCase();
+		const name: string = col.doc!.name;
 
 		if(!isCustom){
 			pathParams = pathParams.concat([['_key', Joi.string(), '🆔 **Document identifier**']]);
@@ -139,17 +150,17 @@ export class Route {
 		// `select` query param
 		if(['get','post','patch','put'].includes(method)){
 			queryParams = [[
-				'fields', Joi.string(),
-				`✂️ **Comma separated list of fields to return in response**, _default is \`all\`_.
-				  &nbsp; &nbsp; &nbsp; \`Values(${Object.keys(collection.schema).join('`, `')})\``
+				'attributes', Joi.string(),
+				`✂️ **Comma separated list of attributes to return in response**, _default is \`all\`_.
+				  &nbsp; &nbsp; &nbsp; \`Values(${Object.keys(col.schema).join('`, `')})\``
 			]];
 		}
 
-		tags = tags || [collection.documentName];
+		tags = tags || [col.name];
 
 		// 404
 		if(['get','patch','delete'].includes(method))
-			errors = [...errors, ['not found', `${collection.documentName} document not found in ${name} collection.`]];
+			errors = [...errors, ['not found', `${name} document not found in ${col.name} collection.`]];
 
 		/**
 		 *  Joi.required() is documented but ignored by Foxx:
@@ -162,36 +173,36 @@ export class Route {
 			switch(method){
 				default:
 				case 'get':
-					summary = summary || `Returns ${collection.documentName}`;
-					description = description || `Prints a **${name}** document of the collection **${collection.name}**.`;
-					response.description = `A ${name} document of the ${collection.name} collection.`;
+					summary = summary || `Returns ${name}`;
+					description = description || `Prints a ${name} document of the collection **${col.name}**.`;
+					response.description = `${name} document of the ${col.name} collection.`;
 					break;
 
 				case 'post':
-					summary = summary || `Creates ${collection.documentName}`;
-					description = description || `Creates and prints the new **${name}** document of the collection **${collection.name}**.`;
-					body = body || [collection.joi!, `📑 **${collection.documentName} document to create**`];
+					summary = summary || `Creates ${name}`;
+					description = description || `Creates and prints the **${name}** document of the collection **${col.name}**.`;
+					body = body || [col.doc!.joi, `📑 **${name}  document to create**`];
 					response.status = 'created';
-					response.description = `The newly created ${name} document of the ${collection.name} collection.`;
+					response.description = `The newly created ${name} document of the ${col.name} collection.`;
 					break;
 
 				case 'patch':
-					summary = summary || `Updates ${collection.documentName}`;
-					if(!isCustom) description = description || `Updates and prints the new **${name}** document of the collection **${collection.name}**.`;
-					body = body || [collection.joi!, `📑 **Partial ${name} document to update**`];
-					response.description = `The updated ${name} document of the ${collection.name} collection.`;
+					summary = summary || `Updates ${name}`;
+					if(!isCustom) description = description || `Updates and prints the **${name}** document of the collection **${col.name}**.`;
+					body = body || [col.doc!.joi, `📑 **Partial ${name} document to update**`];
+					response.description = `The updated ${name} document of the ${col.name} collection.`;
 					break;
 
 				case 'put':
-					summary = summary || `Replaces ${collection.documentName}`;
-					description = description || `Replaces and prints the new **${name}** document of the collection **${collection.name}**.`;
-					body = body || [collection.joi!, `📑 **${collection.documentName} document to replace**`];
-					response.description = `The replaced ${name} document of the ${collection.name} collection.`;
+					summary = summary || `Replaces ${name}`;
+					description = description || `Replaces and prints the **${name}** document of the collection **${col.name}**.`;
+					body = body || [col.doc!.joi, `📑 **${name} document to replace**`];
+					response.description = `The replaced ${name} document of the ${col.name} collection.`;
 					break;
 
 				case 'delete':
-					summary = summary || `Deletes ${collection.documentName}`;
-					description = description || `Deletes a **${name}** document of the collection **${collection.name}**. Prints an empty body on success.`;
+					summary = summary || `Deletes ${name}`;
+					description = description || `Deletes a **${name}** document of the collection **${col.name}**. Prints an empty body on success.`;
 					response.status = 'no content';
 					response.schema = null as unknown as Foxx.Schema; // ArangoDB Bug: null is not accepted
 					response.description = 'No content.';
@@ -201,23 +212,39 @@ export class Route {
 		}
 
 		if(handler){
-			const handlerId = collection.documentName+'.'+handlerName+'()';
-			summary = opt.summary ? opt.summary : 'Calls '+handlerId;
+			const handlerId = col.name+'.'+handlerName+'()';
+			summary = opt.summary || 'Calls '+handlerId;
 			description = '**👁️️️️️ Handler:** `'+handlerId+'`<br/><br/>'
 				+ (config.exposeRouteFunctionsToSwagger
-					? '<pre>'+collection.documentName+'.'+(handler.toString())+'</pre><br/>' : '')
+					? '<pre>'+col.name+'.'+(handler.toString())+'</pre><br/>' : '')
 				+ description;
 		}
 
-		if(roles)
-			description = `**🔐 Roles:** \`[${roles.join(', ')}]\`<br/><br/>`+description;
+		const { routeAuths, routeRoles } = col;
+		if(roles || routeAuths.length || routeRoles.length){
+			const rolesText = roles ? '['+(roles||[]).join(', ')+']' : null;
+			description = '**🔐 Authorization:** `getAuthorizedRoles('+(routeRoles.length
+					? '[...getUserRoles(), ...Route.roles'+(routeRoles.length>1?'['+routeRoles.length+']':'')+']'
+					: 'getUserRoles()'
+				)
+				+ (rolesText?', '+rolesText:'')+') '
+				+ (routeAuths.length?'&& Route.auth'+(routeAuths.length>1?'['+routeAuths.length+']':''):'')
+				+ '`<br/><br/>'
+				// + (roles ? '**👪 Roles:** `'+rolesText+'`<br/><br/>' : '')
+				// + (routeAuths.length?'**🔑 Auth:** `'+(routeAuths.join(' && '))+'`<br/><br/>':'')
+				+ description;
+		}
 
 		if(body && !Array.isArray(body))
 			body = [body, '📑 **Body schema**'];
 
+		// if(path === 'items/requestUploadUrl')
+		// console.log('PATHPARAMS', path,pathParams);
 		const routeData: RouteData = {
-			router, method, name: collection.name, path, roleStripFields: collection.roleStripFields,
+			router, method, name: col.name, path, roleStripAttributes: col.doc!.roleStripAttributes,
+			doc: col.doc,
 			tags, summary, description, roles, response, errors, deprecated,
+			routeAuths: col.routeAuths, routeRoles: col.routeRoles,
 			body, pathParams, queryParams, handler
 		};
 
@@ -228,23 +255,25 @@ export class Route {
 	 * Setup route
 	 */
 	static setup({
-			router,
-		 	method,
-			roles,
-			roleStripFields,
-			name,
-			path,
-			tags,
-			response,
-			errors,
-			summary,
-			description,
-			deprecated,
-			body,
-			queryParams,
-			pathParams,
-		  handler
-		}: RouteData
+		doc,
+		router,
+		method,
+		routeAuths,
+		routeRoles,
+		roles,
+		roleStripAttributes,
+		name,
+		path,
+		tags,
+		response,
+		errors,
+		summary,
+		description,
+		deprecated,
+		body,
+		queryParams,
+		pathParams,
+		handler }: RouteData
 	): Foxx.Endpoint {
 		const { info, debug, warn } = logger;
 		info('- Setup %s %s', method.toUpperCase(), path);
@@ -252,47 +281,75 @@ export class Route {
 		const route = router[method](
 			path,
 			(req: Foxx.Request, res: Foxx.Response) => {
-				const { getUserRoles, getAuthorizedRoles, unauthorizedThrow } = config;
+				const { getUserRoles, getAuthorizedRoles, throwForbidden } = config;
 
-				info('[client %s] %s %s',req.remoteAddress, req.method.toUpperCase(),req.path);
+				info('[client %s] %s %s', req.remoteAddress, req.method.toUpperCase(),req.path);
 				debug('Required roles %o', roles);
 
 				// authorize by route/collection roles
-				const userRoles = getUserRoles(req);
-				debug('User roles %o', userRoles);
+				let userRoles = getUserRoles(req);
+				const args: RouteRolesArg = {
+					req, res, roles, path, method, aql,
+					collection: db._collection(name),
+					query: Route.query.bind(null),
+					_key: req.param('_key') || '',
+					session: Route.session.bind(null, req, res),
+					requestedAttributes: req.param('attributes') || null,
+					hasAuth: !!routeAuths.length,
+					auth: Route.auth.bind(null, req, res, routeAuths),
+					error: Route.error.bind(null, res)
+				};
+				if(routeRoles.length){
+					userRoles = routeRoles.map(f => f(args) || []).reduce((c, n) => c.concat(n), userRoles);
+				}
+				debug('Provided roles %o', userRoles);
 
 				const authorizedRoles = getAuthorizedRoles(userRoles, roles || []);
 				info('Authorized roles %o', authorizedRoles);
 
 				if(!authorizedRoles.length){
-					warn('Unauthorized [client %s] %s %s', req.remoteAddress, req.method.toUpperCase(), req.path);
-					return res.throw(unauthorizedThrow || 'unauthorized');
+					warn('Forbidden [client %s] %s %s', req.remoteAddress, req.method.toUpperCase(), req.path);
+					return res.throw(throwForbidden || 'forbidden');
 				}
 
-				// collect read- & writable fields
-				let fieldsRead: string[] = [], fieldsWrite: string[] = [];
+				// collect read- & writable attributes into temp object {key:count}
+				let attributesRead: any = {}, attributesWrite: any = {}, sum: number = 0;
 				for(let role of userRoles){
-					fieldsRead = concatUnique(fieldsRead, roleStripFields[role].read);
-					fieldsWrite = concatUnique(fieldsWrite, roleStripFields[role].write);
+					if(roleStripAttributes[role]){
+						console.log('role.read', roleStripAttributes[role].read);
+						sum++;
+						for(let read of roleStripAttributes[role].read){
+							attributesRead[read] = (attributesRead[read] || 0) + 1;
+						}
+						for(let write of roleStripAttributes[role].write){
+							attributesWrite[write] = (attributesWrite[write] || 0) + 1;
+						}
+					}
 				}
+				// strip attributes when they are forbidden in all roles
+				let stripAttributesRead: string[] = [], stripAttributesWrite: string[] = [];
+				// const sum = userRoles.length;
+				Object.keys(attributesRead).forEach(
+					k => attributesRead[k] === sum && stripAttributesRead.push(k));
+				Object.keys(attributesWrite).forEach(
+					k => attributesWrite[k] === sum && stripAttributesWrite.push(k));
 
 				// build route argument
-				const requestedFields = req.param('fields') || null;
-				const args: RouteArgs = {
-					req, res,
-					roles, userRoles, path, method,
-					collection: db._collection(name),
-					_key: req.param('_key') || '',
-					requestedFields,
-					send: Route.send.bind(null, req, res, fieldsRead, requestedFields),
-					json: Route.json.bind(null, req, fieldsWrite),
+				// const requestedAttributes = req.param('attributes') || null;
+				const data: RouteArg = Object.assign(args, {
+					req, res, userRoles,
+					send: Route.send.bind(null, req, res, doc.forClient.bind(doc), stripAttributesRead, args.requestedAttributes!),
+					json: Route.json.bind(null, req, res, doc.fromClient.bind(doc), body ? body[0] : null, stripAttributesWrite),
 					deprecated, tags, summary, description
-				};
+				});
 
-				debug('Call route handler with %o', args);
+				debug('Call route handler for %o %o', method.toUpperCase(), path);
 
-				// call handler
-				return handler ? handler(args) : args.send(Route[method](args));
+				if(handler){
+					const result = handler(data);
+					return result ? data.send(result) : result;
+				}
+				return data.send(Route[method](data));
 			}
 		)
 			.summary(summary).description(description);
@@ -301,7 +358,7 @@ export class Route {
 		pathParams.forEach(a => route.pathParam(...a));
 
 		// add query params
-		queryParams.forEach(a => route.queryParam(...a));
+		queryParams.forEach((a: RouteQueryParam) => route.queryParam(...a));
 
 		// add response information
 		if(response){
@@ -316,8 +373,10 @@ export class Route {
 		if(tags) route.tag(...tags);
 
 		// add body
-		if(body) route.body(body[0], mime, body[1]);
-		// else route.body(null); // seens like a bug?
+		if(body){
+			route.body(body[0], mime, body[1]);
+		}
+		// else route.body(null); // seems like a bug?
 
 		// deprecate
 		if(deprecated) route.deprecated(true);
@@ -326,95 +385,225 @@ export class Route {
 	}
 
 	/**
-	 * Send limited response
+	 * Get or set the session
 	 */
-	static send(
+	static session(req: Foxx.Request, res: Foxx.Response, dataOrEnforce?: Partial<Foxx.Session> | true): Foxx.Session {
+		const enforce = dataOrEnforce === true;
+		const data = dataOrEnforce && !enforce ? dataOrEnforce : null;
+
+		// read
+		if(!data || enforce){
+			if(enforce && !req.session!.uid){
+				res.throw(config.throwUnauthorized, {cause:new Error('Session invalid')});
+			}
+			return req.session!;
+		}
+
+		// write
+		Object.keys(data).forEach((k: string) => (req.session as any)[k] = (data as any)[k]);
+		return req.session!;
+	}
+
+	/**
+	 * Authorizes a document by calling the Route.auth handlers
+	 */
+	static auth(
 		req: Foxx.Request,
 		res: Foxx.Response,
-		stripFields: string[],
-		requestedFields: string[],
-		doc: ArangoDB.Document,
-		disableRoleStrip: boolean = false
-	): Foxx.Response {
+		authorizes: any[],
+		document: DocumentData,
+		method?: RouteMethod,
+		canThrow: boolean = true
+	){
+		if(!authorizes.length) return document;
+		const args = {session:req.session, doc:document, document, method, req, res};
+		let success = !(authorizes||[]).find(f => !f(args));
+		if(!success){
+			if(canThrow) res.throw(config.throwForbidden || 'forbidden');
+			return false;
+		}
+		return document;
+	}
+
+	/**
+	 * Execute a query
+	 */
+	static query(query: ArangoDB.Query, _options?: ArangoDB.QueryOptions){
+		logger.debug('Query %o', query);
+		return db._query.apply(db, arguments);
+	}
+
+	/**
+	 * Returns a picked version containing only writable attributes from `req.json()`
+	 */
+	static json(
+		req: Foxx.Request,
+		res: Foxx.Response,
+		fromClient: any,
+		body: any,
+		stripAttributes: string[],
+		omitUnwritableAttributes: boolean = true
+	){
+		let json = req.json();
+
+		// add joi defaults to result, this should've been done by foxx instead of me
+		if(body && body._inner){
+			json = joiDefaults(body, json);
+		}
+
+		// remove un-writable attributes
+		if(omitUnwritableAttributes) json = omit(json, stripAttributes);
+
+		// pass to config.fromClient or Document.fromClient
+		if(config.fromClient || fromClient){
+			const args = {req, res,
+				_key: req.param('_key') || '',
+				requestedAttributes: req.param('attributes') || null,
+				session: Route.session.bind(null, req, res),
+				error: Route.error.bind(null, res)
+			};
+			if(config.fromClient) json = config.fromClient!(json, args);
+			if(fromClient) json = fromClient(json, args);
+		}
+
+		logger.debug('Read input json() %o', json);
+
+		return json;
+	}
+
+	/**
+	 * Throws an error with an optional reason
+	 */
+	static error(res: Foxx.Response, status: ArangoDB.HttpStatus, reason?: string){
+		return reason ? res.throw(status, reason) : res.throw(status);
+	}
+
+	/**
+	 * Map data for client
+	 */
+	static forClient(
+		req: Foxx.Request,
+		res: Foxx.Response,
+		forClient: any,
+		stripAttributes: string[],
+		requestedAttributes: string[],
+		omitUnreadableAttributes: boolean | string = true,
+		doc: DocumentData
+	){
 		if(config.stripDocumentKey && doc._key) delete doc._key;
 		if(config.stripDocumentId && doc._id) delete doc._id;
 		if(!['PATCH','PUT'].includes(req.method) && config.stripDocumentRev && doc._key)
 			delete doc._rev;
 
-		let resp = pick(doc, requestedFields);
-		resp = disableRoleStrip ? resp : omit(resp, stripFields);
+		let resp = pick(doc, requestedAttributes);
+		resp = omitUnreadableAttributes ? omit(resp, stripAttributes) : resp;
+		if(config.forClient || forClient){
+			const args = {req, res,
+				_key: req.param('_key') || '',
+				requestedAttributes: req.param('attributes') || null,
+				session: Route.session.bind(null, req, res),
+				error: Route.error.bind(null, res)
+			};
+			if(config.forClient) resp = config.forClient!(resp, args);
+			if(forClient) resp = forClient(resp, args);
+		}
+		return resp;
+	}
+
+	/**
+	 * Send / map response
+	 */
+	static send(
+		req: Foxx.Request,
+		res: Foxx.Response,
+		forClient: any,
+		stripAttributes: string[],
+		requestedAttributes: string[],
+		doc: DocumentData,
+		omitUnreadableAttributes: boolean | string = true
+	): Foxx.Response {
+		const call = Route.forClient.bind(null, req, res, forClient, stripAttributes, requestedAttributes, omitUnreadableAttributes);
+		let resp;
+		if(Array.isArray(doc)){
+			resp = doc.map(d => call({...d}));
+		} else {
+			resp = call({...doc});
+		}
 		logger.debug('Send response %o', resp);
 
 		return res.send(resp);
 	}
 
 	/**
-	 * Returns a picked version containing only writable fields from `req.json()`
-	 */
-	static json(req: Foxx.Request, stripFields: string[], disableRoleStrip: boolean = false){
-		let json = req.json();
-		if(!disableRoleStrip) json = omit(json, stripFields);
-		logger.debug('Read input json() %o', json);
-		return json;
-	}
-
-	/**
 	 * Read document
 	 */
-	static get({_key, collection}: RouteArgs){
-		logger.info('GET %s#%s', collection.name(),_key);
-		return collection.document(_key);
+	static get({_key, auth, collection}: RouteArg){
+		logger.info('GET %s/%s', collection.name(), _key);
+		return auth(collection.document(_key), 'get');
 	}
 
 	/**
 	 * Create document
 	 */
-	static post({json, res, _key, collection}: RouteArgs) {
+	static post({json, res, auth, _key, collection}: RouteArg) {
 		const body = json();
 		_key = _key || body._key;
 		body._key = _key;
 
-		logger.info('POST %s#%s', collection.name(), _key||'n/a',body);
+		logger.info('POST %s/%s', collection.name(), _key||'n/a',body);
 
 		if(_key && collection.exists(_key))
 			return res.throw(409, 'Document already exists');
 
-		let doc = _key ? Object.assign(body, {_key}) : body;
-		let saved = collection.insert(doc);
-		return Object.assign(doc, saved);
+		const doc = auth(_key ? Object.assign(body, {_key}) : body, 'post');
+		if(!doc) return;
+
+		return Object.assign(doc, collection.insert(doc));
 	}
 
 	/**
 	 * Update document
 	 */
-	static patch({json, res, _key, collection}: RouteArgs) {
-		logger.info('PATCH %s#%s', collection.name(), _key);
+	static patch({json, res, _key, collection, hasAuth, auth}: RouteArg) {
+		logger.info('PATCH %s/%s', collection.name(), _key);
 
 		if(!collection.exists(_key))
 			return res.throw(409, 'Document does not exist');
 
+		const doc = json();
+
+		if(hasAuth && !auth(Object.assign(collection.document(_key), doc), 'patch'))
+			return;
+
 		// todo: implement param overwrite
-		return <any>collection.update(_key, json(), {returnNew:true}).new;
+		return <any>collection.update(_key, doc, {returnNew:true}).new;
 	}
 
 	/**
 	 * Replace document
 	 */
-	static put({json, _key, collection}: RouteArgs) {
-		logger.info('PUT %s#%ss', collection.name(), _key);
+	static put({json, _key, collection, hasAuth, auth}: RouteArg) {
+		logger.info('PUT %s/%s', collection.name(), _key);
+
+		const doc: any = json();
+
+		if(hasAuth && auth(Object.assign(collection.document(_key) || {}, doc), 'put'))
+			return;
 
 		// todo: implement param for create?
-		return <any>collection.replace(_key, json(), {returnNew:true}).new;
+		return <any>collection.replace(_key, doc, {returnNew:true}).new;
 	}
 
 	/**
 	 * Delete document
 	 */
-	static delete({res, _key, collection}: RouteArgs) {
-		logger.info('DELETE %s#%s', collection.name(), _key);
+	static delete({res, _key, collection, hasAuth, auth}: RouteArg) {
+		logger.info('DELETE %s/%s', collection.name(), _key);
 
 		if(!collection.exists(_key))
 			return res.throw(409, 'Document does not exist');
+
+		if(hasAuth && !auth(collection.document(_key), 'delete')) return;
 
 		collection.remove(_key!);
 		return '';

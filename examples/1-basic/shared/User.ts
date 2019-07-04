@@ -1,22 +1,28 @@
-import { Field, Collection, Route, Index, RouteArgs } from '../../../src';
+import { Document, Entity, Collection, Entities, Route, Attribute, Index, RouteArg } from '../../../src';
 
-// makes sure the collection "users" exists
-@Collection()
-// creates all five CRUD like routes (GET=read, POST=create, PUT=replace, PATCH=update, + DELETE)
-@Route.all()
-export class User {
+
+@Document()
+export class User extends Entity {
 	// creates a hash index on User.email
 	@Index()
 	// validates changes to user.email to be email addresses
-	@Field(type => type.email())
+	@Attribute(type => type.email())
 	email: string;
 
-	@Field()
+	@Attribute()
 	name: string;
+}
 
-	// creates & documents a route on /users/custom/:param?add=0
-	@Route.GET(path => 'custom/:param=boolean?add?=number')
-	static GET_CUSTOM({json,send}: RouteArgs){
-		send(json());
+// creates the collection Users
+@Collection(of => User)
+// creates all five `CRUD like` routes (GET=read, POST=create, PUT=replace, PATCH=update, DELETE=remove)
+@Route.all()
+export class Users extends Entities {
+	// creates & documents a route on /users/custom/:user
+	@Route.GET(path => 'custom/:user=number')
+	static GET_CUSTOM({req,error}: RouteArg){
+		const user = Users.findOne(req.param('user'));
+		if(!user) return error('not found');
+		return user;
 	}
 }
