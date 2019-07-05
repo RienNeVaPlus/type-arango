@@ -8,7 +8,7 @@
 
 <p align="center">
 	TypeArango creates and manages ArangoDB <code>collections</code>, <code>documents</code> and <code>routes</code> by using a single,<br/>centralized entity system which can be consumed by any <strong>backend</strong>, 
-	<strong>frontend</strong>, and / or <strong>Foxx service</strong>.<br/><sub><i>No more need to maintain environment specific schemas.</i></sub>
+	<strong>frontend</strong>, and / or <strong>Foxx service</strong>.<br/><sub><i>Propably the worlds <a href="#-worlds-fastest-way-to-create-documented-endpoints">fastest</a> way of setting up documented & schema-validated endpoints.</i></sub>
 </p>
 
 ![divider](./assets/divider.png)
@@ -117,7 +117,7 @@ TypeArango uses the provided entity types to validate and document routes, for e
 If you don't have a foxx service running yet, you can create one by using 
 [arangodb-typescript-setup](https://github.com/RienNeVaPlus/arangodb-typescript-setup).
 
-TypeArango requires ArangoDB `3.4.4` or newer.
+> TypeArango requires ArangoDB `3.4.4` or newer.
 
 ![divider](./assets/divider.small.png)
 
