@@ -8,7 +8,7 @@
 
 <p align="center">
 	TypeArango creates and manages ArangoDB <code>collections</code>, <code>documents</code> and <code>routes</code> by using a single,<br/>centralized entity system which can be consumed by any <strong>backend</strong>, 
-	<strong>frontend</strong>, and / or <strong>Foxx service</strong>.<br/><sub><i>Propably the worlds <a href="#-worlds-fastest-way-to-create-documented-endpoints">fastest</a> way of setting up documented & schema-validated endpoints.</i></sub>
+	<strong>frontend</strong>, and / or <strong>Foxx service</strong>.<br/><sub><i>Probably the world's <a href="#-worlds-fastest-way-to-create-documented-endpoints">fastest</a> way of setting up documented & schema-validated endpoints.</i></sub>
 </p>
 
 ![divider](./assets/divider.png)
