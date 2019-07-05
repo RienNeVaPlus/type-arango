@@ -134,8 +134,7 @@ npm i --save-dev type-arango
 
 #### 3. Initialize TypeArango
 
-In order for the decorators to work, `typeArango()` has to be called **before**
-any entity is imported and completed after the decorators have been applied.
+`typeArango()` has to be called **before** the entities are imported, it returns a function to be called **after** the decorators have been applied. It takes an optional 📝 [Configuration](./API.md#-configuration) argument.
 
 **shared/entities/index.ts**:
 ```ts
@@ -149,6 +148,8 @@ export * from './user';
 
 complete();
 ```
+
+
 ![divider](./assets/divider.small.png)
 
 #### 4. Create routes

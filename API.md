@@ -1,12 +1,11 @@
-# API Reference
+# 📗 API Reference
 
 type-arango provides TypeScript decorators to describe collections, document and routes for ArangoDB Foxx Microservices.
 
-ℹ️ See [README](./README.md) and [examples folder](./examples) for a quick introduction.
+#### 🛫 Getting started
 
-![divider](./assets/divider.small.png)
-
-### 📝 [Configuration](#-configuration)
+- 📕 [README.md](./README.md#-getting-started) - overview
+- 📘 [Examples](./examples) - quick-start
 
 ![divider](./assets/divider.small.png)
 
@@ -38,7 +37,7 @@ A document represents a single entry of a collection.
 
 ### 🗄️ Collections
 
-A collection holds documents and provides routes.
+A collection contains documents and provides routes.
 
 #### `Class` 
 - [Entities](#-entities) - provides ORM functions
@@ -50,7 +49,7 @@ A collection holds documents and provides routes.
 - [@Route.roles](#routerolesfunct) - creates roles for requests by utilizing the client session
 - [@Route.auth](#routeauthfunct) - authorizes a request depending on a document 
 - [@Route.enable](#routeenablecreators-readers-updaters-deleters) - define global roles for custom routes
-- [@Route.all](#routeallcreators-readers-updaters-deleters-options) - initializes [CRUD-like](./API.md#crud-like) routes 
+- [@Route.all](#routeallcreators-readers-updaters-deleters-options) - initializes [CRUD-like](#crud-like) routes 
 #### `ClassAndPropertyDecorator`
   - [@Route.GET](#routegetpath-schema-roles-options)
   - [@Route.POST](#routepostpath-schema-roles-options)
@@ -70,6 +69,7 @@ Types are used to better describe common patterns to store and retrieve data.
 
 ### ❤️ Misc
 - 📜 [Enjoi](#-en-hanced-joi) `(Enjoi, Joi) => Joi` - Enhanced Joi making use of Types
+- [Configuration](#-configuration) - Options for `typeArango()`
 - [@Description](#descriptionstring) - Decorator for describing Classes or Properties
 - ["CRUD-like"](#crud-like) - explained
   
@@ -845,11 +845,11 @@ GET page/123 => {title:'Hello World'}
 Joi originates from plain JavaScript, but now that we have access to Types, it can be enhanced. Therefore type-arango comes with `Enjoi` which is a simple wrapper around `Joi`. Enjoi is especially useful when using the [@Attribute](#attributeschema-readers-writers) Decorator and it's always involved when there is a mention of `$ => ...` in an example.
 
 ```ts
-const string = $(String) // same as Joi.string();
+const string = $(String) // = Joi.string();
 const obj = $({
     string: String // = Joi.string()
-    number: $(Number).integer(), // Joi.number().integer()
-    attribute: $(User).email // Joi.string().email() (from User entity)
+    number: $(Number).integer(), // = Joi.number().integer()
+    attribute: $(User).email // = Joi.string().email() (from User entity)
 }); // = Joi.object().keys(...)
 ```
 
