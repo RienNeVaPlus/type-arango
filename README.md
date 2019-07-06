@@ -101,7 +101,7 @@ export class Users extends Entities {
 
 ![divider](./assets/divider.png)
 
-### ⚡ Worlds fastest way to create documented endpoints
+### ⚡ World's fastest way to create documented endpoints
 
 TypeArango uses the provided entity types to validate and document routes, for example a simple `@Route.all` creates five fully documented routes with a role system in place. 
 

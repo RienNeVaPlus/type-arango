@@ -2,7 +2,7 @@
 
 An example of using the **access role system** of `type-arango`. Please have a look at the [basic example](../1-basic) first.
 
-When working with public endpoints it becomes necessary to protect certain fields or routes.
+When working with public endpoints it becomes necessary to protect certain attributes or enitre routes.
 TypeArango provides a `role` system that can be integrated either with ArangoDBs
 built-in [session middleware](https://docs.arangodb.com/devel/Manual/Foxx/Reference/Sessions/) 
 or any other authentication system that can provide an array of roles (`string[]`).
@@ -45,9 +45,9 @@ export class User extends Entity {
 }
 ```
 
-Describes the `User` entity and it's attributes as known from the previous example. In addition to the attribute types, the [`@Attribute`](../../API.md#attributeschema-readers-writers) decorator can also take `readers` and `writers` roles. Whenever a document is read or written attributes without matching roles are being striped away.
+Describes the `User` entity and it's attributes as known from the previous example. In addition to the attribute types, the [`@Attribute`](../../API.md#attributeschema-readers-writers) decorator can also take `readers` and `writers` roles. Whenever a document is read or written, attributes without matching roles are being unset.
 
-There is also a [`@Nested`](../../API.md#nested) document which is used to store authorization information from Foxx internal `@arangodb/foxx/auth` library.
+There is also a [`@Nested`](../../API.md#nested) document which is used to store authorization information from Foxx's internal `@arangodb/foxx/auth` library.
 
 ![divider](../../assets/divider.small.png)
 
