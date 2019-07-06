@@ -316,7 +316,6 @@ export class Route {
 				let attributesRead: any = {}, attributesWrite: any = {}, sum: number = 0;
 				for(let role of userRoles){
 					if(roleStripAttributes[role]){
-						console.log('role.read', roleStripAttributes[role].read);
 						sum++;
 						for(let read of roleStripAttributes[role].read){
 							attributesRead[read] = (attributesRead[read] || 0) + 1;
