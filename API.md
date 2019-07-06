@@ -817,9 +817,11 @@ class Users extends Entities {
 
 ### 🌐 Types.I18n
 
-Provides simple internationalization support by storing strings in multiple languages as a nested object. When this type is retrieved from a request with a `locale` parameter or `session().data.locale` provided, only the respective value will be returned - or if not found the english (`en`) value.
+Provides simple internationalization support by storing strings in multiple languages as nested objects. If this type is returned in a request with a `locale` parameter or `session().data.locale` provided, only the respective value will be returned - or if none provided the english (`en`) value.
 
-Don't hesitate to use country specific languages, when the provided language has no direct match, the country is ignored and the global language value will be returned.
+Set the query parameter `locale` to `*` in order to return all values from a route.
+
+> Don't hesitate to use country specific languages like `de-CH`. When a provided locale has no direct match, the country code is ignored and the global locale value (`de`) will be returned.
 
 ```ts
 @Document()
@@ -832,10 +834,11 @@ class Page extends Entity {
 // document in collection
 { "title": { "en": "Hello World", "de": "Hallo Welt", "de-CH": "Grüezi Welt" } }
 
-// request
-GET page/123?locale=de-AT => {title:'Hallo Welt'} 
-GET page/123 && session:{data:{locale:'de-CH'}} => {title:'Grüezi Welt'} 
-GET page/123 => {title:'Hello World'} 
+// request examples
+// GET page/123?locale=de-AT                        => {title:'Hallo Welt'} 
+// GET page/123 && session:{data:{locale:'de-CH'}}  => {title:'Grüezi Welt'} 
+// GET page/123                                     => {title:'Hello World'} 
+// GET page/123?locale=*                            => original value
 ```
 
 ![divider](./assets/divider.png)
