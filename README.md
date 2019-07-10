@@ -91,7 +91,8 @@ export class User extends Entity {
 export class Users extends Entities {
     @Route.GET(
         path => ':id/friends',
-        roles => ['viewer']
+        roles => ['viewer'],
+        summary => 'Returns friend users'
     ) static GET({req, json}: RouteArg){
         const user = Users.findOne(req.param('id'));
         return user.friends();
@@ -180,7 +181,7 @@ Read the 📘 [examples](./examples) first, then dive into the 📗 [API Referen
 ![divider](./assets/divider.png)
 
 ### 🌻 Credits
-- type-arango is heavily inspired by [TypeORM](https://github.com/typeorm/typeorm) and [type-graphql](https://github.com/19majkel94/type-graphql).
+- type-arango is inspired by [TypeORM](https://github.com/typeorm/typeorm) and [type-graphql](https://github.com/19majkel94/type-graphql)
 - Avocado drawing by [FreePik](https://www.freepik.com/free-photos-vectors/background)
 
 [github-version]: https://img.shields.io/github/package-json/v/riennevaplus/type-arango.svg

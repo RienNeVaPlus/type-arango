@@ -1,6 +1,6 @@
 {
   "name": "type-arango",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "ArangoDB decorators and utilities for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,7 +21,7 @@
     "Routes",
     "Decorators"
   ],
-  "author": "RienNeVaPlus",
+	"author": "RienNeVaPlus <contact@rienneva.plus>",
   "license": "MIT",
   "dependencies": {
     "@hapi/joi": "^15.1.0",
