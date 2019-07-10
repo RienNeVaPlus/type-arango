@@ -179,7 +179,7 @@ export class Collection {
 					opt.roles = schema;
 				} else if(typeof schema === 'string'){
 					opt.summary = schema;
-				} else if(isObject(schema)){
+				} else if(typeof schema === 'object' && schema){
 
 				} else schema = null;
 			}
@@ -189,11 +189,12 @@ export class Collection {
 				opt = Object.assign(rolesOrSchemaOrSummaryOrFunction, opt);
 			} else {
 				let roles = argumentResolve(rolesOrSchemaOrSummaryOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+
 				if(roles instanceof Array){
 					opt.roles = roles;
 				} else if(typeof roles === 'string'){
 					opt.summary = roles;
-				} else if(isObject(roles)) {
+				} else if(typeof roles === 'object' && roles) {
 					schema = roles;
 				}
 			}
@@ -207,7 +208,7 @@ export class Collection {
 					opt.roles = summary;
 				} else if(typeof summary === 'string'){
 					opt.summary = summary;
-				} else if(isObject(summary)) {
+				} else if(typeof summary === 'object' && summary) {
 					schema = summary;
 				}
 			}
