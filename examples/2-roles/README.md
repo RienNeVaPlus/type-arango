@@ -61,10 +61,13 @@ import {User} from '../../shared';
 @Route.GET(roles => ['guest', 'viewer', 'admin'])
 @Route.PATCH(roles => ['viewer', 'admin'])
 export class Users extends Entities {
-	@Route.POST('register', roles => ['guest'], $ => ({
-		...$(User),
-		password: $(String)
-	}))
+	@Route.POST('register', $ => ({
+			...$(User),
+			password: $(String)
+		}),
+		roles => ['guest'],
+		summary => 'Creates a new User'
+	)
 	static REGISTER({json}: RouteArg){
 		const auth = require('@arangodb/foxx/auth')();
 		const { password, ...user } = json();
@@ -76,10 +79,14 @@ export class Users extends Entities {
 		}).save()
 	}
 
-	@Route.POST('login', $ => ({
-		email: $(User).email,
-		password: $(String).min(6)
-	}))
+	@Route.POST(
+		path => 'login',
+		summary => 'Auth user and init session',
+		$ => ({
+			email: $(User).email,
+			password: $(String).min(6)
+		})
+	)
 	static LOGIN({json,error,session}: RouteArg){
 		const { email, password } = json();
 		const user = Users.findOne({filter:{email}, keep:['_key', 'auth', 'roles']});

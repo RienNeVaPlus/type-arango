@@ -15,17 +15,19 @@ import {SymbolKeysNotSupportedError} from '../errors';
 import * as Joi from 'joi';
 import {Schema} from 'joi';
 
-export type PathFunc = (returns: string) => any;
+export type PathFunc = (returns?: string) => any;
+export type SummaryFunc = (returns?: string) => string;
 type SchemaFunc = (enjoi: (type?: any) => typeof Joi | any, joi?: any) => typeof Joi | boolean | Object;
 
 type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt;
-type ArgSchemaOrRolesOrOpt = boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt;
+type ArgSchemaOrRolesOrSummaryOrOpt = string | SummaryFunc | boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt;
 
 function route(
 	method: RouteMethod,
 	pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-	schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
-	rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
+	schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+	rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+	summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 	options?: RouteOpt
 ): ClassAndMethodDecorator {
 	return function(prototype: any, attribute?: string | symbol): any {
@@ -34,8 +36,8 @@ function route(
 			throw new SymbolKeysNotSupportedError();
 
 		getCollectionForContainer(prototype).decorate('Route', {
-			prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrFunction,
-			rolesOrSchemaOrFunction, options
+			prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrSummaryOrFunction,
+			rolesOrSchemaOrSummaryOrFunction, summaryOrSchemaOrRolesOrFunction, options
 		});
 		return prototype;
 	}
@@ -44,53 +46,63 @@ function route(
 export const Route = {
 	GET: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
-		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
+		schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
 	) => route('get',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunction,
-		rolesOrSchemaOrFunction,
+		schemaOrRolesOrSummaryOrFunction,
+		rolesOrSchemaOrSummaryOrFunction,
+		summaryOrSchemaOrRolesOrFunction,
 		options),
 	POST: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
-		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
+		schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
 	) => route('post',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunction,
-		rolesOrSchemaOrFunction,
+		schemaOrRolesOrSummaryOrFunction,
+		rolesOrSchemaOrSummaryOrFunction,
+		summaryOrSchemaOrRolesOrFunction,
 		options),
 	PATCH: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
-		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
+		schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
 	) => route('patch',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunction,
-		rolesOrSchemaOrFunction,
+		schemaOrRolesOrSummaryOrFunction,
+		rolesOrSchemaOrSummaryOrFunction,
+		summaryOrSchemaOrRolesOrFunction,
 		options),
 	PUT: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
-		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
+		schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
 	) => route('put',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunction,
-		rolesOrSchemaOrFunction,
+		schemaOrRolesOrSummaryOrFunction,
+		rolesOrSchemaOrSummaryOrFunction,
+		summaryOrSchemaOrRolesOrFunction,
 		options),
 	DELETE: (
 		pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-		schemaOrRolesOrFunction?: ArgSchemaOrRolesOrOpt,
-		rolesOrSchemaOrFunction?: ArgSchemaOrRolesOrOpt,
+		schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
 	) => route('delete',
 		pathOrRolesOrFunctionOrOptions,
-		schemaOrRolesOrFunction,
-		rolesOrSchemaOrFunction,
+		schemaOrRolesOrSummaryOrFunction,
+		rolesOrSchemaOrSummaryOrFunction,
+		summaryOrSchemaOrRolesOrFunction,
 		options),
 
 	auth: (

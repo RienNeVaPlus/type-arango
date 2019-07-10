@@ -51,11 +51,11 @@ A collection contains documents and provides routes.
 - [@Route.enable](#routeenablecreators-readers-updaters-deleters) - define global roles for custom routes
 - [@Route.all](#routeallcreators-readers-updaters-deleters-options) - initializes [CRUD-like](#crud-like) routes 
 #### `ClassAndPropertyDecorator`
-  - [@Route.GET](#routegetpath-schema-roles-options)
-  - [@Route.POST](#routepostpath-schema-roles-options)
-  - [@Route.PUT](#routeputpath-schema-roles-options)
-  - [@Route.PATCH](#routepatchpath-schema-roles-options)
-  - [@Route.DELETE](#routedeletepath-schema-roles-options)
+  - [@Route.GET](#routegetpath-schema-roles-summary-options)
+  - [@Route.POST](#routepostpath-schema-roles-summary-options)
+  - [@Route.PUT](#routeputpath-schema-roles-summary-options)
+  - [@Route.PATCH](#routepatchpath-schema-roles-summary-options)
+  - [@Route.DELETE](#routedeletepath-schema-roles-summary-options)
   
 ![divider](./assets/divider.small.png)
 
@@ -683,7 +683,7 @@ All routes receive a single argument, the `RouteArg` which contains useful infor
   
 ![divider](./assets/divider.small.png)
 
-### `@Route.GET(path?, schema?, roles?, options?)`
+### `@Route.GET(path?, schema?, roles?, summary?, options?)`
 
 When used as a `ClassDecorator` it will create a default route for returning documents of the collection by key.
 When used on a static method of the collection a custom request will be created.
@@ -691,6 +691,7 @@ When used on a static method of the collection a custom request will be created.
 - **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
+- **summary**? `string | RouteOpt` - shortcut for `options.summary`
 - **options**? `RouteOpt` - see [RouteArg](#routearg)
 
 > The order of the arguments does not matter as long as the options are the last argument.
@@ -719,13 +720,14 @@ class Users extends Entities {
 ```
 ![divider](./assets/divider.small.png)
 
-### `@Route.POST(path?, schema?, roles?, options?)`
+### `@Route.POST(path?, schema?, roles?, summary?, options?)`
 
 Creates a `POST` request with a custom route or - when called as a `ClassDecorator` a route to create new documents inside the collection.
 
 - **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
+- **summary**? `string | RouteOpt` - shortcut for `options.summary`
 - **options**? `RouteOpt` - see [RouteArg](#routearg)
 
 > The order of the arguments does not matter as long as the options are the last argument.
@@ -748,13 +750,14 @@ class Users extends Entities {
 ```
 ![divider](./assets/divider.small.png)
 
-### `@Route.PATCH(path?, schema?, roles?, options?)`
+### `@Route.PATCH(path?, schema?, roles?, summary?, options?)`
 
 Creates a `PATCH` request with a custom route or - when called as a `ClassDecorator` a route to update documents inside the collection by using `collection._update`.
 
 - **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
+- **summary**? `string | RouteOpt` - shortcut for `options.summary`
 - **options**? `RouteOpt` - see [RouteArg](#routearg)
 
 > The order of the arguments does not matter as long as the options are the last argument.
@@ -773,9 +776,9 @@ class Users extends Entities {
 ```
 ![divider](./assets/divider.small.png)
 
-### `@Route.PUT(path?, schema?, roles?, options?)`
+### `@Route.PUT(path?, schema?, roles?, summary?, options?)`
 
-The same as [`Route.PATCH`](#routepatchpath-schema-roles-options) but instead of using `collection._update` it uses `collection._replace`.
+The same as [`Route.PATCH`](#routepatchpath-schema-roles-summary-options) but instead of using `collection._update` it uses `collection._replace`.
 
 ```ts
 @Collection(of => User)
@@ -791,13 +794,14 @@ class Users extends Entities {
 ```
 ![divider](./assets/divider.small.png)
 
-### `@Route.DELETE(path?, schema?, roles?, options?)`
+### `@Route.DELETE(path?, schema?, roles?, summary?, options?)`
 
 Creates a `DELETE` request with a custom route or - when called as a `ClassDecorator` a route to remove a document of the collection by using `collection._remove`.
 
 - **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
+- **summary**? `string | RouteOpt` - shortcut for `options.summary`
 - **options**? `RouteOpt` - see [RouteArg](#routearg)
 
 ```ts
@@ -848,12 +852,13 @@ class Page extends Entity {
 Joi originates from plain JavaScript, but now that we have access to Types, it can be enhanced. Therefore type-arango comes with `Enjoi` which is a simple wrapper around `Joi`. Enjoi is especially useful when using the [@Attribute](#attributeschema-readers-writers) Decorator and it's always involved when there is a mention of `$ => ...` in an example.
 
 ```ts
-const string = $(String) // = Joi.string();
+const string = $(String)            // = Joi.string();
 const obj = $({
-    string: String // = Joi.string()
-    number: $(Number).integer(), // = Joi.number().integer()
-    attribute: $(User).email // = Joi.string().email() (from User entity)
-}); // = Joi.object().keys(...)
+    bool: Boolean                   // = Joi.boolean()
+    number: $(Number).integer(),    // = Joi.number().integer()
+    valid: ['valid','strings'],     // = Joi.any().valid('valid','strings')
+    attribute: $(User).email        // = Joi.string().email() (from User entity)
+});                                 // = Joi.object().keys(...)
 ```
 
 ![divider](./assets/divider.png)

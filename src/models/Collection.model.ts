@@ -158,8 +158,8 @@ export class Collection {
 		}
 
 		if(Route) for(let {
-			prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrFunction,
-			rolesOrSchemaOrFunction, options
+			prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrSummaryOrFunction,
+			rolesOrSchemaOrSummaryOrFunction, summaryOrSchemaOrRolesOrFunction, options
 		} of Route){
 			const a: any = argumentResolve(pathOrRolesOrFunctionOrOptions);
 			let opt: RouteOpt = Object.assign({
@@ -169,29 +169,47 @@ export class Collection {
 			);
 
 			let schema;
-			let roles;
 
 			// allow options for schema param
-			if(isObject(schemaOrRolesOrFunction)){
-				opt = Object.assign(schemaOrRolesOrFunction, opt);
+			if(isObject(schemaOrRolesOrSummaryOrFunction)){
+				opt = Object.assign(schemaOrRolesOrSummaryOrFunction, opt);
 			} else {
-				schema = argumentResolve(schemaOrRolesOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+				schema = argumentResolve(schemaOrRolesOrSummaryOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+				if(schema instanceof Array){
+					opt.roles = schema;
+				} else if(typeof schema === 'string'){
+					opt.summary = schema;
+				} else if(isObject(schema)){
+
+				} else schema = null;
 			}
 
 			// allow options for roles param
-			if(isObject(rolesOrSchemaOrFunction)){
-				opt = Object.assign(rolesOrSchemaOrFunction, opt);
+			if(isObject(rolesOrSchemaOrSummaryOrFunction)){
+				opt = Object.assign(rolesOrSchemaOrSummaryOrFunction, opt);
 			} else {
-				roles  = argumentResolve(rolesOrSchemaOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+				let roles = argumentResolve(rolesOrSchemaOrSummaryOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+				if(roles instanceof Array){
+					opt.roles = roles;
+				} else if(typeof roles === 'string'){
+					opt.summary = roles;
+				} else if(isObject(roles)) {
+					schema = roles;
+				}
 			}
 
-			if(Array.isArray(schema)){
-				opt.roles = schema;
-				schema = roles ? roles : null;
-			} else if(Array.isArray(roles)){
-				opt.roles = roles;
-			} else if(roles === false || schema === false){
-				schema = null;
+			// allow options for summary param
+			if(isObject(summaryOrSchemaOrRolesOrFunction)){
+				opt = Object.assign(summaryOrSchemaOrRolesOrFunction, opt);
+			} else {
+				let summary = argumentResolve(summaryOrSchemaOrRolesOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+				if(summary instanceof Array){
+					opt.roles = summary;
+				} else if(typeof summary === 'string'){
+					opt.summary = summary;
+				} else if(isObject(summary)) {
+					schema = summary;
+				}
 			}
 
 			if(options)

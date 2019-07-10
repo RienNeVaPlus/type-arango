@@ -27,17 +27,6 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
 		j = Joi.any().valid(...inp);
 	} else {
 		switch(inp){
-			default:
-				if(!inp) break;
-
-				if(inp.prototype){
-					const doc = getDocumentForContainer(inp);
-					if(doc) j = Joi.object().keys(doc.schema); break;
-				}
-
-				j = Joi.any();
-				break;
-
 			case String:
 			case 'string': j = Joi.string(); break;
 
@@ -57,16 +46,27 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
 
 			case Function:
 			case 'func':
-			case 'function':
-				j = Joi.func(); break;
+			case 'function': j = Joi.func(); break;
 
 			case Object:
-			case 'object':
-				j = Joi.object(); break;
+			case 'object': j = Joi.object(); break;
 
 			case 'any': j = Joi.any(); break;
 
 			case 'alternatives': j = Joi.alternatives(); break;
+
+			default:
+				if(!inp) break;
+
+				// console.log('TYPE OF ------------->', typeof inp);
+
+				if(inp.prototype){
+					const doc = getDocumentForContainer(inp);
+					if(doc) j = Joi.object().keys(doc.schema); break;
+				}
+
+				j = Joi.any();
+				break;
 		}
 	}
 
