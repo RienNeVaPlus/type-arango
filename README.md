@@ -42,6 +42,7 @@
 
 🌞 **TypeArango is in development and will receive additional features.** **Contributors wanted** 🙋
 
+[![Mentioned in Awesome ArangoDB](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/RienNeVaPlus/awesome-arangodb)
 [![last-commit][github-last-commit]][github-last-commit-url]
 [![version][github-version]][github-version-url]
 [![npm][npm-badge]][npm-badge-url]
