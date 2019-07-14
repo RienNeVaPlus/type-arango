@@ -24,6 +24,7 @@ export function Index(
 		let options = argumentResolve(indexTypeOrFunctionOrOptions);
 
 		if(!options) options = {type:'hash'};
+		else if(typeof options === 'string') options = {type:options};
 
 		// merge additional options
 		if(maybeOptions) options = Object.assign(maybeOptions, options);
