@@ -99,7 +99,7 @@ export function enjoi(inp?: string | any, presence: Presence = 'optional') {
 }
 
 export function joiDefaults(obj: any, override: any = {}){
-	return obj._inner.children.reduce((res: any, child: any) => {
+	return Array.isArray(obj._inner.children) ? obj._inner.children.reduce((res: any, child: any) => {
 		const key = child.key;
 		if(child.schema._type == 'object'){
 			res[key] = joiDefaults(child.schema, override[key]);
@@ -108,5 +108,5 @@ export function joiDefaults(obj: any, override: any = {}){
 				res[key] = override[key] || child.schema._flags.default;
 		}
 		return res;
-	}, {});
+	}, {}) : {};
 }
