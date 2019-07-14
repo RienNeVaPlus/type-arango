@@ -195,10 +195,10 @@ export class Document<T=any> {
 				this.roles = concatUnique(this.roles, roles.readers, roles.writers);
 			}
 			if(attribute === 'auth'){
-				console.log('>>>',attribute);
-				console.log('readers', roles.readers);
-				console.log('writers', roles.writers);
-				console.log('>>>');
+				// console.log('>>>',attribute);
+				// console.log('readers', roles.readers);
+				// console.log('writers', roles.writers);
+				// console.log('>>>');
 			}
 
 			if(schema){
