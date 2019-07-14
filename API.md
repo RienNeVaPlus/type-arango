@@ -46,8 +46,8 @@ A collection contains documents and provides routes.
 
 #### `ClassDecorator`
 - [@Collection](#collectionofdocument-options) - initializes a collection
-- [@Route.roles](#routerolesfunct) - creates roles for requests by utilizing the client session
-- [@Route.auth](#routeauthfunct) - authorizes a request depending on a document 
+- [@Route.roles](#routerolesrolefunctions) - creates roles for requests by utilizing the client session
+- [@Route.auth](#routeauthauthorizefunctions) - authorizes a request depending on a document 
 - [@Route.enable](#routeenablecreators-readers-updaters-deleters) - define global roles for custom routes
 - [@Route.all](#routeallcreators-readers-updaters-deleters-options) - initializes [CRUD-like](#crud-like) routes 
 #### `ClassAndPropertyDecorator`
@@ -555,11 +555,11 @@ class Users extends Entities { ... }
 ```
 ![divider](./assets/divider.small.png)
 
-### `@Route.roles(funct)`
+### `@Route.roles(...roleFunctions)`
 
 Takes a function to append additional roles for all requests to any route of the collection. It's mainly for generating user specific roles from the client `session`, eg adding a `viewer` role fow own documents.
 
-- **funct** `(arg: RouteRolesArg) => string[]` - a function returning additional roles to grant. The `RouteRolesArg` contain useful tools and information:
+- **roleFunction** `(arg: RouteRolesArg) => string[]` - a function returning additional roles to grant. The `RouteRolesArg` contain useful tools and information:
   - **req** `Foxx.Request`
   - **res** `Foxx.Response` 
   - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - function to read or write the current session
@@ -583,11 +583,11 @@ class Users extends Entities { ... }
 ```
 ![divider](./assets/divider.small.png)
 
-### `@Route.auth(funct)`
+### `@Route.auth(...authorizeFunctions)`
 
-Takes a function to determine access permission on a document level. Used whenever there is no other way of determine the permission than deriving them from the document itself. Might cause an additional read, so it is preferred to use [`Route.roles`](#routerolesfunct) whenever possible.
+Takes a function to determine access permission on a document level. Used whenever there is no other way of determine the permission than deriving them from the document itself. Might cause an additional read, so it is preferred to use [`Route.roles`](#routerolesrolefunctions) whenever possible.
 
-- **funct** `(arg: RouteAuthArg) => boolean` - a function returining whether the document can be accessed. The `RouteAuthArg` contain useful tools and information:
+- **authorizeFunction** `(arg: RouteAuthArg) => boolean` - a function returining whether the document can be accessed. The `RouteAuthArg` contain useful tools and information:
   - **req** `Foxx.Request`
   - **res** `Foxx.Response` 
   - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - function to read or write the current session
