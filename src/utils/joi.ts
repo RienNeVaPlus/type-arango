@@ -9,8 +9,12 @@ type Presence = 'required' | 'optional';
  * Convert type or alias to joi
  */
 export function toJoi(inp: any, presence: Presence = 'optional'){
-	if(inp && inp.isJoi)
-		return inp;
+	if(inp){
+		if(inp.isJoi)
+			return inp;
+		if(inp.schema)
+			return inp.schema;
+	}
 
 	let j: Schema = Joi.any();
 
@@ -102,7 +106,7 @@ export function joiDefaults(obj: any, override: any = {}){
 	return Array.isArray(obj._inner.children) ? obj._inner.children.reduce((res: any, child: any) => {
 		const key = child.key;
 		if(child.schema._type == 'object'){
-			res[key] = joiDefaults(child.schema, override[key]);
+			res[key] = override[key] || joiDefaults(child.schema, override[key]);
 		} else {
 			if(override[key] || child.schema._flags.default)
 				res[key] = override[key] || child.schema._flags.default;
