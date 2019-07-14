@@ -570,7 +570,7 @@ Takes a function to append additional roles for all requests to any route of the
   - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - function to read or write the current session
   - **_key**? `string` - the document key of the current request when available
   - **path** `string` - the current path
-  - **method** `"GET" | "POST" | "PUT" | "PATCH" | "DELETE"`
+  - **method** `"get" | "post" | "put" | "patch" | "delete"`
   - **aql** `ArangoDB.aql` - the ArangoDB AQL function used for queries
   - **query** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor`
   - **collection** `ArangoDB.Collection` - the ArangoDB collection object
@@ -596,7 +596,8 @@ Takes a function to determine access permission on a document level. Used whenev
   - **req** `Foxx.Request`
   - **res** `Foxx.Response` 
   - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - function to read or write the current session
-  - **method** `"GET" | "POST" | "PUT" | "PATCH" | "DELETE"`
+  - **method** `"get" | "post" | "put" | "patch" | "delete"`
+  - **action** `"create" | "read" | "update" | "delete"`
   - **document** `DocumentData` - the requested document
   - **doc** `DocumentData` - alias for `document`
 - **method** - 

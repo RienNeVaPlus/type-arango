@@ -103,6 +103,7 @@ export interface Config {
 }
 
 export type RouteMethod = 'get' | 'post' | 'patch' | 'put' | 'delete';
+export type RouteAction = 'create' | 'read' | 'update' | 'delete';
 
 // export type MetadataId = 'attribute' | 'index' | 'route';
 // export type MetadataTypes = AttributeMetadata | IndexMetadata | RouteMetadata;
@@ -278,13 +279,14 @@ export interface RouteAuthArg {
 	req: Foxx.Request
 	res: Foxx.Response
 	session: Foxx.Session
-	method: string
+	method: RouteMethod
+	action: RouteAction
 	document: DocumentData;
 	doc: DocumentData; // alias for document
 }
 
 // export type AuthorizeMethod = 'read' | 'insert' | 'update' | 'delete';
-export type RouteAuthorize = (doc: DocumentData, method?: RouteMethod) => false | DocumentData;
+export type RouteAuthorize = (doc: DocumentData, method?: RouteMethod, action?: RouteAction) => false | DocumentData;
 
 export type DocumentForClient = (doc: DocumentData, opt: any) => DocumentData;
 export type DocumentFromClient = (doc: DocumentData, opt: any) => DocumentData;

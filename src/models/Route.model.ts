@@ -1,7 +1,7 @@
 import {Collection} from '.'
 import {config, logger, RouteArg, routes} from '../index'
 import {db, joiDefaults, omit, pick, toArray, removeValues} from '../utils'
-import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg} from '../types'
+import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg, RouteAction} from '../types'
 import {Scalar} from './Scalar.model'
 import * as Joi from 'joi'
 
@@ -412,10 +412,11 @@ export class Route {
 		authorizes: any[],
 		document: DocumentData,
 		method?: RouteMethod,
+		action?: RouteAction,
 		canThrow: boolean = true
 	){
 		if(!authorizes.length) return document;
-		const args = {session:req.session, doc:document, document, method, req, res};
+		const args = {session:req.session, doc:document, document, method, action, req, res};
 		let success = !(authorizes||[]).find(f => !f(args));
 		if(!success){
 			if(canThrow) res.throw(config.throwForbidden || 'forbidden');
@@ -538,7 +539,7 @@ export class Route {
 	 */
 	static get({_key, auth, collection}: RouteArg){
 		logger.info('GET %s/%s', collection.name(), _key);
-		return auth(collection.document(_key), 'get');
+		return auth(collection.document(_key), 'get', 'read');
 	}
 
 	/**
@@ -554,7 +555,7 @@ export class Route {
 		if(_key && collection.exists(_key))
 			return res.throw(409, 'Document already exists');
 
-		const doc = auth(_key ? Object.assign(body, {_key}) : body, 'post');
+		const doc = auth(_key ? Object.assign(body, {_key}) : body, 'post', 'create');
 		if(!doc) return;
 
 		return Object.assign(doc, collection.insert(doc));
@@ -571,7 +572,7 @@ export class Route {
 
 		const doc = json();
 
-		if(hasAuth && !auth(Object.assign(collection.document(_key), doc), 'patch'))
+		if(hasAuth && !auth(Object.assign(collection.document(_key), doc), 'patch', 'update'))
 			return;
 
 		// todo: implement param overwrite
@@ -586,7 +587,7 @@ export class Route {
 
 		const doc: any = json();
 
-		if(hasAuth && auth(Object.assign(collection.document(_key) || {}, doc), 'put'))
+		if(hasAuth && auth(Object.assign(collection.document(_key) || {}, doc), 'put', 'update'))
 			return;
 
 		// todo: implement param for create?
@@ -602,7 +603,7 @@ export class Route {
 		if(!collection.exists(_key))
 			return res.throw(409, 'Document does not exist');
 
-		if(hasAuth && !auth(collection.document(_key), 'delete')) return;
+		if(hasAuth && !auth(collection.document(_key), 'delete', 'delete')) return;
 
 		collection.remove(_key!);
 		return '';
