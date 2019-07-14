@@ -159,7 +159,6 @@ export class Entity {
 		}, {});
 		let res;
 
-		console.log('o', data);
 		// insert / update
 		if(options.update && _key)
 			res = _collection.update({_key}, data, options);
