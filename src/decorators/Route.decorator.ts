@@ -115,11 +115,13 @@ export const Route = {
 	},
 
 	roles: (
-		rolesFunction: RouteRoles
+		...rolesFunctions: RouteRoles[]
 	) => {
 		return function(prototype: any): any {
 			const col = getCollectionForContainer(prototype);
-			col.decorate('Route.roles', {prototype,rolesFunction})
+			for(const rolesFunction of rolesFunctions){
+				col.decorate('Route.roles', {prototype,rolesFunction});
+			}
 		}
 	},
 
