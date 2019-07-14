@@ -1,5 +1,5 @@
-import {DocumentData, QueryOpt} from "../types";
-import {getCollectionForContainer} from "./Collection.model";
+import {DocumentData, QueryOpt} from '../types'
+import {getCollectionForContainer} from './Collection.model'
 
 function mapToInstances<T>(Class: new(doc: DocumentData, docIsSync: boolean) => T, results: any[]) {
 	return results.map((r: any) => new Class(r, true));

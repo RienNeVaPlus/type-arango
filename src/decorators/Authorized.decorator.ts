@@ -1,7 +1,7 @@
-import {getDocumentForContainer} from '../models';
-import {isActive} from '../index';
-import {SymbolKeysNotSupportedError} from '../errors';
-import {Roles, RolesFunc} from '../types';
+import {getDocumentForContainer} from '../models'
+import {isActive} from '../index'
+import {SymbolKeysNotSupportedError} from '../errors'
+import {Roles, RolesFunc} from '../types'
 
 export function Authorized(): PropertyDecorator;
 export function Authorized(readers: Roles): PropertyDecorator;

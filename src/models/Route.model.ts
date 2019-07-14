@@ -1,8 +1,8 @@
-import {Collection} from ".";
-import {config, logger, RouteArg, routes} from '../index';
-import {db, joiDefaults, omit, pick, toArray} from "../utils";
-import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg} from '../types';
-import {Scalar} from './Scalar.model';
+import {Collection} from '.'
+import {config, logger, RouteArg, routes} from '../index'
+import {db, joiDefaults, omit, pick, toArray} from '../utils'
+import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg} from '../types'
+import {Scalar} from './Scalar.model'
 import * as Joi from 'joi'
 
 const {aql} = require('@arangodb');

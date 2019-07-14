@@ -1,7 +1,7 @@
-import * as Joi from 'joi';
-import {Schema} from 'joi';
-import {findDocumentForContainer, getDocumentForContainer} from '../models';
-import {isObject} from '.';
+import * as Joi from 'joi'
+import {Schema} from 'joi'
+import {findDocumentForContainer, getDocumentForContainer} from '../models'
+import {isObject} from '.'
 
 type Presence = 'required' | 'optional';
 

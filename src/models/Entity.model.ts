@@ -1,7 +1,7 @@
 import {DocumentData, QueryFilter} from '../types'
-import {getDocumentForContainer} from './index';
-import {AttributeNotInEntityError, MissingKeyError, SymbolKeysNotSupportedError} from '../errors';
-import {db} from '../utils';
+import {getDocumentForContainer} from './index'
+import {AttributeNotInEntityError, MissingKeyError, SymbolKeysNotSupportedError} from '../errors'
+import {db} from '../utils'
 
 const nativeKeys = ['constructor','toString'];
 const unenumerable = ['_saveKeys','_collection'];

@@ -12,12 +12,12 @@ import {
 	RoleObject,
 	SchemaStructure,
 	DocumentOptions, AttributeObject
-} from '../types';
-import {config, documents, Entities, Entity, logger} from '../index';
-import {argumentResolve, concatUnique, enjoi, removeUndefined, toJoi} from '../utils';
-import {MissingTypeError, RelationNotFoundError} from '../errors';
-import {Collection} from './Collection.model';
-import * as Joi from 'joi';
+} from '../types'
+import {config, documents, Entities, Entity, logger} from '../index'
+import {argumentResolve, concatUnique, enjoi, removeUndefined, toJoi} from '../utils'
+import {MissingTypeError, RelationNotFoundError} from '../errors'
+import {Collection} from './Collection.model'
+import * as Joi from 'joi'
 
 /**
  * Creates a new Document for a decorated class

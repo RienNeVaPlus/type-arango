@@ -1,6 +1,6 @@
-import {getDocumentForContainer} from '../models';
-import {SymbolKeysNotSupportedError} from '../errors';
-import {Roles, TypeFunc, ValidateSchema, ValidateSchemaFunc} from '../types';
+import {getDocumentForContainer} from '../models'
+import {SymbolKeysNotSupportedError} from '../errors'
+import {Roles, TypeFunc, ValidateSchema, ValidateSchemaFunc} from '../types'
 
 type ReadersFunc = (returns?: void) => Roles;
 type WritersFunc = (returns?: void) => Roles;

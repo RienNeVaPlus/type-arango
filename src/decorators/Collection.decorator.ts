@@ -1,5 +1,5 @@
-import {CreateCollectionOptions} from '../types';
-import {Entity, getCollectionForContainer} from '../models';
+import {CreateCollectionOptions} from '../types'
+import {Entity, getCollectionForContainer} from '../models'
 
 type DocumentFunc = (returns: any) => typeof Entity;
 

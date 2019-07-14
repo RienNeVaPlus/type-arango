@@ -1,5 +1,5 @@
-import {SymbolKeysNotSupportedError} from '../errors';
-import {Entities, Entity, getCollectionForContainer, getDocumentForContainer} from '../models';
+import {SymbolKeysNotSupportedError} from '../errors'
+import {Entities, Entity, getCollectionForContainer, getDocumentForContainer} from '../models'
 
 export function Description(
 	description: string

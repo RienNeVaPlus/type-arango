@@ -1,8 +1,8 @@
-import 'reflect-metadata';
-import {SymbolKeysNotSupportedError} from '../errors';
-import {IndexOptions, IndexOptionsWithType} from '../types';
-import {argumentResolve} from '../utils';
-import {getDocumentForContainer} from '../models';
+import 'reflect-metadata'
+import {SymbolKeysNotSupportedError} from '../errors'
+import {IndexOptions, IndexOptionsWithType} from '../types'
+import {argumentResolve} from '../utils'
+import {getDocumentForContainer} from '../models'
 
 export type IndexTypeFunct = (returns: ArangoDB.IndexType) => ArangoDB.IndexType;
 

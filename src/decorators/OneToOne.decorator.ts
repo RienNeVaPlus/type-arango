@@ -1,6 +1,6 @@
-import {getDocumentForContainer} from '../models';
-import {SymbolKeysNotSupportedError} from '../errors';
-import {Class, TypeFunc} from '../types';
+import {getDocumentForContainer} from '../models'
+import {SymbolKeysNotSupportedError} from '../errors'
+import {Class, TypeFunc} from '../types'
 
 /**
  * Replace type argument with metadata as soon as https://github.com/Microsoft/TypeScript/issues/7169 is resolved

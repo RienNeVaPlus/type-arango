@@ -1,4 +1,4 @@
-import {getDocumentForContainer} from '../models';
+import {getDocumentForContainer} from '../models'
 
 /**
  * Nested is currently an alias of Document

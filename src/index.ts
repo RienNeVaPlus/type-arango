@@ -1,7 +1,7 @@
 import {isFoxx} from './utils'
 import {Collection, Document, Route, Logger, Entities, Entity, Type} from './models'
 import {RequiresFoxxEnvironmentError} from './errors'
-import {Roles, RouteArg, LogLevel, Config, Related, RouteRolesArg} from './types';
+import {Roles, RouteArg, LogLevel, Config, Related, RouteRolesArg} from './types'
 
 export let logger: Logger = new Logger();
 export let collections: Collection[] = [];

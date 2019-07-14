@@ -1,4 +1,5 @@
-import {config} from '../index';
+import {config} from '../index'
+
 const prefix = 'TypeArango: ';
 
 const a = (arg: any[]) => { arg[0] = prefix + arg[0]; return arg; };

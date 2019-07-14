@@ -1,5 +1,5 @@
-import {isFoxx} from "../utils"
-import {QueryOpt} from "../types"
+import {isFoxx} from '../utils'
+import {QueryOpt} from '../types'
 
 const is = isFoxx();
 export const arango = is ? require('@arangodb') : null;

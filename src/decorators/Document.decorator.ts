@@ -1,5 +1,5 @@
-import {getDocumentForContainer} from '../models';
-import {DocumentOptions} from '../types';
+import {getDocumentForContainer} from '../models'
+import {DocumentOptions} from '../types'
 
 export function Document(
 	options?: DocumentOptions

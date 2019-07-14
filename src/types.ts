@@ -12,8 +12,8 @@ import {
 	Schema,
 	StringSchema,
 	ValidationOptions
-} from 'joi';
-import {enjoi} from './utils';
+} from 'joi'
+import {enjoi} from './utils'
 
 // https://stackoverflow.com/questions/45306782/typescript-declaration-for-polymorphic-decorator
 export interface ClassAndMethodDecorator {

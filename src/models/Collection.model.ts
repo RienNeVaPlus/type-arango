@@ -1,6 +1,6 @@
-import {collections, config, Entities, isActive, logger} from "../index";
-import {Document, getDocumentForContainer, Route as RouteModel, Scalar} from './index';
-import {argumentResolve, concatUnique, db, enjoi, isObject, queryBuilder} from '../utils';
+import {collections, config, Entities, isActive, logger} from '../index'
+import {Document, getDocumentForContainer, Route as RouteModel, Scalar} from './index'
+import {argumentResolve, concatUnique, db, enjoi, isObject, queryBuilder} from '../utils'
 import {
 	CreateCollectionOptions,
 	DecoratorIds,
@@ -11,9 +11,9 @@ import {
 	RouteOpt,
 	RoutePathParam,
 	SchemaStructure
-} from '../types';
-import {getRouteForCollection} from ".";
-import * as Joi from 'joi';
+} from '../types'
+import {getRouteForCollection} from '.'
+import * as Joi from 'joi'
 
 export type RoleTypes = 'creators' | 'readers' | 'updaters' | 'deleters';
 

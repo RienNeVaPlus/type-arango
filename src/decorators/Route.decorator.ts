@@ -1,19 +1,10 @@
-/**
- * The `@Route.X` decorators provide the endpoints
- * - @Route.GET(roles) - retrieve entity
- * - @Route.POST(roles) - create entity
- * - @Route.PATCH(roles) - update / merge entity
- * - @Route.PUT(roles) - replace entity
- * - @Route.DELETE(roles) - remove entity
- * - @Route.all(creators, readers, updaters, deleters) - all routes
- */
-import {isActive} from '../index';
-import {getCollectionForContainer} from '../models';
-import {argumentResolve} from '../utils';
-import {ClassAndMethodDecorator, Roles, RolesFunc, RouteAuthArg, RouteMethod, RouteOpt, RouteRoles} from '../types';
-import {SymbolKeysNotSupportedError} from '../errors';
-import * as Joi from 'joi';
-import {Schema} from 'joi';
+import {isActive} from '../index'
+import {getCollectionForContainer} from '../models'
+import {argumentResolve} from '../utils'
+import {ClassAndMethodDecorator, Roles, RolesFunc, RouteAuthArg, RouteMethod, RouteOpt, RouteRoles} from '../types'
+import {SymbolKeysNotSupportedError} from '../errors'
+import * as Joi from 'joi'
+import {Schema} from 'joi'
 
 export type PathFunc = (returns?: string) => any;
 export type SummaryFunc = (returns?: string) => string;

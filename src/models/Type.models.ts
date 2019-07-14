@@ -1,6 +1,6 @@
 export namespace Type {
 	export class I18n {
-		[key: string]: string;
+		[key: string]: string | any
 
 		static _typeArango: string = '0.4';
 		static forClient(val: any, {req,session}: any){
