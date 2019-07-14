@@ -97,11 +97,13 @@ export const Route = {
 		options),
 
 	auth: (
-		authorizeFunction: (arg: RouteAuthArg) => boolean
+		...authorizeFunctions: Array<(arg: RouteAuthArg) => boolean>
 	) => {
 		return function(prototype: any): any {
 			const col = getCollectionForContainer(prototype);
-			col.decorate('Route.auth', {prototype,authorizeFunction})
+			for(const authorizeFunction of authorizeFunctions) {
+				col.decorate('Route.auth', {prototype, authorizeFunction});
+			}
 		}
 	},
 
