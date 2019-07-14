@@ -20,6 +20,8 @@ export class Entity {
 	public _key?: string;
 	public _rev?: string;
 
+	[key: string]: any;
+
 	static get _doc(){
 		return getDocumentForContainer(this);
 	}
@@ -128,7 +130,7 @@ export class Entity {
 
 		// accumulate changed values from _saveKeys into object
 		const data = _saveKeys.reduce((o: any, key: string) => {
-			const v = (this as any)[key];
+			const v = this[key];
 
 			// replace relation functions with values
 			const relation = _doc.relation[key];
@@ -137,8 +139,12 @@ export class Entity {
 					v.save();
 				}
 
+				// restore relation keys when provided
+				if(this['_'+key]){
+					o[key] = this['_'+key];
+				}
 				// assign relation id when current entity is not inside relation entity
-				if(!v[_doc.name.toLowerCase()]){
+				else if(!v[_doc.name.toLowerCase()]){
 					o[key] = v._key;
 				}
 			}
@@ -153,6 +159,7 @@ export class Entity {
 		}, {});
 		let res;
 
+		console.log('o', data);
 		// insert / update
 		if(options.update && _key)
 			res = _collection.update({_key}, data, options);
