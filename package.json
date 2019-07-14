@@ -1,7 +1,7 @@
 {
   "name": "type-arango",
   "version": "0.4.7",
-  "description": "ArangoDB decorators and utilities for TypeScript",
+  "description": "ArangoDB Foxx decorators and utilities for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "jsnext:main": "src/index.ts",
