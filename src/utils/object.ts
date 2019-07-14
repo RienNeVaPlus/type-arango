@@ -1,5 +1,5 @@
-export function removeUndefined(obj: any){
-	Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]);
+export function removeValues(obj: any, ...values: any[]){
+	Object.keys(obj).forEach(key => values.includes(obj[key]) && delete obj[key]);
 	return obj;
 }
 

@@ -14,7 +14,7 @@ import {
 	DocumentOptions, AttributeObject
 } from '../types'
 import {config, documents, Entities, Entity, logger} from '../index'
-import {argumentResolve, concatUnique, enjoi, removeUndefined, toJoi} from '../utils'
+import {argumentResolve, concatUnique, enjoi, removeValues, toJoi} from '../utils'
 import {MissingTypeError, RelationNotFoundError} from '../errors'
 import {Collection} from './Collection.model'
 import * as Joi from 'joi'
@@ -186,7 +186,7 @@ export class Document<T=any> {
 				schema = joi;
 			}
 			if(readers)
-				roles = removeUndefined({readers:readers,writers:writers||config.requiredWriterRolesFallback});
+				roles = removeValues({readers:readers,writers:writers||config.requiredWriterRolesFallback}, undefined);
 
 			if(roles) {
 				if(config.addAttributeWritersToReaders && roles.writers){
@@ -194,18 +194,12 @@ export class Document<T=any> {
 				}
 				this.roles = concatUnique(this.roles, roles.readers, roles.writers);
 			}
-			if(attribute === 'auth'){
-				// console.log('>>>',attribute);
-				// console.log('readers', roles.readers);
-				// console.log('writers', roles.writers);
-				// console.log('>>>');
-			}
 
 			if(schema){
 				this.schema[attribute!] = schema === true ? joi.required() : schema;
 			}
 
-			const data: AttributeObject = removeUndefined({attribute,roles,schema,metadata});
+			const data: AttributeObject = removeValues({attribute,roles,schema,metadata}, undefined);
 
 			if(metadata && metadata._typeArango){
 				if(metadata.forClient) this.forClientMap.push([attribute!, metadata.forClient]);
