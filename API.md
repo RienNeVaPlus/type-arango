@@ -104,6 +104,11 @@ const complete = typeArango({
     addAttributeWritersToFieldReaders: boolean = true;
     
     /**
+     * When using Type.I18n the defaultLocale is used when other locales do not match
+     */
+    defaultLocale: string = 'en';
+    
+    /**
      * Whether to strip the `_id` key from documents
      */
     stripDocumentId: boolean = true;

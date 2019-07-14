@@ -108,5 +108,5 @@ export function joiDefaults(obj: any, override: any = {}){
 				res[key] = override[key] || child.schema._flags.default;
 		}
 		return res;
-	}, {}) : {};
+	}, {}) : undefined;
 }

@@ -1,6 +1,6 @@
 import {Collection} from '.'
 import {config, logger, RouteArg, routes} from '../index'
-import {db, joiDefaults, omit, pick, toArray} from '../utils'
+import {db, joiDefaults, omit, pick, toArray, removeValues} from '../utils'
 import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg} from '../types'
 import {Scalar} from './Scalar.model'
 import * as Joi from 'joi'
@@ -447,7 +447,7 @@ export class Route {
 
 		// add joi defaults to result, this should've been done by foxx instead of me
 		if(body && body._inner){
-			json = joiDefaults(body, json);
+			json = removeValues(joiDefaults(body, json), undefined);
 		}
 
 		// remove un-writable attributes

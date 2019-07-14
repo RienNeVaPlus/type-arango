@@ -91,6 +91,7 @@ export interface Config {
 	throwForbidden: ArangoDB.HttpStatus
 	throwUnauthorized: ArangoDB.HttpStatus
 	dasherizeRoutes: boolean
+	defaultLocale: string
 	prefixCollectionName: boolean
 	exposeRouteFunctionsToSwagger: boolean
 	addAttributeWritersToReaders: boolean

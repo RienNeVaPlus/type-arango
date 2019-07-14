@@ -1,3 +1,5 @@
+import {config} from "../index";
+
 export namespace Type {
 	export class I18n {
 		[key: string]: string | any
@@ -7,8 +9,8 @@ export namespace Type {
 			const sess = session();
 			const param = req.param('locale');
 			if(param === '*') return val;
-			const locale = param || (sess.data ? sess.data.locale : 'en');
-			return val[locale] || val[locale.substr(0,2)] || null;
+			const locale = param || (sess.data ? sess.data.locale : config.defaultLocale);
+			return val[locale] || val[locale.substr(0,2)] || val[config.defaultLocale] || null;
 		}
 	}
 }

@@ -16,6 +16,7 @@ export let config: Config = {
 	stripDocumentRev: true,
 	stripDocumentKey: false,
 	addAttributeWritersToReaders: true,
+	defaultLocale: 'en',
 	forClient: null,
 	fromClient: null,
 	logLevel: LogLevel.Warn,
