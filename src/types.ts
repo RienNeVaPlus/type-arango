@@ -239,6 +239,7 @@ export interface RouteRolesArg {
 	aql: (strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query
 	query: (query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor
 	collection: ArangoDB.Collection
+	document: () => DocumentData;
 	req: Foxx.Request
 	res: Foxx.Response
 	roles?: Roles

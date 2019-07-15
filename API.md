@@ -569,11 +569,12 @@ Takes a function to append additional roles for all requests to any route of the
   - **res** `Foxx.Response` 
   - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - function to read or write the current session
   - **_key**? `string` - the document key of the current request when available
+  - **document** `() => DocumentData` - loads & caches the document for the lifetime of the request
+  - **collection** `ArangoDB.Collection` - the ArangoDB collection object
   - **path** `string` - the current path
   - **method** `"get" | "post" | "put" | "patch" | "delete"`
   - **aql** `ArangoDB.aql` - the ArangoDB AQL function used for queries
   - **query** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor`
-  - **collection** `ArangoDB.Collection` - the ArangoDB collection object
   - **roles**? `string[]`
   - **requestedAttributes** `string[]`
   - **hasAuth** `boolean`
@@ -666,7 +667,35 @@ For additional details on these routes checkout the Swagger Docs at the `API` ta
 
 ### RouteArg
 
-All routes receive a single argument, the `RouteArg` which contains useful information and tools to describe, authenticate, read and answer requests. Most of them are well known from the Foxx routes.
+All route functions receive a single argument, the `RouteArg` which contains useful information and tools to describe, authenticate, read and answer requests. Most of them are well known from the Foxx routes.
+
+- **req** `Foxx.Request`
+- **res** `Foxx.Response`
+- **method** `"get" | "post" | "put" | "patch" | "delete"`
+- **path** `string` - path of the route
+- **roles** `string[]` - roles used to authorize the request
+- **userRoles** `string[]` - all roles of the client
+- **collection** `ArangoDB.Collection` - [collection object](https://www.arangodb.com/docs/3.4/data-modeling-collections-database-methods.html#collection) of the entity
+- **_key** `string` - shortcut for `req.param('_key')`
+- **document** `() => Document` - function to resolve and cache the document for the lifetime of the request. Avoids duplicate reads.
+- **query** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor` - executes a query
+- **aql** `(strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query` - builds aql string
+- **requestedAttributes** `string[]` - list of requested attributes
+- **hasAuth** `boolean` - whether an authorization is required for the current route
+- **auth** `(doc: DocumentData, method?: RouteMethod, action?: RouteAction) => false | DocumentData` - function to determine access to the document
+- **json** `(omitUnwritableAttributes: boolean = true) => DocumentData` - returns request json without inaccessible fields
+- **send** `(data: DocumentData, omitUnreadableAttributes: boolean = true) => Foxx.Response` - strips inaccessible attributes based on roles and sends a response
+- **error** `(status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response` - function to response with an error
+- **tags** `string[]` - tags used for the route (collection.name)
+- **summary** `string` - the summary of the route
+- **description** `string` - the description of the route
+- **deprecated** `boolean` - whether the route has been deprecated
+
+![divider](./assets/divider.small.png)
+
+### RouteOpt
+
+Routes can be further configured by using the following options.
 
 - **options**? `RouteOpt`
   - **body**? `RouteBody`
@@ -698,7 +727,7 @@ When used on a static method of the collection a custom request will be created.
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteArg](#routearg)
+- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
 
 > The order of the arguments does not matter as long as the options are the last argument.
 

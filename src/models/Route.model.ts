@@ -288,11 +288,15 @@ export class Route {
 
 				// authorize by route/collection roles
 				let userRoles = getUserRoles(req);
+				let tmp = {doc:null};
+				const _key = req.param('_key');
+				const collection = db._collection(name);
 				const args: RouteRolesArg = {
 					req, res, roles, path, method, aql,
-					collection: db._collection(name),
+					_key,
+					collection,
+					document: Route.document.bind(null, collection, tmp, _key),
 					query: Route.query.bind(null),
-					_key: req.param('_key') || '',
 					session: Route.session.bind(null, req, res),
 					requestedAttributes: req.param('attributes') || null,
 					hasAuth: !!routeAuths.length,
@@ -401,6 +405,13 @@ export class Route {
 		// write
 		Object.keys(data).forEach((k: string) => (req.session as any)[k] = (data as any)[k]);
 		return req.session!;
+	}
+
+	/**
+	 * Request based document cache in order to avoid duplicate calls to collection.document
+	 */
+	static document(collection: ArangoDB.Collection, tmp: any, _key: string){
+		return tmp.doc || (tmp.doc = collection.document(_key))
 	}
 
 	/**
@@ -537,9 +548,9 @@ export class Route {
 	/**
 	 * Read document
 	 */
-	static get({_key, auth, collection}: RouteArg){
+	static get({_key, auth, collection, document}: RouteArg){
 		logger.info('GET %s/%s', collection.name(), _key);
-		return auth(collection.document(_key), 'get', 'read');
+		return auth(document(), 'get', 'read');
 	}
 
 	/**
@@ -564,7 +575,7 @@ export class Route {
 	/**
 	 * Update document
 	 */
-	static patch({json, res, _key, collection, hasAuth, auth}: RouteArg) {
+	static patch({json, res, _key, document, collection, hasAuth, auth}: RouteArg) {
 		logger.info('PATCH %s/%s', collection.name(), _key);
 
 		if(!collection.exists(_key))
@@ -572,7 +583,7 @@ export class Route {
 
 		const doc = json();
 
-		if(hasAuth && !auth(Object.assign(collection.document(_key), doc), 'patch', 'update'))
+		if(hasAuth && !auth(Object.assign(document(), doc), 'patch', 'update'))
 			return;
 
 		// todo: implement param overwrite
@@ -582,12 +593,12 @@ export class Route {
 	/**
 	 * Replace document
 	 */
-	static put({json, _key, collection, hasAuth, auth}: RouteArg) {
+	static put({json, _key, document, collection, hasAuth, auth}: RouteArg) {
 		logger.info('PUT %s/%s', collection.name(), _key);
 
 		const doc: any = json();
 
-		if(hasAuth && auth(Object.assign(collection.document(_key) || {}, doc), 'put', 'update'))
+		if(hasAuth && auth(Object.assign(document() || {}, doc), 'put', 'update'))
 			return;
 
 		// todo: implement param for create?
@@ -597,13 +608,13 @@ export class Route {
 	/**
 	 * Delete document
 	 */
-	static delete({res, _key, collection, hasAuth, auth}: RouteArg) {
+	static delete({res, _key, document, collection, hasAuth, auth}: RouteArg) {
 		logger.info('DELETE %s/%s', collection.name(), _key);
 
 		if(!collection.exists(_key))
 			return res.throw(409, 'Document does not exist');
 
-		if(hasAuth && !auth(collection.document(_key), 'delete', 'delete')) return;
+		if(hasAuth && !auth(document(), 'delete', 'delete')) return;
 
 		collection.remove(_key!);
 		return '';
