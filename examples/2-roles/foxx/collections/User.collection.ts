@@ -6,7 +6,9 @@ import {User} from '../../shared';
 @Collection(of => User)
 
 // add collection specific roles to client requests (eg viewer for the own user)
-@Route.roles(({session, _key}) => session().uid === _key ? ['viewer'] : [])
+@Route.roles(
+	({session, _key}) => session().uid === _key ? ['viewer'] : []
+)
 
 // minimalistic route initializer to create, read & update users
 @Route.GET(roles => ['guest', 'viewer', 'admin'])
