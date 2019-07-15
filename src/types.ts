@@ -280,10 +280,11 @@ export interface RouteAuthArg {
 	req: Foxx.Request
 	res: Foxx.Response
 	session: Foxx.Session
-	method: RouteMethod
-	action: RouteAction
-	document: DocumentData;
-	doc: DocumentData; // alias for document
+	method?: RouteMethod
+	action?: RouteAction
+	roles: Roles
+	document: DocumentData
+	doc: DocumentData // alias for document
 }
 
 // export type AuthorizeMethod = 'read' | 'insert' | 'update' | 'delete';
@@ -293,7 +294,6 @@ export type DocumentForClient = (doc: DocumentData, opt: any) => DocumentData;
 export type DocumentFromClient = (doc: DocumentData, opt: any) => DocumentData;
 
 export interface RouteData {
-	// col: Collection
 	doc: any
 	router: Foxx.Router
 	method: RouteMethod
@@ -310,7 +310,7 @@ export interface RouteData {
 	tags?: string[]
 	routeAuths: Array<RouteAuthorize>
 	routeRoles: Array<RouteRoles>
-	roles?: Roles
+	roles: Roles
 	roleStripAttributes: RoleObject
 	handler?: RouteHandler
 }

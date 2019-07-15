@@ -1,7 +1,9 @@
 import {Collection} from '.'
 import {config, logger, RouteArg, routes} from '../index'
 import {db, joiDefaults, omit, pick, toArray, removeValues} from '../utils'
-import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg, RouteAction} from '../types'
+import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg, RouteAction,
+	Roles,
+	RouteAuthArg} from '../types'
 import {Scalar} from './Scalar.model'
 import * as Joi from 'joi'
 
@@ -243,7 +245,7 @@ export class Route {
 		const routeData: RouteData = {
 			router, method, name: col.name, path, roleStripAttributes: col.doc!.roleStripAttributes,
 			doc: col.doc,
-			tags, summary, description, roles, response, errors, deprecated,
+			tags, summary, description, roles: roles||[], response, errors, deprecated,
 			routeAuths: col.routeAuths, routeRoles: col.routeRoles,
 			body, pathParams, queryParams, handler
 		};
@@ -300,7 +302,7 @@ export class Route {
 					session: Route.session.bind(null, req, res),
 					requestedAttributes: req.param('attributes') || null,
 					hasAuth: !!routeAuths.length,
-					auth: Route.auth.bind(null, req, res, routeAuths),
+					auth: Route.auth.bind(null, req, res, roles, routeAuths),
 					error: Route.error.bind(null, res)
 				};
 				if(routeRoles.length){
@@ -411,7 +413,7 @@ export class Route {
 	 * Request based document cache in order to avoid duplicate calls to collection.document
 	 */
 	static document(collection: ArangoDB.Collection, tmp: any, _key: string){
-		return tmp.doc || (tmp.doc = collection.document(_key))
+		return _key ? (tmp.doc || (tmp.doc = collection.document(_key))) : null
 	}
 
 	/**
@@ -420,6 +422,7 @@ export class Route {
 	static auth(
 		req: Foxx.Request,
 		res: Foxx.Response,
+		roles: Roles,
 		authorizes: any[],
 		document: DocumentData,
 		method?: RouteMethod,
@@ -427,7 +430,7 @@ export class Route {
 		canThrow: boolean = true
 	){
 		if(!authorizes.length) return document;
-		const args = {session:req.session, doc:document, document, method, action, req, res};
+		const args: RouteAuthArg = {session:req.session!, roles, doc:document, document, method, action, req, res};
 		let success = !(authorizes||[]).find(f => !f(args));
 		if(!success){
 			if(canThrow) res.throw(config.throwForbidden || 'forbidden');
