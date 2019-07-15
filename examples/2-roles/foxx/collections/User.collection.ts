@@ -1,6 +1,5 @@
-// makes sure the collection "users" exists
-import {Collection, Entities, Route, RouteArg} from '../../../../src';
-import {User} from '../../shared';
+import {Collection, Entities, Route, RouteArg} from '../../../../src' // type-arango
+import {User} from '../../shared'
 
 // start a new collection containing User entities
 @Collection(of => User)

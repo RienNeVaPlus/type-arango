@@ -1,4 +1,4 @@
-import typeArango, { LogLevel } from '../../../src'; // type-arango
+import typeArango, { LogLevel } from '../../../src' // type-arango
 
 // config
 typeArango({

@@ -1,4 +1,4 @@
-import {Attribute, Document, Entity, Index, Nested} from '../../../src'; // type-arango
+import {Attribute, Document, Entity, Index, Nested} from '../../../src' // type-arango
 
 // creates a nested object for the users auth
 @Nested()

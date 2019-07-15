@@ -1,6 +1,6 @@
-import { context } from '@arangodb/locals';
-import {createRoutes} from '../../../src/';
-import createRouter from '@arangodb/foxx/router';
+import { createRoutes } from '../../../src/' // type-arango
+import { context } from '@arangodb/locals'
+import createRouter from '@arangodb/foxx/router'
 
 // Import the entities before creating the routes
 import * as _Entities from '../shared';

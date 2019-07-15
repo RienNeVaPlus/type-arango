@@ -1,4 +1,4 @@
-import { Document, Entity, Collection, Entities, Route, Attribute, Index, RouteArg } from '../../../src';
+import { Document, Entity, Collection, Entities, Route, Attribute, Index, RouteArg } from '../../../src' // type-arango
 
 
 @Document()

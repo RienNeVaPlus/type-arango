@@ -1,4 +1,4 @@
-import typeArango, { LogLevel, config } from '../../../src'; // type-arango
+import typeArango, { LogLevel, config } from '../../../src' // type-arango
 
 const complete = typeArango({
 	// verbose

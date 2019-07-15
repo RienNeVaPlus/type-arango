@@ -1,8 +1,8 @@
-import { context } from '@arangodb/locals';
-import {createRoutes} from '../../../src/';
+import { createRoutes } from '../../../src/' // type-arango
+import { context } from '@arangodb/locals'
 import sessionsMiddleware from '@arangodb/foxx/sessions'
-import jwtStorage from '@arangodb/foxx/sessions/storages/jwt';
-import createRouter from '@arangodb/foxx/router';
+import jwtStorage from '@arangodb/foxx/sessions/storages/jwt'
+import createRouter from '@arangodb/foxx/router'
 
 // Setup any session middleware, this is the default from ArangoDB using JWT
 context.use( sessionsMiddleware({
