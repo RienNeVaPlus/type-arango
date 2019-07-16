@@ -1,8 +1,8 @@
 export function isFoxx(){
 	let is = false;
 	try {
-		require('@arangodb/locals');
-		is = true;
+		let l = require('@arangodb/locals');
+		is = !!(l && l.context);
 	} catch(e){}
 	return is;
 }
