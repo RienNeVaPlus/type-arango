@@ -3,6 +3,7 @@ import {SymbolKeysNotSupportedError} from '../errors'
 import {IndexOptions, IndexOptionsWithType} from '../types'
 import {argumentResolve} from '../utils'
 import {getDocumentForContainer} from '../models'
+import {isActive} from '../index';
 
 export type IndexTypeFunct = (returns: ArangoDB.IndexType) => ArangoDB.IndexType;
 
@@ -17,6 +18,7 @@ export function Index(
 	maybeOptions?: IndexOptions
 ): PropertyDecorator {
 	return (prototype: any, attribute: string | symbol) => {
+		if(!isActive) return;
 		if(typeof attribute === 'symbol')
 			throw new SymbolKeysNotSupportedError();
 

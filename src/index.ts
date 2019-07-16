@@ -41,6 +41,7 @@ export {
 export {RouteArg, RouteRolesArg, LogLevel, Related, isFoxx, Entities, Entity, Type}
 
 export function complete(){
+	if(!isActive) return;
 	documents.forEach(doc => doc.finalize());
 	collections.forEach(col => col.finalize());
 }

@@ -7,8 +7,6 @@ import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteRe
 import {Scalar} from './Scalar.model'
 import * as Joi from 'joi'
 
-const {aql} = require('@arangodb');
-
 const REGEX_PATH_PARAM: RegExp = /:+([^=/?&]+)[=]?([^/?&]+)?/gi;
 const mime: string[] = ['application/json'];
 
@@ -240,8 +238,6 @@ export class Route {
 		if(body && !Array.isArray(body))
 			body = [body, '📑 **Body schema**'];
 
-		// if(path === 'items/requestUploadUrl')
-		// console.log('PATHPARAMS', path,pathParams);
 		const routeData: RouteData = {
 			router, method, name: col.name, path, roleStripAttributes: col.doc!.roleStripAttributes,
 			doc: col.doc,
@@ -277,6 +273,7 @@ export class Route {
 		pathParams,
 		handler }: RouteData
 	): Foxx.Endpoint {
+		const {aql} = require('@arangodb');
 		const { info, debug, warn } = logger;
 		info('- Setup %s %s', method.toUpperCase(), path);
 

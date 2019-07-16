@@ -1,6 +1,7 @@
 import {getDocumentForContainer} from '../models'
 import {SymbolKeysNotSupportedError} from '../errors'
 import {Roles, TypeFunc, ValidateSchema, ValidateSchemaFunc} from '../types'
+import {isActive} from '../index';
 
 type ReadersFunc = (returns?: void) => Roles;
 type WritersFunc = (returns?: void) => Roles;
@@ -29,6 +30,7 @@ export function Attribute(
 	writersArrayOrFunction?: WritersFunc | Roles
 ): PropertyDecorator {
 	return (prototype: any, attribute: string | symbol) => {
+		if(!isActive) return;
 		if(typeof attribute === 'symbol')
 			throw new SymbolKeysNotSupportedError();
 

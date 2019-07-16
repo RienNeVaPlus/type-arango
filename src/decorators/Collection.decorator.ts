@@ -1,5 +1,6 @@
 import {CreateCollectionOptions} from '../types'
 import {Entity, getCollectionForContainer} from '../models'
+import {isActive} from '../index';
 
 type DocumentFunc = (returns: any) => typeof Entity;
 
@@ -11,7 +12,7 @@ export function Collection(
 	options?: CreateCollectionOptions
 ): ClassDecorator {
 	return (prototype: any) => {
-		getCollectionForContainer(prototype).decorate('Collection', {prototype, ofDocumentFunction, options});
+		if(isActive) getCollectionForContainer(prototype).decorate('Collection', {prototype, ofDocumentFunction, options});
 		return prototype;
 	}
 }

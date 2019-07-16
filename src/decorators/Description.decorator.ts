@@ -1,10 +1,12 @@
 import {SymbolKeysNotSupportedError} from '../errors'
 import {Entities, Entity, getCollectionForContainer, getDocumentForContainer} from '../models'
+import {isActive} from '../index';
 
 export function Description(
 	description: string
 ) {
 	return function(prototype: any, attribute?: string | symbol): any {
+		if(!isActive) return;
 		if(typeof attribute === 'symbol')
 			throw new SymbolKeysNotSupportedError();
 
