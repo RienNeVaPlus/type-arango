@@ -62,8 +62,6 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
 			default:
 				if(!inp) break;
 
-				// console.log('TYPE OF ------------->', typeof inp);
-
 				if(inp.prototype){
 					const doc = getDocumentForContainer(inp);
 					if(doc) j = Joi.object().keys(doc.schema); break;

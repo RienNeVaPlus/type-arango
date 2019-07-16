@@ -23,7 +23,7 @@
 - **[Route Decorators](./API.md#route--get-post-put-patch--delete)** for creating and documenting `Foxx.Routes` as simple as `@Route.POST(input => string())`.
 - **[Attribute-based authorization](./examples/2-roles)** with `reader` and `writer` roles
 - **[Route-based authorization](./API.md#routeenablecreators-readers-updaters-deleters)** with `creators`, `readers`, `updaters` and `deleters`
-- **[Request-based authorization](./API.md#routeauthfunct)** on entity- or global basis
+- **[Request-based authorization](./API.md#routerolesrolefunctions)** on entity- or global basis
 - **[CRUD like](./API.md#crud-like)** route setup with `@Route.all(roles)`
 - **[Custom Routes](./API.md#route--get-post-put-patch--delete)** with input schemas and access roles
 - **[Validate Input Data](./API.md#attributeschema-readers-writers)** by describing the entity or providing joi schemas for routes
@@ -58,10 +58,8 @@ The example will setup a User entity stored inside a Users collection with a tot
 > Various other examples of how to use typeArango with certain features can be found in the 📘 **[examples](./examples)** folder.
 
 ```ts
-import {
-    Document, Entity, Collection, Entities, Route,
-    Authorized, Index, Related, Attribute
-} from 'type-arango'
+import { Document, Entity, Collection, Entities, Route, Authorized, Index, Related, Attribute } 
+  from 'type-arango'
 
 // `User` document entity
 @Document()
