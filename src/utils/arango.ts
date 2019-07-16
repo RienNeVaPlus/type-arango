@@ -1,6 +1,5 @@
 import {isFoxx} from '../utils'
 import {QueryOpt} from '../types'
-import {logger} from '../index';
 
 const is = isFoxx();
 const orders = ['ASC','DESC'];
@@ -68,7 +67,7 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 		q.push('RETURN i');
 	}
 
-	logger.warn('Query %o', q);
+	// logger.warn('Query %o', q);
 
 	return q.join('\n');
 }
