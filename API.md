@@ -859,7 +859,7 @@ class Users extends Entities {
 
 ### `@Route.LIST(schema?, roles?, summary?, options?)`
 
-Creates a `GET` route on `/collectionName` for returning a list of documents. Any provided `queryParams` will be used to filter the list. Additionally the parameters **limit**, **offset**, **sort** & **order** are provided. For more informationen see swagger docs.
+Creates a `GET` route on `/collectionName` for returning a list of documents. Any provided `queryParams` will be used to filter the list. Additionally the parameters **limit**, **offset**, **sort** & **order** can be used. For more information see swagger docs.
 
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the requests `queryParams` Any values will be used to filter the result list. Use required attributes to avoid full collection access.
 - **roles**? `string[]` - roles required to access the route
