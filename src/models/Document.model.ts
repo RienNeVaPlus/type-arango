@@ -52,15 +52,18 @@ function reduceMap(arg: any, doc: DocumentData, map: DocumentMap){
 
 type DocumentMap = [string, (val: any, arg: any) => any];
 
+const _id = Joi.string();
+const _key = Joi.string();
+
 export class Document<T=any> {
 	public col?: Collection;
 	public name: string;
 	public options: DocumentOptions = {};
 	public attribute: DocumentAttribute = {
-		_id: {attribute: '_id', metadata: String, schema: toJoi(String)},
-		_key: {attribute:'_key', metadata: String, schema: toJoi(String)}
+		_id: {attribute: '_id', metadata: String, schema: _id},
+		_key: {attribute: '_key', metadata: String, schema: _key}
 	};
-	public schema: SchemaStructure = {};
+	public schema: SchemaStructure = {_id, _key};
 	public relation: RelationStructure<Document<any>> = {};
 	public roles: string[] = ['guest'];
 	public roleStripAttributes: RoleObject = {};
