@@ -17,6 +17,8 @@ export let config: Config = {
 	stripDocumentKey: false,
 	addAttributeWritersToReaders: true,
 	defaultLocale: 'en',
+	defaultListLimit: 25,
+	defaultListLimitMax: 100,
 	forClient: null,
 	fromClient: null,
 	logLevel: LogLevel.Warn,

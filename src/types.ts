@@ -92,6 +92,8 @@ export interface Config {
 	throwUnauthorized: ArangoDB.HttpStatus
 	dasherizeRoutes: boolean
 	defaultLocale: string
+	defaultListLimit: number
+	defaultListLimitMax: number
 	prefixCollectionName: boolean
 	exposeRouteFunctionsToSwagger: boolean
 	addAttributeWritersToReaders: boolean
@@ -103,7 +105,7 @@ export interface Config {
 }
 
 export type RouteMethod = 'get' | 'post' | 'patch' | 'put' | 'delete';
-export type RouteAction = 'create' | 'read' | 'update' | 'delete';
+export type RouteAction = 'create' | 'read' | 'update' | 'delete' | 'list';
 
 // export type MetadataId = 'attribute' | 'index' | 'route';
 // export type MetadataTypes = AttributeMetadata | IndexMetadata | RouteMetadata;
@@ -142,22 +144,22 @@ export interface RoleObject {
 	[key: string]: RoleAttributes
 }
 
-export interface AuthorizedMetadata {
-	authorized: AttributeRoles
-}
+// export interface AuthorizedMetadata {
+// 	authorized: AttributeRoles
+// }
 
-export interface IndexMetadata extends ArangoDB.IndexDescription<string | string[]> {}
+// export interface IndexMetadata extends ArangoDB.IndexDescription<string | string[]> {}
 
-export interface RouteMetadata {
-	method: RouteMethod
-	opt?: RouteOpt
-}
-
-export interface AttributeMetadata {
-	schema?: Schema
-	metadata?: any
-	roles?: AttributeRoles
-}
+// export interface RouteMetadata {
+// 	method: RouteMethod
+// 	opt?: RouteOpt
+// }
+//
+// export interface AttributeMetadata {
+// 	schema?: Schema
+// 	metadata?: any
+// 	roles?: AttributeRoles
+// }
 
 export interface SchemaStructure {
 	[key: string]: Schema
@@ -216,6 +218,7 @@ export interface RouteBaseOpt {
 }
 
 export interface RouteOpt extends RouteBaseOpt {
+	action?: 'list'
 	body?: RouteBody
 	pathParams?: RoutePathParam[]
 	queryParams?: RouteQueryParam[]
@@ -235,6 +238,9 @@ interface TemplateStringsArray extends ReadonlyArray<string> {
 export interface RouteRolesArg {
 	path: string
 	method: RouteMethod
+	action: RouteAction
+	validParams: string[]
+	param: {[key: string]: any}
 	_key: string
 	aql: (strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query
 	query: (query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor
@@ -297,6 +303,7 @@ export interface RouteData {
 	doc: any
 	router: Foxx.Router
 	method: RouteMethod
+	action: RouteAction
 	name: string
 	path: string
 	pathParams: RoutePathParam[]

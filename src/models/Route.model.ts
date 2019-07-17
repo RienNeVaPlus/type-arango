@@ -1,9 +1,11 @@
 import {Collection} from '.'
 import {config, logger, RouteArg, routes} from '../index'
-import {db, joiDefaults, omit, pick, toArray, removeValues} from '../utils'
-import {DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg, RouteAction,
+import {db, joiDefaults, omit, pick, toArray, removeValues, queryBuilder} from '../utils'
+import {
+	DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg, RouteAction,
 	Roles,
-	RouteAuthArg} from '../types'
+	RouteAuthArg, QueryOpt
+} from '../types'
 import {Scalar} from './Scalar.model'
 import * as Joi from 'joi'
 
@@ -72,7 +74,14 @@ export class Route {
 
 	static parsePath(opt: RouteOpt, collectionName?: string): RouteOpt {
 		let { path } = opt;
-		if(path === undefined) return opt;
+
+		if(!path){
+			if(!path && opt.action === 'list')
+				path = collectionName;
+
+			if(path === undefined)
+				return opt;
+		}
 
 		logger.debug('Parsing route path: %s',path);
 		path = path.startsWith('/') ? path.substr(1) : path;
@@ -147,12 +156,15 @@ export class Route {
 			pathParams = pathParams.concat([['_key', Joi.string(), '🆔 **Document identifier**']]);
 		}
 
+		const sortValues = Object.keys(col.doc!.schema);
+
 		// `select` query param
-		if(['get','post','patch','put'].includes(method)){
+		if(['get','post','patch','put'].includes(method) || opt.action === 'list'){
 			queryParams = [[
 				'attributes', Joi.string(),
-				`✂️ **Comma separated list of attributes to return in response**, _default is \`all\`_.
-				  &nbsp; &nbsp; &nbsp; \`Values(${Object.keys(col.schema).join('`, `')})\``
+				`✂️ **Comma separated list of attributes to return**
+				  &nbsp; &nbsp; &nbsp; \`Values: ${sortValues.join(', ')}\`
+				  &nbsp; &nbsp; &nbsp; \`Example: ?attributes=${sortValues.slice(0,2).join(',')}\``
 			]];
 		}
 
@@ -168,7 +180,27 @@ export class Route {
 		 */
 
 		if(isCustom){
-			queryParams = opt.queryParams || [];
+			queryParams = (opt.queryParams || []).concat(queryParams||[]);
+
+			if(opt.action === 'list'){
+				summary = summary || `Returns ${name}[]`;
+				description = description || `Prints a list of ${name} documents of the collection **${col.name}**.`;
+				response.description = `Array of ${name} documents of the ${col.name} collection.`;
+				handler = handler || Route.list;
+				let qp = Object.values(queryParams).map(qp => qp[0]);
+				if(!qp.includes('limit'))
+					queryParams.push(['limit', Joi.number().min(1).max(config.defaultListLimitMax).default(config.defaultListLimit),
+						'**#️⃣ Limit results**\n　    `Example: ?limit=100`']);
+				if(!qp.includes('offset'))
+					queryParams.push(['offset', Joi.number().default(0),
+						'**⏭️ Skip results**\n　    `Example: ?offset=25`']);
+				if(!qp.includes('sort'))
+					queryParams.push(['sort', Joi.any().valid(...sortValues),
+						'**🔀 Sort results by attribute**\n　    `Values: '+sortValues.join(', ')+'`\n　    `Example: ?sort='+sortValues[0]+'`']);
+				if(!qp.includes('order'))
+					queryParams.push(['order', Joi.any().valid('ASC','DESC').default('ASC'),
+						'**🔃 Order results**\n　    `Values: ASC, DESC`\n　    `Example: ?order=DESC`']);
+			}
 		} else {
 			switch(method){
 				default:
@@ -188,7 +220,7 @@ export class Route {
 
 				case 'patch':
 					summary = summary || `Updates ${name}`;
-					if(!isCustom) description = description || `Updates and prints the **${name}** document of the collection **${col.name}**.`;
+					description = description || `Updates and prints the **${name}** document of the collection **${col.name}**.`;
 					body = body || [col.doc!.joi, `📑 **Partial ${name} document to update**`];
 					response.description = `The updated ${name} document of the ${col.name} collection.`;
 					break;
@@ -211,7 +243,7 @@ export class Route {
 			}
 		}
 
-		if(handler){
+		if(opt.action !== 'list' && handler){
 			const handlerId = col.name+'.'+handlerName+'()';
 			summary = opt.summary || 'Calls '+handlerId;
 			description = '**👁️️️️️ Handler:** `'+handlerId+'`<br/><br/>'
@@ -238,8 +270,13 @@ export class Route {
 		if(body && !Array.isArray(body))
 			body = [body, '📑 **Body schema**'];
 
+		const action: RouteAction = opt.action ||
+			method === 'get' ? 'read' :
+			method === 'post' ? 'create' :
+			method === 'delete' ? 'delete' : 'update';
+
 		const routeData: RouteData = {
-			router, method, name: col.name, path, roleStripAttributes: col.doc!.roleStripAttributes,
+			router, method, action, name: col.name, path, roleStripAttributes: col.doc!.roleStripAttributes,
 			doc: col.doc,
 			tags, summary, description, roles: roles||[], response, errors, deprecated,
 			routeAuths: col.routeAuths, routeRoles: col.routeRoles,
@@ -256,6 +293,7 @@ export class Route {
 		doc,
 		router,
 		method,
+		action,
 		routeAuths,
 		routeRoles,
 		roles,
@@ -277,6 +315,10 @@ export class Route {
 		const { info, debug, warn } = logger;
 		info('- Setup %s %s', method.toUpperCase(), path);
 
+		const validParams: string[] = [];
+		queryParams.forEach(qp => validParams.push(qp[0]));
+		pathParams.forEach(qp => validParams.push(qp[0]));
+
 		const route = router[method](
 			path,
 			(req: Foxx.Request, res: Foxx.Response) => {
@@ -288,16 +330,22 @@ export class Route {
 				// authorize by route/collection roles
 				let userRoles = getUserRoles(req);
 				let tmp = {doc:null};
-				const _key = req.param('_key');
+
+				const param = validParams.reduce((c: any, n) => {
+					c[n] = req.pathParams[n] || req.queryParams[n];
+					return c;
+				}, {});
+
+				const _key = param._key;
 				const collection = db._collection(name);
 				const args: RouteRolesArg = {
-					req, res, roles, path, method, aql,
+					req, res, roles, path, method, action, aql, validParams, param,
 					_key,
 					collection,
 					document: Route.document.bind(null, collection, tmp, _key),
 					query: Route.query.bind(null),
 					session: Route.session.bind(null, req, res),
-					requestedAttributes: req.param('attributes') || null,
+					requestedAttributes: req.queryParams.attributes ? req.queryParams.attributes.split(',') : null,
 					hasAuth: !!routeAuths.length,
 					auth: Route.auth.bind(null, req, res, roles, routeAuths),
 					error: Route.error.bind(null, res)
@@ -618,5 +666,29 @@ export class Route {
 
 		collection.remove(_key!);
 		return '';
+	}
+
+	/**
+	 * List documents
+	 */
+	static list({collection, requestedAttributes, param, hasAuth, auth}: RouteArg) {
+		logger.info('LIST %s/%s', collection.name());
+
+		const { attributes, offset, limit = config.defaultListLimit, sort, order, ...filter } = param;
+
+		let q: QueryOpt = {
+			filter,
+			keep: requestedAttributes,
+			sort: [sort+' '+order],
+			limit: offset ? [offset, limit] : limit
+		};
+
+		return db._query(
+			queryBuilder(collection.name(), q)
+		)
+			.toArray()
+			.filter(
+				(doc: DocumentData) => !hasAuth || auth(doc, 'get', 'list')
+			);
 	}
 }

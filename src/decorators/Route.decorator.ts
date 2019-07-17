@@ -14,7 +14,7 @@ type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt;
 type ArgSchemaOrRolesOrSummaryOrOpt = string | SummaryFunc | boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt;
 
 function route(
-	method: RouteMethod,
+	method: RouteMethod | 'list',
 	pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
 	schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 	rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
@@ -95,6 +95,18 @@ export const Route = {
 		rolesOrSchemaOrSummaryOrFunction,
 		summaryOrSchemaOrRolesOrFunction,
 		options),
+
+	LIST: (
+		schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+		options?: RouteOpt
+	): ClassDecorator => route('get',
+		undefined,
+		schemaOrRolesOrSummaryOrFunction,
+		rolesOrSchemaOrSummaryOrFunction,
+		summaryOrSchemaOrRolesOrFunction,
+		Object.assign(options||{}, {action:'list'})),
 
 	auth: (
 		...authorizeFunctions: Array<(arg: RouteAuthArg) => boolean>

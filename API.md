@@ -50,6 +50,7 @@ A collection contains documents and provides routes.
 - [@Route.auth](#routeauthauthorizefunctions) - authorizes a request depending on a document 
 - [@Route.enable](#routeenablecreators-readers-updaters-deleters) - define global roles for custom routes
 - [@Route.all](#routeallcreators-readers-updaters-deleters-options) - initializes [CRUD-like](#crud-like) routes 
+- [@Route.LIST]() - initializes a special route for fetching a list
 #### `ClassAndPropertyDecorator`
   - [@Route.GET](#routegetpath-schema-roles-summary-options)
   - [@Route.POST](#routepostpath-schema-roles-summary-options)
@@ -672,7 +673,10 @@ All route functions receive a single argument, the `RouteArg` which contains use
 - **req** `Foxx.Request`
 - **res** `Foxx.Response`
 - **method** `"get" | "post" | "put" | "patch" | "delete"`
+- **action** `"create" | "read" | "update" | "delete" | "list"`
 - **path** `string` - path of the route
+- **param** `{[key: string]: any}` - object of only valid path- and query parameters
+- **validParams** `string[]` - list of path- and query parameter names
 - **roles** `string[]` - roles used to authorize the request
 - **userRoles** `string[]` - all roles of the client
 - **collection** `ArangoDB.Collection` - [collection object](https://www.arangodb.com/docs/3.4/data-modeling-collections-database-methods.html#collection) of the entity
@@ -720,8 +724,8 @@ Routes can be further configured by using the following options.
 
 ### `@Route.GET(path?, schema?, roles?, summary?, options?)`
 
-When used as a `ClassDecorator` it will create a default route for returning documents of the collection by key.
-When used on a static method of the collection a custom request will be created.
+Creates a `GET` route on `collectionName/{_key}`.
+ When used as a `ClassDecorator` a default route for returning a single document of the collection is created. When used on a static method of the collection a custom route executing the very same function with the [RouteArg](#routearg) argument will be created.
 
 - **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
@@ -757,13 +761,13 @@ class Users extends Entities {
 
 ### `@Route.POST(path?, schema?, roles?, summary?, options?)`
 
-Creates a `POST` request with a custom route or - when called as a `ClassDecorator` a route to create new documents inside the collection.
+Creates a `POST` route on `collectionName/{_key}`. Provides a route to create  documents by using `collection._insert`, when called as a `ClassDecorator`.
 
 - **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteArg](#routearg)
+- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
 
 > The order of the arguments does not matter as long as the options are the last argument.
 
@@ -787,13 +791,13 @@ class Users extends Entities {
 
 ### `@Route.PATCH(path?, schema?, roles?, summary?, options?)`
 
-Creates a `PATCH` request with a custom route or - when called as a `ClassDecorator` a route to update documents inside the collection by using `collection._update`.
+Creates a `PATCH` route on `collectionName/{_key}`. Provides a route to update single documents by using `collection._update`, when called as a `ClassDecorator`.
 
 - **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteArg](#routearg)
+- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
 
 > The order of the arguments does not matter as long as the options are the last argument.
 
@@ -831,17 +835,17 @@ class Users extends Entities {
 
 ### `@Route.DELETE(path?, schema?, roles?, summary?, options?)`
 
-Creates a `DELETE` request with a custom route or - when called as a `ClassDecorator` a route to remove a document of the collection by using `collection._remove`.
+Creates a `DELETE` route on `collectionName/{_key}`. Provides a route to remove single documents by using `collection._remove`, when called as a `ClassDecorator`.
 
 - **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteArg](#routearg)
+- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
 
 ```ts
 @Collection(of => User)
-// executed as a ClassDecorator - creates a route on `DELETE users/:_key` tp create Users
+// executed as a ClassDecorator - creates a route on `DELETE users/:_key` to create Users
 @Route.DELETE(roles => ['guest'])
 class Users extends Entities { 
     // executed as a ProperyDecorator - creates a route on `DELETE users/baz`
@@ -850,6 +854,24 @@ class Users extends Entities {
         res.send('baz');
     } 
 }
+```
+![divider](./assets/divider.small.png)
+
+### `@Route.LIST(schema?, roles?, summary?, options?)`
+
+Creates a `GET` route on `/collectionName` for returning a list of documents. Any provided `queryParams` will be used to filter the list. Additionally the parameters **limit**, **offset**, **sort** & **order** are provided. For more informationen see swagger docs.
+
+- **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the requests `queryParams` Any values will be used to filter the result list. Use required attributes to avoid full collection access.
+- **roles**? `string[]` - roles required to access the route
+- **summary**? `string | RouteOpt` - shortcut for `options.summary`
+- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
+
+```ts
+@Collection(of => User)
+// creates a route on `GET users?country=US` 
+// to return User[] with User.country == 'US'
+@Route.LIST($ => ({country:['US','DE']}), roles => ['guest'])
+class Users extends Entities {}
 ```
 
 ![divider](./assets/divider.png)
