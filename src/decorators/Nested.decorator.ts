@@ -9,7 +9,10 @@ export function Nested(
 ): ClassDecorator {
 	return (prototype: any) => {
 		if(!isActive) return;
-		getDocumentForContainer(prototype).decorate('Nested', {prototype, insideDocumentFunction});
+		const doc = getDocumentForContainer(prototype);
+		doc.attribute = {};
+		doc.schema = {};
+		doc.decorate('Nested', {prototype, insideDocumentFunction});
 		return prototype;
 	}
 }
