@@ -634,7 +634,6 @@ export class Route {
 		if(hasAuth && !auth(Object.assign(document(), doc), 'patch', 'update'))
 			return;
 
-		// todo: implement param overwrite
 		return <any>collection.update(_key, doc, {returnNew:true}).new;
 	}
 
@@ -649,7 +648,6 @@ export class Route {
 		if(hasAuth && auth(Object.assign(document() || {}, doc), 'put', 'update'))
 			return;
 
-		// todo: implement param for create?
 		return <any>collection.replace(_key, doc, {returnNew:true}).new;
 	}
 
