@@ -216,9 +216,7 @@ export class Collection {
 			if(options)
 				opt = Object.assign(options, opt);
 
-			if(opt.path !== undefined) {
-				opt = RouteModel.parsePath(opt, this.route);
-			}
+			opt = RouteModel.parsePath(opt, this.route);
 
 			if(schema) {
 				if(schema.isJoi){}
@@ -255,11 +253,11 @@ export class Collection {
 						if(method === 'get'){
 							const isRequired = attr.schema._flags.presence === 'required';
 							opt.queryParams = opt.queryParams.concat([[attr.key,
-								attr.schema, Scalar.iconRequired(isRequired) + ' ' + (isRequired
+								attr.schema, Scalar.iconRequired(isRequired) + ' ' + (attr.schema._description ? '**'+attr.schema._description+'**' : (isRequired
 										? '**Required'
 										: '**Optional'
-								) + ` query parameter**  \`[ ${attr.key}: ${attr.schema._type} ]\`
-				　 \`Example: ?${attr.key}=${attr.schema._type}\``
+								) + ` query parameter**  \`[ ${attr.key}: ${attr.schema._type} ]\``)+`
+				　 \`Example: ?${attr.key}=${attr.schema._examples[0] || attr.schema._type}\``
 							]]);
 						}
 						// else {
