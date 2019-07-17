@@ -315,6 +315,7 @@ export class Route {
 		const { info, debug, warn } = logger;
 		info('- Setup %s %s', method.toUpperCase(), path);
 
+		const collection = db._collection(name);
 		const validParams: string[] = [];
 		queryParams.forEach(qp => validParams.push(qp[0]));
 		pathParams.forEach(qp => validParams.push(qp[0]));
@@ -337,7 +338,6 @@ export class Route {
 				}, {});
 
 				const _key = param._key;
-				const collection = db._collection(name);
 				const args: RouteRolesArg = {
 					req, res, roles, path, method, action, aql, validParams, param,
 					_key,
