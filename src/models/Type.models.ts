@@ -7,7 +7,7 @@ export namespace Type {
 
 		static _typeArango: string = '0.4';
 
-		static schema: Joi.ObjectSchema = Joi.object().unknown();
+		static schema: Joi.ObjectSchema = Joi.object().unknown().example({en:'Translation'});
 
 		static forClient(val: any, {req,session}: any){
 			const sess = session();
