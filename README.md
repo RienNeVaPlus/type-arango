@@ -7,28 +7,30 @@
 </h5>
 
 <p align="center">
-	TypeArango creates and manages ArangoDB <code>collections</code>, <code>documents</code> and <code>routes</code> by using a single,<br/>centralized entity system which can be consumed by any <strong>backend</strong>, 
-	<strong>frontend</strong>, and / or <strong>Foxx service</strong>.<br/><sub><i>Probably the world's <a href="#-worlds-fastest-way-to-create-documented-endpoints">fastest</a> way of setting up documented & schema-validated endpoints.</i></sub>
+	TypeArango manages ArangoDB <code>collections</code>, <code>documents</code>, <code>relations</code> and <code>routes</code><br>by taking advantage of TypeScript's typings. It comes with a fast and easy to use <strong>permission<br/>system</strong>, provides an <strong>ORM</strong>, event <strong>listeners</strong>, <strong>documented endpoints</strong> as well as plenty of<br/>other tools to make it fun to build ReST APIs in a declarative & elegant manner.
+	<br/>
+	<sub><i>TypeArango is probably the <a href="#-worlds-fastest-way-to-create-documented-endpoints">fastest</a> way of setting up documented & validated endpoints.</i></sub>
 </p>
 
 ![divider](./assets/divider.png)
 
 ### ⭐ Features
 - **Beautiful Code** thanks to decorators
-- **A single Schema** for all js or ts environments
+- **A single Schema** for all TypeScript environments
 - **[Manages ArangoDB Collections](./API.md#collectionofdocument-options)** by deriving their information from entities classes
 - **[Manages ArangoDB Indexes](./API.md#indextype-options)** by decorating attributes with `@Index(type, options)`
 - **[Auto Schema from types](./API.md#-en-hanced-joi)** derives typing information into `joi` schemas
 - **[Auto Documentation](#-worlds-fastest-way-to-create-documented-endpoints)** optimized swagger docs from types and decorators
-- **[Route Decorators](./API.md#route--get-post-put-patch--delete)** for creating and documenting `Foxx.Routes` as simple as `@Route.POST(input => string())`.
+- **[Route Decorators](./API.md#route--get-post-put-patch-delete--list)** for creating and documenting `Foxx.Routes` as simple as `@Route.POST(input => string())`.
 - **[Attribute-based authorization](./examples/2-roles)** with `reader` and `writer` roles
-- **[Route-based authorization](./API.md#routeenablecreators-readers-updaters-deleters)** with `creators`, `readers`, `updaters` and `deleters`
+- **[Route-based authorization](./API.md#routegroupscreators-readers-updaters-deleters)** with `creators`, `readers`, `updaters` and `deleters`
 - **[Request-based authorization](./API.md#routerolesrolefunctions)** on entity- or global basis
-- **[CRUD like](./API.md#crud-like)** route setup with `@Route.all(roles)`
-- **[Custom Routes](./API.md#route--get-post-put-patch--delete)** with input schemas and access roles
+- **[CRUD like](./API.md#crud-like)** route setup with `@Route.use('GET', 'POST', ...)`
+- **[Custom Routes](./API.md#route--get-post-put-patch-delete--list)** with input schemas and access roles
 - **[Validate Input Data](./API.md#attributeschema-readers-writers)** by describing the entity or providing joi schemas for routes
-- **[Internationalize document values](./API.md#-typesi18n)** and return translated strings based upon the session or a parameter
-- **[Request specific attributes](./API.md#route--get-post-put-patch--delete)** only by providing a `attributes` parameter to the endpoint (like SQL SELECT)
+- **[Event Listener](./API.md#-listener)** on a document or attribute basis to globally modify collection data
+- **[Internationalize document values](./API.md#-typei18n)** and return translated strings based upon the session or a parameter
+- **[Advanced ReST features](./API.md#route--get-post-put-patch-delete--list)** for returning lists and limiting output
 - **[Logging integrated](./API.md#-configuration)** for an easy setup and debugging
 
 ![divider](./assets/divider.small.png)
@@ -75,18 +77,22 @@ export class User extends Entity {
     @Attribute(nr => nr.min(0).max(100))
     rating: number;
     
+    @Attribute()
+    createdAt: Type.DateInsert;
+    
     @OneToMany(type => User)
     friends: Related<User[]>
 }
 
 // `Users` collection
 @Collection(of => User)
-@Route.all(
+@Route.groups(
     creators => ['guest'],
     readers => ['user','admin'],
     writers => ['viewer','admin'],
     deleters => ['admin']
 )
+@Route.use('GET','POST','PATCH','PUT','DELETE','LIST')
 export class Users extends Entities {
     @Route.GET(
         path => ':id/friends',

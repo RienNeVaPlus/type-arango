@@ -15,7 +15,7 @@ A document represents a single entry of a collection.
 
 #### `Class`
 - [Entity](#-entity) - provides ORM functions to document instances
-  - [entity.create](#entitycreate) - creates a document
+  - [entity.insert](#entityinsert) - creates a document
   - [entity.merge](#entitymergedoc) - merges an object into a document
   - [entity.replace](#entityreplacedoc-options) - replaces a document
   - [entity.remove](#entityremoveoptions) - deletes a document
@@ -26,12 +26,20 @@ A document represents a single entry of a collection.
 #### `ClassDecrorator`
 - [@Document](#document) - initializes a new document
 - [@Nested](#nested) - initializes a nested document
+- [@FromClient](#fromclientmapper) - parse request body before writing to database
+- [@ForClient](#forclientmapper) - parse document before sending to client
+
 #### `PropertyDecorator`
 - [@Attribute](#attributeschema-readers-writers) - defines property name and type as document attribute
 - [@Authorized](#authorizedreaders-writers) - protects the property with read / write roles
 - [@Index](#indextype-options) - creates an index for a property
 - [@OneToOne](#onetoonetype-relation) - defines a 1:1 relation
 - [@OneToMany](#onetomanytype-relation) - defines a 1:n relation
+
+#### `ClassAndPropertyDecorator`
+- [Listener](#-listener)
+  - [@Before.*](#beforeresolver) - Executes a resolver before requesting data from the database
+  - [@After.*](#afterresolver) - Executes a resolver after requesting data from the database
 
 ![divider](./assets/divider.small.png)
 
@@ -46,11 +54,12 @@ A collection contains documents and provides routes.
 
 #### `ClassDecorator`
 - [@Collection](#collectionofdocument-options) - initializes a collection
+- [@Route.use](#routeusemethods-options) - initializes routes by method
+- [@Route.groups](#routegroupscreators-readers-updaters-deleters) - defines roles for CRUD routes
 - [@Route.roles](#routerolesrolefunctions) - creates roles for requests by utilizing the client session
 - [@Route.auth](#routeauthauthorizefunctions) - authorizes a request depending on a document 
-- [@Route.enable](#routeenablecreators-readers-updaters-deleters) - define global roles for custom routes
-- [@Route.all](#routeallcreators-readers-updaters-deleters-options) - initializes [CRUD-like](#crud-like) routes 
 - [@Route.LIST]() - initializes a special route for fetching a list
+
 #### `ClassAndPropertyDecorator`
   - [@Route.GET](#routegetpath-schema-roles-summary-options)
   - [@Route.POST](#routepostpath-schema-roles-summary-options)
@@ -62,9 +71,11 @@ A collection contains documents and provides routes.
 
 ### 🔌 Types
 
-Types are used to better describe common patterns to store and retrieve data.
+Types are used to better describe common patterns to store and retrieve attribute data.
 
-- 🌐 [Type.I18n](#-typesi18n) - internationalization support
+- 🌐 [Type.I18n](#-typei18n) - internationalization support
+- 🕒 [Type.DateInsert](#-typedateinsert) - set attribute to `new Date` when creating new documents
+- 🕘 [Type.DateUpdate](#-typedateupdate) - set attribute to `new Date` when updating documents
 
 ![divider](./assets/divider.small.png)
 
@@ -196,6 +207,7 @@ The Entity class is primarily used to provide ORM functions to document instance
 Extend all documents from the `Entity` class provided by type-arango:
 ```ts
 import { Document, Entity } from 'type-arango'
+
 @Document()
 class User extends Entity { ... }
 ```
@@ -206,7 +218,7 @@ static route(){
     // create a user instance
     const user = new User({email:'contact@example.com'});
     // save the user to the collection
-    user.create();
+    user.insert();
     
     // change the user and return a list of modified properties
     user.name = 'RienNeVaPlus';
@@ -218,15 +230,16 @@ static route(){
 ```
 ![divider](./assets/divider.small.png)
 
-### `entity.create()`
+### `entity.insert()`
 
 Stores the instance to the collection. Throws when the document already exists. It's really just an alias for `entity.save({update:false})`.
 
+**Example** (in route)
 ```ts
 // create entity
 const user = new User({email:'hello@example.com'});
 // store in collection
-user.create();
+user.insert();
 ```
 ![divider](./assets/divider.small.png)
 
@@ -234,6 +247,7 @@ user.create();
 
 Merges `doc` into the entity, it's as simple as `Object.assign(this, doc);`.
 
+**Example** (in route)
 ```ts
 // load an user instance
 const user = Users.findOne('123');
@@ -249,6 +263,7 @@ Replaces the document with the provided object, ignoring `_saveKeys`.
 - **doc** `{[key: string]: any}` - object to replace the current document
 - **options**? `ArangoDB.ReplaceOptions` - see [ArangoDB manual](https://www.arangodb.com/docs/stable/data-modeling-documents-document-methods.html#replace)
 
+**Example** (in route)
 ```ts
 // load an user instance
 const user = Users.findOne('123');
@@ -268,6 +283,7 @@ Removes the document from the collection using `collection._remove`
   - **returnOld**? `boolean`
   - **silent**? `boolean`
 
+**Example** (in route)
 ```ts
 // load an user instance
 const user = Users.findOne('123');
@@ -288,6 +304,7 @@ Saves the values of all changed attributes (`entity._saveKeys`) to the documents
   - **silent**? `boolean`
   - **returnNew**? `boolean`
 
+**Example** (in route)
 ```ts
 // load an user instance
 const user = Users.findOne('123');
@@ -300,6 +317,7 @@ user.remove();
 
 Returns a list of unsaved / modified properties. Is used by `entity.save` in order to determine which attributes need to be written.
 
+**Example** (in route)
 ```ts
 // load an user instance
 const user = Users.findOne('123');
@@ -322,6 +340,7 @@ Properties decorated with [`@OneToOne`](#onetoonetype-relation) or [`@OneToMany`
 
 Some relations have values, but these are mainly used for fetching the related document. Type-arango overwrites these values with the fetcher function described here. However the original value is available by simply prefixing the property key with an underscore (eg `entity._profile`).
 
+**Example** (in route)
 ```ts
 // in a route
 const user = Users.findOne('123');
@@ -339,6 +358,7 @@ const profileId = user._profile;
 
 Decorates a class that has been extended by `Entity`. Documents are consumed by `@Collection`*s* and define a schema which is derived from the property types and additional decorator information.
 
+**Example**
 ```ts
 @Document()
 class User extends Entity { ... }
@@ -349,6 +369,7 @@ class User extends Entity { ... }
 
 Documents in ArangoDB can be nested. Make sure to define nested classes before the documents.
 
+**Example**
 ```ts
 @Nested()
 class UserPerson {
@@ -362,6 +383,31 @@ class User extends Entity {
     person: UserPerson;
 }
 ```
+![divider](./assets/divider.small.png)
+
+### `@FromClient(mapper)`
+
+Applied on client data when using `json()` inside a route.
+
+**Example**
+```ts
+@Document()
+@FromClient(doc => Object.assign(doc, {requestTime:new Date()})
+class User extends Entity {}
+```
+
+![divider](./assets/divider.small.png)
+
+### `@ForClient(mapper)`
+
+Applied on response document when using `send()` inside a route.
+
+**Example**
+```ts
+@Document()
+@ForClient(doc => Object.assign(doc, {requestTime:new Date()})
+class User extends Entity {}
+```
 
 ![divider](./assets/divider.png)
 
@@ -374,7 +420,8 @@ Defines an attribute of the document. Uses [metadata reflection](https://github.
 - **writers**? `string[]` - Roles with write permission to the attribute
 
 For more details on roles, see `@Authorized()`.
- 
+
+**Example**
 ```ts
 @Document()
 class User extends Entity {
@@ -396,6 +443,7 @@ Defines `reader` and `writer` roles to protect attributes in routes. The the [2n
 - **readers**? `string[]` - Roles with read permission to the attribute
 - **writers**? `string[]` - Roles with write permission to the attribute
  
+**Example**
 ```ts
 ...
 @Attribute()
@@ -427,6 +475,7 @@ Creates an index on the attribute.
  
 > **Warning**: Creating an index on an existing collections can take a some time.
 
+**Example**
 ```ts
 ...
 @Index(type => 'hash')
@@ -447,6 +496,7 @@ Defines a 1:1 relation to another entity. Decorated properties have additional f
 - **type**? `Entity` - The related document entity
 - **relation**? `(TypeEntity) => TypeEntity.attribute` - TypeEntity is an object with the same keys as the related entity and can be used to create a relation to a certain field. The default relation is `Entity._key`.
 
+**Example**
 ```ts
 @Document()
 class User {
@@ -459,13 +509,14 @@ class User {
 ```
 ![divider](./assets/divider.small.png)
 
-### @OneToMany(type, relation?)
+### `@OneToMany(type, relation?)`
 
 Defines a 1:n relation to another entity. Mostly the same as `@OneToOne` except requesting the relation returns an array of entity instances instead of a single instance. See also [`entity.$relation()`](#entityrelationkeepattributes).
 
 - **type**? `Entity` - The related document entity
 - **relation**? `(TypeEntity) => TypeEntity.attribute` - See `@OneToOne`
 
+**Example**
 ```ts
 @Document()
 class User {
@@ -474,7 +525,154 @@ class User {
 }
 ```
 
+![divider](./assets/divider.png)
 
+### 👂 Listener
+
+The `@Before.*` and `@After.*` decorators can be used as `ClassDecorator` (to apply a listener to a document) or as `PropertyDecorator` (to apply a listener to an attribute).
+
+Both decorators provide the same methods with a slightly different resolver syntax.
+- **Single listeners**
+  - `.document(resolver)` - when a document is **loaded**
+  - `.insert(resolver)` - when a document is **inserted**
+  - `.update(resolver)` - when a document is **updated**
+  - `.patch(resolver)` - when a document is **patched**
+  - `.remove(resolver)` - when a document is **removed**
+- **Combined listeners**
+  - `.modify(resolver)` - when a document is either **updated** or **patched**
+  - `.write(resolver)` - when a document is either **inserted**, **updated** or **patched**.
+
+
+> **Warning:** Resolvers are executed when using [CRUD-Routes](#crud-like), the methods `document`, `insert`, `update`, `replace` and `remove` of [RouteArg](#routearg) or `save`, `insert`, `replace` & `remove` of an [Entity](#-entity) - but not when using `query`.
+
+![divider](./assets/divider.small.png)
+
+### `@Before.*(resolver)`
+Executes the resolver before data from the database is read / inserted / updated / replaced or removed.
+
+**Example**
+```ts
+@Document()
+// avoids deletions
+@Before.remove(doc => false)
+class User {
+    @Attribute()
+    // use `new Date` as a default value when inserting documents
+    @Before.insert(value => value || new Date)
+    createdAt: Date;
+}
+```
+
+![divider](./assets/divider.small.png)
+
+### `@After.*(resolver)`
+Executes the resolver after data from the database has been read / inserted / updated / replaced or removed.
+
+**Example**
+```ts
+const MAP = ['one','two','three']
+
+@Document()
+// add virtual field to documents
+@After.document(doc => Object.assign(doc, {extra:'free'})
+class User {
+    @Attribute()
+    @After.document(value => MAP[value])
+    numericIndex: Date;
+}
+```
+
+![divider](./assets/divider.small.png)
+#### Types
+- `DocumentData` - any object that is - or will become a document
+- `ArangoDB.HttpStatus` - string of http status code (eg `forbidden` or `not-found`)
+- `Passive` - `true` or `undefined` - does nothing
+- `Cancel` - `false` or `ArangoDB.HttpStatus` - cancels the operation
+
+##### Listener arguments when used as `ClassDecorator`
+
+```ts
+// Before a document will be loaded. The callback can cancel the request.
+@Before.document( (loadDocumentKey: string, {_key, method}) => Passive | Cancel )
+
+// After a document has been loaded. Can modify the loaded document before it's returned.
+// Changes to loadedDocument are temporary until the response has been sent (like forClient).
+@After.document( (loadedDocument: DocumentData, {_key, document, method}) => Passive | Cancel | DocumentData )
+
+// Before a document is inserted. Can modify the document before it's written.
+// Changes to insertDocument are permanent (like fromClient).
+@Before.insert( (insertDocument: DocumentData, {json, method}) => Passive | Cancel | DocumentData)
+
+// After a document has been inserted. Can modify the inserted document before it's returned.
+// Changes to insertedDocument are temporary until the response has been sent (like forClient).
+@After.insert( (insertedDocument: DocumentData, {_key, document, method}) => Passive | Cancel | DocumentData )
+
+// Before a document is updated. Can modify the document before it's written.
+// Changes to updateDocument are permanent (like fromClient).
+@Before.update( (updateDocument: DocumentData, {_key, json, method}) => Passive | Cancel | DocumentData )
+
+// After a document has been updated. Can modify the updated document before it's returned.
+// Changes to updatedDocument are temporary until the response has been sent (like forClient).
+@After.update( (updatedDocument: DocumentData, {_key, document, method} ) => Passive | Cancel | DocumentData )
+
+// Before a document is replaced. Can modify the document before it's written.
+// Changes to replaceDocument are permanent (like fromClient).
+@Before.replace( (replaceDocument: DocumentData, {_key, json, method}) => Passive | Cancel | DocumentData)
+
+// After a document has been replaced. Can modify the document before it's returned.
+// Changes to replacedDocument are temporary until the response has been sent (like forClient).
+@After.replace( (replacedDocument: DocumentData, {_key, document, method}) => Passive | Cancel | DocumentData )
+
+// Before a document is removed. Can avoid deletions.
+@Before.remove( (removeDocumentKey: string, {_key, method}) => Passive | Cancel )
+
+// After a document has been removed.
+@After.remove( (removedDocumentKey: string, {_key, method}) => Passive )
+```
+
+##### Listener arguments when used as `ClassDecorator`
+
+```ts
+// Before a document will be loaded. Rarely needed, available for the sake of completeness
+@Before.document( (loadDocumentKey: string, {_key,attribute,method} ) => void )
+
+// After an attribute has been loaded. Can modify the attribute before it's returned.
+// Changes to attributeValue are temporary until the response has been sent (like forClient).
+@After.document( (attributeValue: any, {_key, document, attribute, method}) => any )
+
+// Before a document in inserted. Can modify the attribute before it's written.
+// Changes to attributeValue are permanent (like fromClient).
+@Before.insert( (insertAttributeValue: any, {json, attribute, method}) => any )
+
+// After a document has been inserted. Can modify the inserted document before it's returned.
+// Changes to insertedAttributeValue are temporary until the response has been sent (like forClient).
+@After.insert( (insertedAttributeValue: any, {_key, document, attribute, method}) => any )
+
+// Before a document is updated. Can modify the attribute before it's written.
+// Changes to attributeValueToUpdate are permanent (like fromClient).
+@Before.update( (updateAttributeValue: any, {_key, json, attribute, method}) => any )
+
+// After a document has been updated. Can modify the updated attribute before it's returned.
+// Changes to updatedAttributeValue are temporary until the response has been sent (like forClient).
+@After.update( (updatedAttributeValue : any, {_key, document, attribute, method}) => any )
+
+// Before a document is replaced. Can modify the attribute before it's written.
+// Changes to documentToReplace are permanent (like fromClient).
+@Before.replace( (replaceAttributeValue: any, {_key, json, attribute, method}) => any )
+
+// After a document has been replaced. Can modify the attribute before it's returned.
+// Changes to replacedDocument are temporary until the response has been sent (like forClient).
+@After.replace( (replacedAttributeValue : any, {_key, document, attribute, method}) => any )
+
+// Before a document is removed.
+@Before.remove( (removeDocumentKey: string, {_key, attribute, method}) => void )
+
+// After a document has been removed.
+@After.remove( (removedDocumentKey: string, {_key, attribute, old, method}) => void )
+```
+
+> **Note:** Don't use listeners when you can use `@ForClient` / `@FromClient` instead.
+ 
 ![divider](./assets/divider.png)
 
 ### 🗄 Entities
@@ -511,7 +709,8 @@ Returns a list of entity instances.
   - **limit?** `number | [offset, count]` - limits the results AQL style eg. `[10, 2]`
   - **keep?** `string[]` - list attributes to load from collection
   - **unset?** `string[]` - instead of selecting attributes with `keep`, `unset` loads every other attribute, except the provided ones.
-  
+
+**Example**
 ```ts
 static route(){
     // returns a single User instance
@@ -526,6 +725,7 @@ The same as `entities.find` except it returns a single instance instead of an ar
 
 - **options** `FilterOptions | _key` - see [`entities.find`](#entitiesfindoptions)
 
+**Example**
 ```ts
 static route(){
     // returns a single User instance
@@ -555,10 +755,68 @@ Decorates a class that has been extended by `Entities`. Collections consume `@Do
   - **shardKeys**? `string[]`
   - **replicationFactor**? `number`
 
+**Example**
 ```ts
 @Collection(of => User)
 class Users extends Entities { ... }
 ```
+![divider](./assets/divider.small.png)
+
+### `@Route.use(...methods, options?)`
+
+Shortcut for creating multiple routes. Creates [`GET`](#routegetpath-schema-roles-summary-options), [`POST`](#routepostpath-schema-roles-summary-options), [`PUT`](#routeputpath-schema-roles-summary-options), [`PATCH`](#routepatchpath-schema-roles-summary-options), [`DELETE`](#routedeletepath-schema-roles-summary-options) & [`LIST`](#routelistschema-roles-summary-options) routes for the collection.
+
+- **...methods** `string[]` - a list of methods or a preset name
+- **options**? `Partial<RouteOpt>` - see [RouteOpt](#routeopt)
+
+**Example**
+```ts
+@Collection(of => Company)
+@Route.use('GET', 'POST', 'PATCH', 'PUT', 'DELETE')
+class Companies extends Entities { ... }
+```
+
+#### Presets
+
+Instead of writing out all the methods, extremely lazy developers can use common preset strings.
+
+| Preset  | [GET](#routegetpath-schema-roles-summary-options) | [POST](#routepostpath-schema-roles-summary-options) | [PATCH](#routepatchpath-schema-roles-summary-options) | [PUT](#routeputpath-schema-roles-summary-options) | [DELETE](#routedeletepath-schema-roles-summary-options) | [LIST](#routelistschema-roles-summary-options) |
+| -------        | --- | ---- | ----- | --- | ------ | ---- |
+| `ALL+` or `*`  | ⚫  | ⚫    | ⚫    | ⚫  | ⚫     | ⚫   |
+| `ALL`          | ⚫  | ⚫    | ⚫    | ⚫  | ⚫     | ⚪   |
+| `CRUD+`        | ⚫  | ⚫    | ⚫    | ⚪  | ⚫     | ⚫   |
+| `CRUD`         | ⚫  | ⚫    | ⚫    | ⚪  | ⚫     | ⚪   |
+
+![divider](./assets/divider.small.png)
+
+### `@Route.groups(creators, readers, updaters, deleters)`
+
+Sets roles for all [CRUD-like](./API.md#crud-like) routes.
+
+- **creators** `() => string[] | string[]` - required roles for `POST` requests
+- **readers** `() => string[] | string[]` - required roles for `GET` and `LIST` requests
+- **updaters** `() => string[] | string[]` - required roles for `PUT` and `PATCH` requests
+- **deleters** `() => string[] | string[]` - required roles for `DELETE` requests
+
+**Example**
+```ts
+@Collection(of => User)
+// setup global roles for all requests below
+@Route.groups(
+    creators => ['guest'],
+    readers => ['user']
+)
+@Route.use(['POST','GET'])
+class Users extends Entities { ... }
+```
+![divider](./assets/divider.png)
+
+### Route- `GET`, `POST`, `PUT`, `PATCH`, `DELETE` & `LIST`
+
+The `ClassAndProperyDecorators` can be applied on either a static method or a class. When a class is decorated the route will behave as expected from the route method.
+
+For additional details on these routes checkout the Swagger Docs at the `API` tab inside of the ArangoDB Web Interface.
+
 ![divider](./assets/divider.small.png)
 
 ### `@Route.roles(...roleFunctions)`
@@ -582,6 +840,7 @@ Takes a function to append additional roles for all requests to any route of the
   - **auth**? `RouteAuthorize`
   - **error** `(status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response` - send an error response
 
+**Example**
 ```ts
 @Collection(of => User)
 // adds 'viewer' to userRoles when requesting a document where `_key` equals `uid` of the session
@@ -604,6 +863,7 @@ Takes a function to determine access permission on a document level. Used whenev
   - **doc** `DocumentData` - alias for `document`
 - **method** - 
 
+**Example**
 ```ts
 @Collection(of => User)
 // allows access to documents with an user attribute qual to session.uid
@@ -612,61 +872,7 @@ class Users extends Entities { ... }
 ```
 ![divider](./assets/divider.small.png)
 
-### `@Route.enable(creators, readers, updaters, deleters)`
-
-Sets the roles for all [CRUD-like](./API.md#crud-like) routes.
-
-- **creators** `() => string[] | string[]` - required roles for `POST` requests
-- **readers** `() => string[] | string[]` - required roles for `GET` requests
-- **updaters** `() => string[] | string[]` - required roles for `PUT` and `PATCH` requests
-- **deleters** `() => string[] | string[]` - required roles for `DELETE` requests
-
-```ts
-@Collection(of => User)
-// setup global roles for all requests below
-@Route.enable(
-    creators => ['guest'],
-    readers => ['user'],
-    updaters => ['user'],
-    deleters => ['admin']
-)
-@Route.POST()
-@Route.GET()
-class Users extends Entities { ... }
-```
-![divider](./assets/divider.small.png)
-
-### `@Route.all(creators, readers, updaters, deleters, options?)`
-
-Shortcut for creating all routes at once. Creates `POST`, `GET`, `PUT`, `PATCH` and `DELETE` routes for the collection.
-
-- **creators** `() => string[] | string[]` - required roles for `POST` requests
-- **readers** `() => string[] | string[]` - required roles for `GET` requests
-- **updaters** `() => string[] | string[]` - required roles for `PUT` and `PATCH` requests
-- **deleters** `() => string[] | string[]` - required roles for `DELETE` requests
-- **options**? `Partial<RouteArg>` - see [RouteArg](#routearg)
-
-```ts
-@Collection(of => Company)
-@Route.all(
-    creators => ['guest'],
-    readers => ['user'],
-    updaters => ['user'],
-    deleters => ['admin']
-)
-class Companies extends Entities { ... }
-```
-![divider](./assets/divider.png)
-
-### Route- GET, POST, PUT, PATCH & DELETE
-
-The `ClassAndProperyDecorators` can be applied on either a static method or a class. When a class is decorated the route will behave as expected from the route method.
-
-For additional details on these routes checkout the Swagger Docs at the `API` tab inside of the ArangoDB Web Interface.
-
-![divider](./assets/divider.small.png)
-
-### RouteArg
+### `RouteArg`
 
 All route functions receive a single argument, the `RouteArg` which contains useful information and tools to describe, authenticate, read and answer requests. Most of them are well known from the Foxx routes.
 
@@ -675,13 +881,18 @@ All route functions receive a single argument, the `RouteArg` which contains use
 - **method** `"get" | "post" | "put" | "patch" | "delete"`
 - **action** `"create" | "read" | "update" | "delete" | "list"`
 - **path** `string` - path of the route
-- **param** `{[key: string]: any}` - object of only valid path- and query parameters
+- **param** `{[key: string]: any}` - object of (only) valid path- and query parameters
 - **validParams** `string[]` - list of path- and query parameter names
 - **roles** `string[]` - roles used to authorize the request
 - **userRoles** `string[]` - all roles of the client
 - **collection** `ArangoDB.Collection` - [collection object](https://www.arangodb.com/docs/3.4/data-modeling-collections-database-methods.html#collection) of the entity
-- **_key** `string` - shortcut for `req.param('_key')`
-- **document** `() => Document` - function to resolve and cache the document for the lifetime of the request. Avoids duplicate reads.
+- **_key** `string` - shortcut for `param._key`
+- **exists** `(name: string) => boolean` - shortcut for `collection.exists`
+- **document** `(key = _key) => Document` - resolves and caches a document for the lifetime of the request. Avoids duplicate reads. Loads the current document by default, can load other documents when called with an argument.
+- **insert** `(data: DocumentData) => ArangoDB.InsertResult` - inserts a document into the collection, executes callbacks from `@On.insert`.
+- **update** `(dataOrKey = _key, dataOrOptions?, options?) => ArangoDB.UpdateResult` - updates a document of the collection, executes callbacks from `@On.update`. Uses `_key` as default document key.
+- **replace** `(dataOrKey = _key, dataOrOptions?, options?) => ArangoDB.UpdateResult` - replaces a document of the collection, executes callbacks from `@On.replace`. Uses `_key` as default document key.
+- **remove** `(keyOrOptions = _key, options?) => ArangoDB.RemoveResult` - removes a document of the collection, executes callbacks from `@On.remove`. Uses `_key` as default document key.
 - **query** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor` - executes a query
 - **aql** `(strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query` - builds aql string
 - **requestedAttributes** `string[]` - list of requested attributes
@@ -697,28 +908,24 @@ All route functions receive a single argument, the `RouteArg` which contains use
 
 ![divider](./assets/divider.small.png)
 
-### RouteOpt
+### `RouteOpt`
 
 Routes can be further configured by using the following options.
 
-- **options**? `RouteOpt`
-  - **body**? `RouteBody`
-  - **pathParams**? `[string, Schema, string?][]`
-  - **queryParams**? `[string, Schema, string?][]`
-  - **response**? `RouteResponse`
-    - **status** `RouteStatus`
-	- **schema** `Foxx.Schema | Foxx.Model`
-	- **mime** `string[]`
-	- **description**? `string`
-  - **errors**? `[RouteStatus, string][]`
-  - **path**? `string`
-  - **process**? `boolean`
-  - **handlerName**? `string`
-  - **handler**? `(arg: RouteArg) => any` - The handler of the current request
-  - **roles**? `string[]` - List of required roles for accessing the current request
-  - **userRoles** `string[]` - List of provided roles for the current request
-  - **json** `(omitUnwritableAttributes?: boolean) => DocumentData` - Returns the request body with respect to the document attribute roles (stripping unauthorized attributes, but leaving unknown attributes in place).
-  - **send** `(data: DocumentData, omitUnreadableAttributes?: boolean) => Foxx.Response` - send a response - is internally called with any truthful return from a route. Return `void` or `false` to avoid this.
+- **body**? `RouteBody`
+- **pathParams**? `[string, Schema, string?][]`
+- **queryParams**? `[string, Schema, string?][]`
+- **response**? `RouteResponse`
+  - **status** `RouteStatus`
+  - **schema** `Foxx.Schema | Foxx.Model`
+  - **mime** `string[]`
+  - **description**? `string`
+- **errors**? `[RouteStatus, string][]`
+- **path**? `string`
+- **process**? `boolean`
+- **handlerName**? `string`
+- **handler**? `(arg: RouteArg) => any` - The handler of the current request
+- **roles**? `string[]` - List of required roles for accessing the current request
   
 ![divider](./assets/divider.small.png)
 
@@ -735,6 +942,7 @@ Creates a `GET` route on `collectionName/{_key}`.
 
 > The order of the arguments does not matter as long as the options are the last argument.
 
+**Example**
 ```ts
 @Collection(of => User)
 // executed as a ClassDecorator - creates a route on `GET users/:_key` to return a User
@@ -771,6 +979,7 @@ Creates a `POST` route on `collectionName/{_key}`. Provides a route to create  d
 
 > The order of the arguments does not matter as long as the options are the last argument.
 
+**Example**
 ```ts
 @Collection(of => User)
 // executed as a ClassDecorator - creates a route on `POST users/:_key` to create Users
@@ -801,6 +1010,7 @@ Creates a `PATCH` route on `collectionName/{_key}`. Provides a route to update s
 
 > The order of the arguments does not matter as long as the options are the last argument.
 
+**Example**
 ```ts
 @Collection(of => User)
 // executed as a ClassDecorator - creates a route on `PATCH users/:_key` to update Users
@@ -819,6 +1029,7 @@ class Users extends Entities {
 
 The same as [`Route.PATCH`](#routepatchpath-schema-roles-summary-options) but instead of using `collection._update` it uses `collection._replace`.
 
+**Example**
 ```ts
 @Collection(of => User)
 // executed as a ClassDecorator - creates a route on `PUT users/:_key` to replace Users
@@ -843,6 +1054,7 @@ Creates a `DELETE` route on `collectionName/{_key}`. Provides a route to remove 
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
 - **options**? `RouteOpt` - see [RouteOpt](#routeopt)
 
+**Example**
 ```ts
 @Collection(of => User)
 // executed as a ClassDecorator - creates a route on `DELETE users/:_key` to create Users
@@ -866,6 +1078,7 @@ Creates a `GET` route on `/collectionName` for returning a list of documents. An
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
 - **options**? `RouteOpt` - see [RouteOpt](#routeopt)
 
+**Example**
 ```ts
 @Collection(of => User)
 // creates a route on `GET users?country=US` 
@@ -876,7 +1089,7 @@ class Users extends Entities {}
 
 ![divider](./assets/divider.png)
 
-### 🌐 Types.I18n
+### 🌐 `Type.I18n`
 
 Provides simple internationalization support by storing strings in multiple languages as nested objects. If this type is returned in a request with a `locale` parameter or `session().data.locale` provided, only the respective value will be returned - or if none provided the english (`en`) value.
 
@@ -884,38 +1097,74 @@ Set the query parameter `locale` to `*` in order to return all values from a rou
 
 > Don't hesitate to use country specific languages like `de-CH`. When a provided locale has no direct match, the country code is ignored and the global locale value (`de`) will be returned.
 
+**Example**
 ```ts
 @Document()
-@Route.GET()
 class Page extends Entity {
     @Attribute()
     title: Type.I18n;
 }
 
+@Collection(of => Page)
+@Route.GET()
+class Pages extends Entities { }
+
 // document in collection
-{ "title": { "en": "Hello World", "de": "Hallo Welt", "de-CH": "Grüezi Welt" } }
+{ "_key": "1", "title": { "en": "Hello World", "de": "Hallo Welt", "de-CH": "Grüezi Welt" } }
 
 // request examples
-// GET page/123?locale=de-AT                        => {title:'Hallo Welt'} 
-// GET page/123 && session:{data:{locale:'de-CH'}}  => {title:'Grüezi Welt'} 
-// GET page/123                                     => {title:'Hello World'} 
-// GET page/123?locale=*                            => original value
+// GET pages/1?locale=de-AT                        => {title:'Hallo Welt'} 
+// GET pages/1 && session:{data:{locale:'de-CH'}}  => {title:'Grüezi Welt'} 
+// GET pages/1                                     => {title:'Hello World'} 
+// GET pages/1?locale=*                            => original value
 ```
 
-![divider](./assets/divider.png)
+![divider](./assets/divider.small.png)
 
-### 📜 En-*(hanced)* Joi
+### 🕒 `Type.DateInsert`
 
-Joi originates from plain JavaScript, but now that we have access to Types, it can be enhanced. Therefore type-arango comes with `Enjoi` which is a simple wrapper around `Joi`. Enjoi is especially useful when using the [@Attribute](#attributeschema-readers-writers) Decorator and it's always involved when there is a mention of `$ => ...` in an example.
+Sets a value of `new Date()` whenever a new document is created.
 
+> This is really just another way of using the `@Before.insert(resolver)` decorator
+
+**Example**
 ```ts
-const string = $(String)            // = Joi.string();
-const obj = $({
-    bool: Boolean                   // = Joi.boolean()
-    number: $(Number).integer(),    // = Joi.number().integer()
-    valid: ['valid','strings'],     // = Joi.any().valid('valid','strings')
-    attribute: $(User).email        // = Joi.string().email() (from User entity)
-});                                 // = Joi.object().keys(...)
+@Document()
+class User extends Entity {
+    @Attribute()
+    createdAt: Type.DateInsert;
+}
+
+@Collection(of => User)
+@Route.POST()
+class Users extends Entities { }
+
+// request
+// POST /users/1 => {_key: "1", createdAt: "2019-03-18T12:00:00.000Z"} 
+```
+
+![divider](./assets/divider.small.png)
+
+### 🕘 `Type.DateUpdate`
+
+Sets a value of `new Date()` whenever a document is updated.
+
+> This is really just another way of using the `@Before.insert(resolver)` decorator
+
+**Example**
+```ts
+@Document()
+class User extends Entity {
+    @Attribute()
+    updatedAt: Type.DateUpdate;
+}
+
+@Collection(of => User)
+@Route.PATCH()
+class Users extends Entities { }
+
+// request
+// PATCH /users/1 => {_key: "1", updatedAt: "2019-03-18T12:00:00.001Z"} 
 ```
 
 ![divider](./assets/divider.png)
@@ -924,6 +1173,7 @@ const obj = $({
 
 Does not really do anything as of now. Can be decorate a `Class` or a `Propery` and might be to used to further describe routes / entities in the future.
 
+**Example**
 ```ts
 @Document()
 @Description('Every user has a single profile document with a relation on User.profile')
@@ -937,14 +1187,33 @@ class UserProfile extends Entitiy {
 
 ![divider](./assets/divider.png)
 
+### 📜 En-*(hanced)* Joi
+
+Joi originates from plain JavaScript, but now that we have access to Types, it can be enhanced. Therefore type-arango comes with `Enjoi` which is a simple wrapper around `Joi`. Enjoi is especially useful when using the [@Attribute](#attributeschema-readers-writers) Decorator and it's always involved when there is a mention of `$ => ...` in an example.
+
+**Example**
+```ts
+const string = $(String)            // = Joi.string();
+const obj = $({
+    bool: Boolean                   // = Joi.boolean()
+    number: $(Number).integer(),    // = Joi.number().integer()
+    valid: ['valid','strings'],     // = Joi.any().valid('valid','strings')
+    attribute: $(User).email        // = Joi.string().email() (from User entity)
+});                                 // = Joi.object().keys(...)
+```
+
+
+![divider](./assets/divider.png)
+
 ### *"CRUD like"*
 
-The decorator [`@Route.all`](#routeallcreators-readers-updaters-deleters-options) expects [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) roles but provides five instead of the expected four routes, this is intended because the `updateRoles` can either `PATCH` (update) or `PUT` (replace) an entity.
+The decorator [`@Route.groups`](#routegroupscreators-readers-updaters-deleters) expects [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) roles but provides five instead of the expected four routes, this is intended because the `updateRoles` can either `PATCH` (update) or `PUT` (replace) an entity.
 
 
 | Method | [CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) | Roles |
 | ------ | --------- | -------- |
 | GET    | Read      | readers  |
+| LIST   | Read      | readers  |
 | POST   | Create    | creators |
 | PATCH  | Update    | updaters |
 | PUT    | Update    | updaters |
