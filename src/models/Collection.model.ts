@@ -3,7 +3,7 @@ import {Document, getDocumentForContainer, Route as RouteModel, Scalar} from './
 import {argumentResolve, concatUnique, db, enjoi, isObject, queryBuilder} from '../utils'
 import {
 	CreateCollectionOptions,
-	DecoratorIds,
+	DecoratorId,
 	DecoratorStorage,
 	QueryOpt,
 	RoleObject,
@@ -99,14 +99,10 @@ export class Collection {
 		// if(roles.length && onlyWhenEmpty && !this.roles[key].length)
 		this.roles[key] = concatUnique(this.roles[key], roles);
 		if(this.doc) this.doc!.roles = concatUnique(this.doc!.roles, roles);
-		else console.log('CANNOT ADD ROLES, DOCUMENT NOT READY');
+		//else console.log('CANNOT ADD ROLES, DOCUMENT NOT READY');
 	}
 
-	// public addMetadata(id: MetadataId, attribute: string, data: MetadataTypes): void {
-	// 	this.metadata.unshift({id,attribute,data});
-	// }
-
-	public decorate(decorator: DecoratorIds, data: any){
+	public decorate(decorator: DecoratorId, data: any){
 		this.decorator[decorator] = [...(this.decorator[decorator]||[]), {...data,decorator}];
 	}
 
@@ -139,8 +135,6 @@ export class Collection {
 		const { ofDocumentFunction, options = {} } = Collection![0];
 		if(options.name) this.name = options.name;
 
-		// const col = getCollectionForContainer(prototype);
-		// col.decorate('Route.auth', {prototype,authorizeFunction})
 		const doc = this.doc = getDocumentForContainer(argumentResolve(ofDocumentFunction));
 		doc.col = this;
 
@@ -215,6 +209,11 @@ export class Collection {
 
 			if(options)
 				opt = Object.assign(options, opt);
+
+			if(method === 'LIST'){
+				method = 'get';
+				opt.action = 'list';
+			} else method = method.toLowerCase();
 
 			opt = RouteModel.parsePath(opt, this.route);
 

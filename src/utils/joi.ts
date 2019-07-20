@@ -18,59 +18,55 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
 
 	let j: Schema = Joi.any();
 
-	if(!inp){}
-	else if(isObject(inp)){
-		if(inp.prototype){
-			const doc = getDocumentForContainer(inp);
-			if(doc) j = Joi.object().keys(doc.schema);
-		} else {
-			Object.keys(inp).forEach(k => inp[k] = toJoi(inp[k]));
-			j = Joi.object().keys(inp);
-		}
-	} else if(Array.isArray(inp)){
-		j = Joi.any().valid(...inp);
-	} else {
-		switch(inp){
-			case String:
-			case 'string': j = Joi.string(); break;
+	switch(inp){
+		case String:
+		case 'string': j = Joi.string(); break;
 
-			case Number:
-			case 'number': j = Joi.number(); break;
+		case Number:
+		case 'number': j = Joi.number(); break;
 
-			case Array:
-			case 'array': j = Joi.array(); break;
+		case Array:
+		case 'array': j = Joi.array(); break;
 
-			case Boolean:
-			case 'boolean': j = Joi.boolean(); break;
+		case Boolean:
+		case 'boolean': j = Joi.boolean(); break;
 
-			case 'binary': j = Joi.binary(); break;
+		case 'binary': j = Joi.binary(); break;
 
-			case Date:
-			case 'date': j = Joi.date(); break;
+		case Date:
+		case 'date': j = Joi.date(); break;
 
-			case Function:
-			case 'func':
-			case 'function': j = Joi.func(); break;
+		case Function:
+		case 'func':
+		case 'function': j = Joi.func(); break;
 
-			case Object:
-			case 'object': j = Joi.object(); break;
+		case Object:
+		case 'object': j = Joi.object(); break;
 
-			case 'any': j = Joi.any(); break;
+		case 'any': j = Joi.any(); break;
 
-			case 'alternatives': j = Joi.alternatives(); break;
+		case 'alternatives': j = Joi.alternatives(); break;
 
-			default:
-				if(!inp) break;
+		default:
+			if(!inp) break;
 
+			if(Array.isArray(inp)){
+				j = Joi.any().valid(...inp);
+			}
+			else if(isObject(inp)){
 				if(inp.prototype){
 					const doc = getDocumentForContainer(inp);
 					if(doc) j = Joi.object().keys(doc.schema); break;
+				} else {
+					Object.keys(inp).forEach(k => inp[k] = toJoi(inp[k]));
+					j = Joi.object().keys(inp);
 				}
-
-				j = Joi.any();
-				break;
-		}
+			}
+			break;
 	}
+
+	if(!j)
+		j = Joi.any();
 
 	if(presence === 'required'){
 		j = j.required();
@@ -86,18 +82,13 @@ export function enjoi(inp?: string | any, presence: Presence = 'optional') {
 	if(inp === undefined)
 		return Joi;
 
-	const type = typeof inp;
-
-	if(isObject(inp)){
-		return toJoi(inp, presence);
-	}
-
-	if(type === 'function'){
+	// return document schema for entity references
+	if(typeof inp === 'function'){
 		const doc = findDocumentForContainer(inp);
 		return doc ? doc.schema : toJoi(inp, presence);
 	}
 
-	return toJoi(inp);
+	return toJoi(inp, presence);
 }
 
 export function joiDefaults(obj: any, override: any = {}){

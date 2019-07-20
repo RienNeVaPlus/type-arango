@@ -1,13 +1,22 @@
-import {Collection} from '.'
+import {Document,Collection} from '.'
 import {config, logger, RouteArg, routes} from '../index'
-import {db, joiDefaults, omit, pick, toArray, removeValues, queryBuilder} from '../utils'
+import {db, joiDefaults, omit, pick, queryBuilder, removeValues, toArray} from '../utils'
 import {
-	DocumentData, RouteData, RouteMethod, RouteOpt, RouteQueryParam, RouteResponse, RouteRolesArg, RouteAction,
+	DocumentData,
+	QueryOpt,
 	Roles,
-	RouteAuthArg, QueryOpt
+	RouteAction,
+	RouteAuthArg,
+	RouteData,
+	RouteMethod,
+	RouteOpt,
+	RouteQueryParam,
+	RouteResponse,
+	RouteRolesArg
 } from '../types'
 import {Scalar} from './Scalar.model'
 import * as Joi from 'joi'
+import {MissingKeyError} from '../errors';
 
 const REGEX_PATH_PARAM: RegExp = /:+([^=/?&]+)[=]?([^/?&]+)?/gi;
 const mime: string[] = ['application/json'];
@@ -211,8 +220,8 @@ export class Route {
 					break;
 
 				case 'post':
-					summary = summary || `Creates ${name}`;
-					description = description || `Creates and prints the **${name}** document of the collection **${col.name}**.`;
+					summary = summary || `Inserts ${name}`;
+					description = description || `Inserts and prints the **${name}** document of the collection **${col.name}**.`;
 					body = body || [col.doc!.joi, `📑 **${name}  document to create**`];
 					response.status = 'created';
 					response.description = `The newly created ${name} document of the ${col.name} collection.`;
@@ -316,6 +325,11 @@ export class Route {
 		info('- Setup %s %s', method.toUpperCase(), path);
 
 		const collection = db._collection(name);
+		const document = Route.document.bind(null, collection, doc);
+		const insert = Route.insert.bind(null, collection, doc);
+		const update = Route.modify.bind(null, collection, doc, 'update');
+		const replace = Route.modify.bind(null, collection, doc, 'replace');
+		const remove = Route.remove.bind(null, collection, doc);
 		const validParams: string[] = [];
 		queryParams.forEach(qp => validParams.push(qp[0]));
 		pathParams.forEach(qp => validParams.push(qp[0]));
@@ -339,10 +353,15 @@ export class Route {
 
 				const _key = param._key;
 				const args: RouteRolesArg = {
-					req, res, roles, path, method, action, aql, validParams, param,
+					name, req, res, roles, path, method, action, aql, validParams, param,
 					_key,
 					collection,
-					document: Route.document.bind(null, collection, tmp, _key),
+					document: document.bind(null, tmp, action !== 'create', _key),
+					exists: collection.exists.bind(collection),
+					insert,
+					update: update.bind(null, _key),
+					replace: replace.bind(null, _key),
+					remove: remove.bind(null, _key),
 					query: Route.query.bind(null),
 					session: Route.session.bind(null, req, res),
 					requestedAttributes: req.queryParams.attributes ? req.queryParams.attributes.split(',') : null,
@@ -435,6 +454,110 @@ export class Route {
 	}
 
 	/**
+	 * Request based document cache in order to avoid duplicate calls to collection.document (only active when document() is called without an argument)
+	 */
+	static document(collection: ArangoDB.Collection, doc: Document, tmp: any = {}, canThrow: boolean = true, key: string, selector?: string | ArangoDB.DocumentLike){
+		let k: string | ArangoDB.DocumentLike = selector || key;
+		if(!k) throw new MissingKeyError(collection.name());
+
+		// temp cache to avoid duplicate reads
+		if(!selector || selector === key){
+			if(tmp.doc) return tmp.doc;
+			return tmp.doc = Route.documentRead(collection, doc, canThrow, k);
+		}
+		return Route.documentRead(collection, doc, canThrow, k);
+	}
+
+	/**
+	 * Used by Route.document
+	 */
+	static documentRead(collection: ArangoDB.Collection, doc: Document, canThrow: boolean = true, selector: string | ArangoDB.DocumentLike){
+		selector = doc.emitBefore('document', selector);
+		try { return doc.emitAfter('document', collection.document(selector), selector); }
+		catch(e){
+			if(canThrow) throw e;
+			return {};
+		}
+	}
+
+	/**
+	 * Executes collection.insert, triggers listeners
+	 */
+	static insert(collection: ArangoDB.Collection, doc: Document, data: DocumentData, options?: ArangoDB.InsertOptions){
+		data = doc.emitBefore('write', doc.emitBefore('insert', data));
+		return doc.emitAfter('write', doc.emitAfter('insert', collection.insert(data, options)));
+	}
+
+	/**
+	 * Executes collection.update / collection.replace, triggers listeners
+	 */
+	static modify(
+		collection: ArangoDB.Collection,
+		doc: Document,
+		method: 'update' | 'replace',
+		key: string,
+		selectorOrData: string | ArangoDB.DocumentLike | DocumentData,
+		dataOrOptions?: DocumentData | ArangoDB.UpdateOptions,
+		options?: ArangoDB.UpdateOptions
+	){
+		let k: string | ArangoDB.DocumentLike = key;
+		let d: DocumentData;
+		let o: ArangoDB.UpdateOptions;
+
+		// selector is selector
+		if(typeof selectorOrData === 'string' || (selectorOrData && (selectorOrData._key || selectorOrData._id))){
+			k = selectorOrData as string;
+			d = dataOrOptions as DocumentData;
+			o = options as ArangoDB.UpdateOptions;
+		}
+		// selector is document
+		else {
+			d = selectorOrData as DocumentData;
+			o = dataOrOptions as ArangoDB.UpdateOptions;
+		}
+
+		if(!k) throw new MissingKeyError(collection.name());
+
+		d = doc.emitBefore('write',
+			doc.emitBefore('modify',
+				doc.emitBefore(method, d, k),
+			k),
+		k);
+
+		return doc.emitAfter('write', doc.emitAfter('modify',
+			doc.emitAfter(method, collection[method](k, d, o), k),
+		k), k);
+	}
+
+	/**
+	 * Executes collection.remove, triggers listeners
+	 */
+	static remove(
+		collection: ArangoDB.Collection,
+		doc: Document,
+		key: string,
+		selector?: string | ArangoDB.DocumentLike | ArangoDB.RemoveOptions,
+		options?: ArangoDB.RemoveOptions
+	){
+		let k: string | ArangoDB.DocumentLike = key;
+		let o: ArangoDB.RemoveOptions = {};
+		// selector is selector
+		if(typeof selector === 'string' || (selector && (selector.hasOwnProperty('_key') || selector.hasOwnProperty('_id')))){
+			k = selector as string;
+			o = options as ArangoDB.RemoveOptions;
+		}
+		// selector is option
+		else if(selector) {
+			o = selector as ArangoDB.RemoveOptions;
+		}
+
+		if(!k) throw new MissingKeyError(collection.name());
+
+		k = doc.emitBefore('remove', k);
+		return doc.emitAfter('remove', collection.remove(k, o));
+	}
+
+	/**
 	 * Get or set the session
 	 */
 	static session(req: Foxx.Request, res: Foxx.Response, dataOrEnforce?: Partial<Foxx.Session> | true): Foxx.Session {
@@ -452,13 +575,6 @@ export class Route {
 		// write
 		Object.keys(data).forEach((k: string) => (req.session as any)[k] = (data as any)[k]);
 		return req.session!;
-	}
-
-	/**
-	 * Request based document cache in order to avoid duplicate calls to collection.document
-	 */
-	static document(collection: ArangoDB.Collection, tmp: any, _key: string){
-		return _key ? (tmp.doc || (tmp.doc = collection.document(_key))) : null
 	}
 
 	/**
@@ -578,15 +694,17 @@ export class Route {
 		forClient: any,
 		stripAttributes: string[],
 		requestedAttributes: string[],
-		doc: DocumentData,
+		doc: DocumentData | any,
 		omitUnreadableAttributes: boolean | string = true
 	): Foxx.Response {
 		const call = Route.forClient.bind(null, req, res, forClient, stripAttributes, requestedAttributes, omitUnreadableAttributes);
 		let resp;
 		if(Array.isArray(doc)){
 			resp = doc.map(d => call({...d}));
-		} else {
+		} else if(doc && typeof doc === 'object') {
 			resp = call({...doc});
+		} else {
+			resp = doc;
 		}
 		logger.debug('Send response %o', resp);
 
@@ -596,37 +714,37 @@ export class Route {
 	/**
 	 * Read document
 	 */
-	static get({_key, auth, collection, document}: RouteArg){
-		logger.info('GET %s/%s', collection.name(), _key);
+	static get({_key, auth, name, document}: RouteArg){
+		logger.info('GET %s/%s', name, _key);
 		return auth(document(), 'get', 'read');
 	}
 
 	/**
 	 * Create document
 	 */
-	static post({json, res, auth, _key, collection}: RouteArg) {
+	static post({json, res, auth, _key, name, exists, insert}: RouteArg) {
 		const body = json();
 		_key = _key || body._key;
 		body._key = _key;
 
-		logger.info('POST %s/%s', collection.name(), _key||'n/a',body);
+		logger.info('POST %s/%s', name, _key||'n/a',body);
 
-		if(_key && collection.exists(_key))
+		if(_key && exists(_key))
 			return res.throw(409, 'Document already exists');
 
 		const doc = auth(_key ? Object.assign(body, {_key}) : body, 'post', 'create');
 		if(!doc) return;
 
-		return Object.assign(doc, collection.insert(doc));
+		return Object.assign(doc, insert(doc));
 	}
 
 	/**
 	 * Update document
 	 */
-	static patch({json, res, _key, document, collection, hasAuth, auth}: RouteArg) {
-		logger.info('PATCH %s/%s', collection.name(), _key);
+	static patch({json, res, _key, document, exists, update, name, hasAuth, auth}: RouteArg) {
+		logger.info('PATCH %s/%s', name, _key);
 
-		if(!collection.exists(_key))
+		if(!exists(_key))
 			return res.throw(409, 'Document does not exist');
 
 		const doc = json();
@@ -634,43 +752,43 @@ export class Route {
 		if(hasAuth && !auth(Object.assign(document(), doc), 'patch', 'update'))
 			return;
 
-		return <any>collection.update(_key, doc, {returnNew:true}).new;
+		return update(_key, doc, {returnNew:true}).new;
 	}
 
 	/**
 	 * Replace document
 	 */
-	static put({json, _key, document, collection, hasAuth, auth}: RouteArg) {
-		logger.info('PUT %s/%s', collection.name(), _key);
+	static put({json, _key, document, replace, name, hasAuth, auth}: RouteArg) {
+		logger.info('PUT %s/%s', name, _key);
 
 		const doc: any = json();
 
 		if(hasAuth && auth(Object.assign(document() || {}, doc), 'put', 'update'))
 			return;
 
-		return <any>collection.replace(_key, doc, {returnNew:true}).new;
+		return replace(_key, doc, {returnNew:true}).new;
 	}
 
 	/**
 	 * Delete document
 	 */
-	static delete({res, _key, document, collection, hasAuth, auth}: RouteArg) {
-		logger.info('DELETE %s/%s', collection.name(), _key);
+	static delete({res, _key, document, exists, remove, name, hasAuth, auth}: RouteArg) {
+		logger.info('DELETE %s/%s', name, _key);
 
-		if(!collection.exists(_key))
+		if(!exists(_key))
 			return res.throw(409, 'Document does not exist');
 
 		if(hasAuth && !auth(document(), 'delete', 'delete')) return;
 
-		collection.remove(_key!);
-		return '';
+		remove(_key!);
+		return null;
 	}
 
 	/**
 	 * List documents
 	 */
-	static list({collection, requestedAttributes, param, hasAuth, auth}: RouteArg) {
-		logger.info('LIST %s/%s', collection.name());
+	static list({name, requestedAttributes, param, hasAuth, auth}: RouteArg) {
+		logger.info('LIST %s/%s', name);
 
 		const { attributes, offset, limit = config.defaultListLimit, sort, order, ...filter } = param;
 
@@ -682,7 +800,7 @@ export class Route {
 		};
 
 		return db._query(
-			queryBuilder(collection.name(), q)
+			queryBuilder(name, q)
 		)
 			.toArray()
 			.filter(

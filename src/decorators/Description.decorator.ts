@@ -13,11 +13,11 @@ export function Description(
 		const data = {prototype, attribute, description};
 
 		if(prototype instanceof Entity || prototype.prototype instanceof Entity){
-			getDocumentForContainer(prototype.prototype||prototype)
+			getDocumentForContainer(attribute ? prototype.constructor : prototype)
 				.decorate('Description', data);
 		}
 		else if(prototype instanceof Entities || prototype.prototype instanceof Entities){
-			getCollectionForContainer(prototype.prototype||prototype)
+			getCollectionForContainer(attribute ? prototype.constructor : prototype)
 				.decorate('Description', data);
 		}
 

@@ -1,7 +1,15 @@
 import {isActive} from '../index'
 import {getCollectionForContainer} from '../models'
 import {argumentResolve} from '../utils'
-import {ClassAndMethodDecorator, Roles, RolesFunc, RouteAuthArg, RouteMethod, RouteOpt, RouteRoles} from '../types'
+import {
+	ClassAndMethodDecorator,
+	Roles,
+	RolesFunc,
+	RouteAuthArg,
+	RouteDecorator,
+	RouteOpt,
+	RouteRoles
+} from '../types'
 import {SymbolKeysNotSupportedError} from '../errors'
 import * as Joi from 'joi'
 import {Schema} from 'joi'
@@ -13,8 +21,18 @@ type SchemaFunc = (enjoi: (type?: any) => typeof Joi | any, joi?: any) => typeof
 type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt;
 type ArgSchemaOrRolesOrSummaryOrOpt = string | SummaryFunc | boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt;
 
+type RoutePreset = '*' | 'ALL' | 'ALL+' | 'CRUD' | 'CRUD+'
+
+const ROUTE_PRESET: {[key in RoutePreset]: RouteDecorator[]} = {
+	'*': ['GET','POST','PATCH','PUT','DELETE','LIST'],
+	'ALL': ['GET','POST','PATCH','PUT','DELETE'],
+	'ALL+': ['GET','POST','PATCH','PUT','DELETE','LIST'],
+	'CRUD': ['GET','POST','PATCH','DELETE'],
+	'CRUD+': ['GET','POST','PUT','DELETE','LIST'],
+};
+
 function route(
-	method: RouteMethod | 'list',
+	method: RouteDecorator,
 	pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
 	schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 	rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
@@ -41,7 +59,7 @@ export const Route = {
 		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
-	) => route('get',
+	): ClassAndMethodDecorator => route('GET',
 		pathOrRolesOrFunctionOrOptions,
 		schemaOrRolesOrSummaryOrFunction,
 		rolesOrSchemaOrSummaryOrFunction,
@@ -53,7 +71,7 @@ export const Route = {
 		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
-	) => route('post',
+	): ClassAndMethodDecorator => route('POST',
 		pathOrRolesOrFunctionOrOptions,
 		schemaOrRolesOrSummaryOrFunction,
 		rolesOrSchemaOrSummaryOrFunction,
@@ -65,7 +83,7 @@ export const Route = {
 		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
-	) => route('patch',
+	): ClassAndMethodDecorator => route('PATCH',
 		pathOrRolesOrFunctionOrOptions,
 		schemaOrRolesOrSummaryOrFunction,
 		rolesOrSchemaOrSummaryOrFunction,
@@ -77,7 +95,7 @@ export const Route = {
 		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
-	) => route('put',
+	): ClassAndMethodDecorator => route('PUT',
 		pathOrRolesOrFunctionOrOptions,
 		schemaOrRolesOrSummaryOrFunction,
 		rolesOrSchemaOrSummaryOrFunction,
@@ -89,7 +107,7 @@ export const Route = {
 		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
-	) => route('delete',
+	): ClassAndMethodDecorator => route('DELETE',
 		pathOrRolesOrFunctionOrOptions,
 		schemaOrRolesOrSummaryOrFunction,
 		rolesOrSchemaOrSummaryOrFunction,
@@ -101,16 +119,17 @@ export const Route = {
 		rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
 		options?: RouteOpt
-	): ClassDecorator => route('get',
+	): ClassDecorator => route('LIST',
 		undefined,
 		schemaOrRolesOrSummaryOrFunction,
 		rolesOrSchemaOrSummaryOrFunction,
 		summaryOrSchemaOrRolesOrFunction,
-		Object.assign(options||{}, {action:'list'})),
+		options
+	),
 
 	auth: (
 		...authorizeFunctions: Array<(arg: RouteAuthArg) => boolean>
-	) => {
+	): ClassDecorator => {
 		return function(prototype: any): any {
 			const col = getCollectionForContainer(prototype);
 			for(const authorizeFunction of authorizeFunctions) {
@@ -119,23 +138,30 @@ export const Route = {
 		}
 	},
 
+	/**
+	 * Add roles based on request session
+	 */
 	roles: (
 		...rolesFunctions: RouteRoles[]
-	) => {
+	): ClassDecorator => {
 		return function(prototype: any): any {
 			const col = getCollectionForContainer(prototype);
 			for(const rolesFunction of rolesFunctions){
 				col.decorate('Route.roles', {prototype,rolesFunction});
 			}
+			return prototype;
 		}
 	},
 
-	enable: (
+	/**
+	 * Set global roles
+	 */
+	groups: (
 		rolesOrCreatorsOrFunction: Roles | RolesFunc = [],
 		readersOrFunction?: Roles | RolesFunc,
 		updatersOrFunction?: Roles | RolesFunc,
 		deletersOrFunction?: Roles | RolesFunc
-	) => {
+	): ClassDecorator => {
 		return function(prototype: any): any {
 			const col = getCollectionForContainer(prototype);
 
@@ -155,18 +181,40 @@ export const Route = {
 			col.addRoles('readers', readers);
 			col.addRoles('updaters', updaters);
 			col.addRoles('deleters', deleters);
-
-			// if(col.completed) col.processMetadata();
+			return prototype;
 		}
 	},
 
+	/**
+	 * Enable some routes
+	 */
+	use: (
+		...methodsAndOptions: Array<RoutePreset | RouteDecorator | RouteOpt>
+	): ClassDecorator => {
+		const arr = typeof methodsAndOptions[0] === 'string' && ROUTE_PRESET[methodsAndOptions[0] as RoutePreset]
+			? [...ROUTE_PRESET[methodsAndOptions[0] as RoutePreset], ...methodsAndOptions.slice(1)] : methodsAndOptions;
+
+		const opt = arr.find(a => a && typeof a === 'object') as RouteOpt;
+		const methods = arr.filter(a => typeof a === 'string') as RouteDecorator[];
+		return function(prototype: any): any {
+			methods.forEach((method: RouteDecorator) => {
+				route(method, opt)(prototype)
+			});
+			return prototype;
+		}
+	},
+
+	/**
+	 * Enable all routes
+	 * @deprecated
+	 */
 	all: (
 		rolesOrCreatorsOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
 		readersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
 		updatersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
 		deletersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
 		globalOptions?: RouteOpt
-	) => {
+	): ClassDecorator => {
 		return function(prototype: any): any {
 			let creators = argumentResolve(rolesOrCreatorsOrFunctionOrOptions);
 			let readers = argumentResolve(readersOrFunctionOrOptions);
@@ -188,11 +236,12 @@ export const Route = {
 			}
 
 			// setup routes
-			route('delete', deleters, globalOptions)(prototype);
-			route('put', updaters, globalOptions)(prototype);
-			route('patch', updaters, globalOptions)(prototype);
-			route('post', creators, globalOptions)(prototype);
-			route('get', readers, globalOptions)(prototype);
+			route('DELETE', deleters, globalOptions)(prototype);
+			route('PUT', updaters, globalOptions)(prototype);
+			route('PATCH', updaters, globalOptions)(prototype);
+			route('POST', creators, globalOptions)(prototype);
+			route('GET', readers, globalOptions)(prototype);
+			route('LIST', readers, globalOptions)(prototype);
 
 			// const col = getCollectionForContainer(prototype);
 			// if(col.completed) col.processMetadata();

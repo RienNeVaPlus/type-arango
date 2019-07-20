@@ -28,7 +28,7 @@ export interface ClassAndPropertyDecorator {
 	// Class decorator overload
 	<TFunction extends Function>(target: TFunction): TFunction;
 
-	<T>(target: Object, propertyKey: string | symbol): T
+	(target: Object, propertyKey: string | symbol): void
 }
 // declare type PropertyDecorator = (target: Object, propertyKey: string | symbol) => void;
 
@@ -104,11 +104,12 @@ export interface Config {
 	fromClient: null | DocumentFromClient
 }
 
-export type RouteMethod = 'get' | 'post' | 'patch' | 'put' | 'delete';
-export type RouteAction = 'create' | 'read' | 'update' | 'delete' | 'list';
+export type RouteDecorator = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE' | 'LIST'
+export type RouteMethod = 'get' | 'post' | 'patch' | 'put' | 'delete'
+export type RouteAction = 'create' | 'read' | 'update' | 'delete' | 'list'
 
-// export type MetadataId = 'attribute' | 'index' | 'route';
-// export type MetadataTypes = AttributeMetadata | IndexMetadata | RouteMetadata;
+// export type MetadataId = 'attribute' | 'index' | 'route'
+// export type MetadataTypes = AttributeMetadata | IndexMetadata | RouteMetadata
 
 export type Roles = string[];
 export type RolesFunc = (returns?: void) => Roles;
@@ -165,13 +166,13 @@ export interface SchemaStructure {
 	[key: string]: Schema
 }
 
-export type DecoratorIds = 'Attribute' | 'Description' | 'Index' | 'Collection' | 'Document' | 'Nested' | 'Route'
-	| 'Route.auth' | 'Route.roles' | RelationType;
+export type DecoratorId = 'Attribute' | 'Description' | 'Index' | 'Collection' | 'Document' | 'Nested' | 'Route'
+	| 'Route.auth' | 'Route.roles' | RelationType | EventDecorator;
 export type DecoratorStorage = {
-	[key in DecoratorIds]?: DecoratorObject[]
+	[key in DecoratorId]?: DecoratorObject[]
 }
 export interface DecoratorObject {
-	decorator: DecoratorIds
+	decorator: DecoratorId
 	prototype: any
 	attribute?: string
 	[key: string]: any
@@ -236,6 +237,7 @@ interface TemplateStringsArray extends ReadonlyArray<string> {
 }
 
 export interface RouteRolesArg {
+	name: string
 	path: string
 	method: RouteMethod
 	action: RouteAction
@@ -245,7 +247,12 @@ export interface RouteRolesArg {
 	aql: (strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query
 	query: (query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor
 	collection: ArangoDB.Collection
-	document: () => DocumentData;
+	document: (selector?: string | ArangoDB.DocumentLike) => DocumentData
+	insert: (data: DocumentData, options?: ArangoDB.InsertOptions) => ArangoDB.InsertResult
+	update: (selector: string | ArangoDB.DocumentLike, data: DocumentData, options?: ArangoDB.UpdateOptions) => ArangoDB.UpdateResult
+	replace: (selector: string | ArangoDB.DocumentLike, data: DocumentData, options?: ArangoDB.ReplaceOptions) => ArangoDB.UpdateResult
+	remove: (selector: string | ArangoDB.DocumentLike, options?: ArangoDB.RemoveOptions) => ArangoDB.RemoveResult
+	exists: (selector: string) => boolean
 	req: Foxx.Request
 	res: Foxx.Response
 	roles?: Roles
@@ -260,7 +267,7 @@ export type RouteRoles = (arg: RouteRolesArg) => Roles;
 export interface RouteArg extends RouteRolesArg, RouteBaseOpt {
 	userRoles: string[]
 	json: (omitUnwritableAttributes?: boolean) => DocumentData // read role specific body
-	send: (data: DocumentData, omitUnreadableAttributes?: boolean) => Foxx.Response // send role specific response
+	send: (data: DocumentData | any, omitUnreadableAttributes?: boolean) => Foxx.Response // send role specific response
 }
 
 // const inp = {session:req.session,method,doc,req,res};
@@ -322,7 +329,6 @@ export interface RouteData {
 	handler?: RouteHandler
 }
 
-
 export interface QueryFilter {
 	[key: string]: string | string[] | number | number[] | boolean | boolean[]
 }
@@ -335,3 +341,30 @@ export interface QueryOpt {
 	keep?: string[]
 	unset?: string[]
 }
+
+export type EventDecorator =
+	'After.document.class' | 'After.document.prop' |
+	'Before.document.class' | 'Before.document.prop' |
+	'After.insert.class' | 'After.insert.prop' |
+	'Before.insert.class' | 'Before.insert.prop' |
+	'After.update.class' | 'After.update.prop' |
+	'Before.update.class' | 'Before.update.prop' |
+	'After.replace.class' | 'After.replace.prop' |
+	'Before.replace.class' | 'Before.replace.prop' |
+	'After.modify.class' | 'After.modify.prop' |
+	'Before.modify.class' | 'Before.modify.prop' |
+	'After.write.class' | 'After.write.prop' |
+	'Before.write.class' | 'Before.write.prop' |
+	'After.remove.class' | 'After.remove.prop' |
+	'Before.remove.class' | 'Before.remove.prop'
+
+export type EventType =
+	'After.document' | 'Before.document' |
+	'After.insert' | 'Before.insert' |
+	'After.update' | 'Before.update' |
+	'After.modify' | 'Before.modify' |
+	'After.write' | 'Before.write' |
+	'After.replace' | 'Before.replace' |
+	'After.remove' | 'Before.remove'
+
+export type EventMethod = 'document' | 'insert' | 'update' | 'replace' | 'modify' | 'write' | 'remove'

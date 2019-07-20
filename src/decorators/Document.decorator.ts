@@ -1,14 +1,11 @@
 import {getDocumentForContainer} from '../models'
-import {DocumentOptions} from '../types'
 import {isActive} from '../index';
 
-export function Document(
-	options?: DocumentOptions
-): ClassDecorator {
+export function Document(): ClassDecorator {
 	return (prototype: any) => {
 		if(!isActive) return;
 		const doc = getDocumentForContainer(prototype);
-		doc.decorate('Document', {prototype, options});
+		// doc.decorate('Document', {prototype});
 		doc.complete();
 		return prototype;
 	}

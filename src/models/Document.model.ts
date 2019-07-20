@@ -1,8 +1,12 @@
 import {
-	DecoratorIds,
+	AttributeObject,
+	DecoratorId,
 	DecoratorStorage,
 	DocumentAttribute,
 	DocumentData,
+	DocumentOptions,
+	EventMethod,
+	EventType,
 	QueryFilter,
 	QueryOpt,
 	Relation,
@@ -10,11 +14,10 @@ import {
 	RelationType,
 	RoleAttributes,
 	RoleObject,
-	SchemaStructure,
-	DocumentOptions, AttributeObject
+	SchemaStructure
 } from '../types'
-import {config, documents, Entities, Entity, logger} from '../index'
-import {argumentResolve, concatUnique, enjoi, removeValues, toJoi} from '../utils'
+import {config, documents, Entities, Entity, logger, version} from '../index'
+import {argumentResolve, concatUnique, enjoi, removeValues, toArray, toJoi} from '../utils'
 import {MissingTypeError, RelationNotFoundError} from '../errors'
 import {Collection} from './Collection.model'
 import * as Joi from 'joi'
@@ -32,7 +35,7 @@ function createDocumentFromContainer<T=typeof Entity>(someClass: new() => T): Do
  * Finds a document instance for a decorated class
  */
 export function findDocumentForContainer<T=typeof Entity>(someClass: new() => T): Document<T> | undefined {
-	return documents.find(c => someClass === c.Class); // || someClass.prototype instanceof c.cls);
+	return documents.find(c => someClass === c.Class);
 }
 
 /**
@@ -54,6 +57,24 @@ type DocumentMap = [string, (val: any, arg: any) => any];
 
 const _id = Joi.string();
 const _key = Joi.string();
+const eventTypes: EventType[] = [
+	'After.document', 'Before.document',
+	'After.insert', 'Before.insert',
+	'After.update', 'Before.update',
+	'After.modify', 'Before.modify',
+	'After.write', 'Before.write',
+	'After.replace', 'Before.replace',
+	'After.remove', 'Before.remove'
+];
+const eventNames: string[] = [
+	'afterDocument', 'beforeDocument',
+	'afterInsert', 'BeforeInsert',
+	'afterUpdate', 'BeforeUpdate',
+	'afterModify', 'BeforeModify',
+	'afterWrite', 'BeforeWrite',
+	'afterReplace', 'BeforeReplace',
+	'afterRemove', 'BeforeRemove'
+];
 
 export class Document<T=any> {
 	public col?: Collection;
@@ -75,7 +96,7 @@ export class Document<T=any> {
 		this.name = Class.name;
 	}
 
-	public decorate(decorator: DecoratorIds, data: any){
+	public decorate(decorator: DecoratorId, data: any){
 		this.decorator[decorator] = [...(this.decorator[decorator]||[]), {...data,decorator}];
 	}
 
@@ -103,6 +124,92 @@ export class Document<T=any> {
 		const { fromClient } = this.options;
 		doc = this.fromClientMap.reduce(reduceMap.bind(null, arg), doc);
 		return fromClient ? fromClient(doc, arg) : doc;
+	}
+
+	/**
+	 * Emit before event
+	 */
+	public emitBefore(method: EventMethod, ...args: any[]){
+		// PropertyDecorator
+		toArray(this.decorator['Before.'+method+'.prop' as DecoratorId])
+			.forEach(({attribute,resolver}) => {
+				switch(method){
+					case 'document': resolver(args[0], {_key:args[0], attribute, method}); break;
+					case 'insert': args[0][attribute] = resolver(args[0][attribute], {json:args[0], attribute, method}); break;
+					case 'update': args[0][attribute] = resolver(args[0][attribute], {_key:args[1], json:args[0], attribute, method}); break;
+					case 'replace': args[0][attribute] = resolver(args[0][attribute], {_key:args[1], json:args[0], attribute, method}); break;
+					case 'remove': resolver(args[0], {_key:args[0], attribute, method}); break;
+				}
+			});
+
+		// ClassDecorator
+		toArray(this.decorator['Before.'+method+'.class' as DecoratorId])
+			.forEach(({resolver}) => {
+				let v: false | true | undefined | ArangoDB.HttpStatus;
+				switch(method){
+					case 'document': v = resolver(args[0], {_key:args[0], method}); break;
+					case 'insert': v = resolver(args[0], {json:args[0], method}); break;
+					case 'update': v = resolver(args[0], {_key:args[1], json:args[0], method}); break;
+					case 'replace': v = resolver(args[0], {_key:args[1], json:args[0], method}); break;
+					case 'remove': v = resolver(args[0], {_key:args[0], method}); break;
+				}
+
+				// Cancel
+				if(v === false || typeof v === 'string'){
+					throw new Error(v || 'bad-request');
+				}
+				// Passive
+				else if(v === true || v === undefined){ }
+				// DocumentData
+				else if(typeof args[0] === 'object') {
+					args[0] = v;
+				}
+			});
+
+		return args[0];
+	}
+
+	/**
+	 * Emit after event
+	 */
+	public emitAfter(method: EventMethod, ...args: any[]){
+		// PropertyDecorator
+		toArray(this.decorator['After.'+method+'.prop' as DecoratorId])
+			.forEach(({attribute,resolver}) => {
+				switch(method){
+					case 'document': args[0][attribute] = resolver(args[0][attribute], {_key:args[1], document:args[0], attribute, method});	break;
+					case 'insert': args[0][attribute] = resolver(args[0][attribute], {_key:args[1], document:args[0], attribute, method}); break;
+					case 'update': args[0][attribute] = resolver(args[0][attribute], {_key:args[1], document:args[0], attribute, method}); break;
+					case 'replace': args[0][attribute] = resolver(args[0][attribute], {_key:args[1], document:args[0], attribute, method}); break;
+					case 'remove': resolver(args[0], {_key:args[0], attribute, method}); break;
+				}
+			});
+
+		// ClassDecorator
+		toArray(this.decorator['After.'+method+'.class' as DecoratorId])
+			.forEach(({resolver}) => {
+				let v: false | true | undefined | ArangoDB.HttpStatus;
+				switch(method){
+					case 'document': v = resolver(args[0], {_key:args[0], method}); break;
+					case 'insert': v = resolver(args[0], {_key:args[0]._key, document:args[0], method}); break;
+					case 'update': v = resolver(args[1], {_key:args[1], document:args[0], method}); break;
+					case 'replace': v = resolver(args[1], {_key:args[1], document:args[0], method}); break;
+					case 'remove': v = resolver(args[0], {_key:args[0], method}); break;
+				}
+
+				// Cancel
+				if(v === false || typeof v === 'string'){
+					throw new Error(v || 'bad-request');
+				}
+				// Passive
+				else if(v === true || v === undefined){ }
+				// DocumentData
+				else if(typeof args[0] === 'object') {
+					args[0] = v;
+				}
+			});
+
+		return args[0];
 	}
 
 	public resolveRelation(rel: Relation, filter: QueryFilter, value: any, set?: typeof Entity | null | string[]) {
@@ -152,14 +259,14 @@ export class Document<T=any> {
 	 * Setup attribute names for doc.attributeIdentifierObject before finalizing
 	 */
 	complete(){
-		const { Document, Attribute } = this.decorator;
+		const { Attribute } = this.decorator;
 
-		if(Document){
-			const { options } = Document![0];
-			if(options){
-				this.options = options;
-			}
-		}
+		// if(Document){
+		// 	// const { options } = Document![0];
+		// 	// if(options){
+		// 	// 	this.options = options;
+		// 	// }
+		// }
 
 		if(Attribute) for(let {attribute} of Attribute){
 			if(attribute) this.attribute[attribute] = {attribute};
@@ -168,7 +275,7 @@ export class Document<T=any> {
 
 	finalize(){
 		const { Attribute, OneToOne, OneToMany } = this.decorator;
-		let metadata;
+		let metadata: any;
 
 		// @Attribute
 		if(Attribute) for(let {
@@ -205,8 +312,17 @@ export class Document<T=any> {
 			const data: AttributeObject = removeValues({attribute,roles,schema,metadata}, undefined);
 
 			if(metadata && metadata._typeArango){
-				if(metadata.forClient) this.forClientMap.push([attribute!, metadata.forClient]);
-				if(metadata.fromClient) this.fromClientMap.push([attribute!, metadata.fromClient]);
+				if(version < metadata._typeArango){
+					logger.error(`Type.${metadata.name} requires type-arango v${metadata._typeArango}`);
+				} else {
+					if(metadata.forClient) this.forClientMap.push([attribute!, metadata.forClient]);
+					if(metadata.fromClient) this.fromClientMap.push([attribute!, metadata.fromClient]);
+					eventTypes.forEach(name => {
+						const m = metadata[eventNames[eventTypes.indexOf(name)]];
+						if(!m) return;
+						this.decorate(name+'.prop' as DecoratorId, {prototype,attribute,resolver:m})
+					});
+				}
 			}
 
 			this.attribute[attribute!] = data;

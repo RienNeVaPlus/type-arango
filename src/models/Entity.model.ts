@@ -2,6 +2,7 @@ import {DocumentData, QueryFilter} from '../types'
 import {getDocumentForContainer} from './index'
 import {AttributeNotInEntityError, MissingKeyError, SymbolKeysNotSupportedError} from '../errors'
 import {db} from '../utils'
+import {Document} from '.'
 
 const nativeKeys = ['constructor','toString'];
 const unenumerable = ['_saveKeys','_collection'];
@@ -30,8 +31,8 @@ export class Entity {
 		return db;
 	}
 
-	get _doc(){
-		return (this.constructor as typeof Entity)._doc;
+	get _doc() {
+		return (this.constructor as typeof Entity)._doc as Document;
 	}
 
 	constructor(doc?: DocumentData | string, docIsSync: boolean = false) {
@@ -105,15 +106,24 @@ export class Entity {
 	/**
 	 * Creates the document by using .save({update:false});
 	 */
-	create(){
+	insert(){
 		return this.save({update:false});
+	}
+
+	/**
+	 * Alias for insert
+	 * @deprecated
+	 */
+	create(){
+		console.warn('Using entity.create is deprecated, use entity.insert instead');
+		return this.insert();
 	}
 
 	/**
 	 * Merges `obj` into `this`
 	 */
-	merge(obj: DocumentData){
-		return Object.assign(this, obj);
+	merge(...obj: DocumentData[]){
+		return Object.assign(this, ...obj);
 	}
 
 	/**
@@ -129,13 +139,13 @@ export class Entity {
 			return this;
 
 		// accumulate changed values from _saveKeys into object
-		const data = _saveKeys.reduce((o: any, key: string) => {
+		let data = _saveKeys.reduce((o: any, key: string) => {
 			const v = this[key];
 
 			// replace relation functions with values
 			const relation = _doc.relation[key];
 			if(relation){
-				if(v instanceof Entity && v._saveKeys.length){
+				if(v instanceof Entity && v._saveKeys.length) {
 					v.save();
 				}
 
@@ -144,7 +154,7 @@ export class Entity {
 					o[key] = this['_'+key];
 				}
 				// assign relation id when current entity is not inside relation entity
-				else if(!v[_doc.name.toLowerCase()]){
+				else if(!v[_doc.name.toLowerCase()]) {
 					o[key] = v._key;
 				}
 			}
@@ -160,10 +170,16 @@ export class Entity {
 		let res;
 
 		// insert / update
-		if(options.update && _key)
-			res = _collection.update({_key}, data, options);
-		else
-			res = _collection.insert(data, options);
+		if(options.update && _key) {
+			data = _doc.emitBefore('update', data);
+			res = _doc.emitAfter('insert', _collection.update({_key}, data, options) );
+		}
+		else {
+			data = _doc.emitBefore('insert', data);
+			console.log('DO insert', data);
+			res = _doc.emitAfter('insert', _collection.insert(data, Object.assign(options, {returnNew:true})).new );
+			console.log('insert res', res);
+		}
 
 		this.merge(res);
 
@@ -177,23 +193,25 @@ export class Entity {
 	 * Replaces the document with the provided doc, ignoring _saveKeys
 	 */
 	replace(doc: DocumentData, options?: ArangoDB.ReplaceOptions){
-		const { _key, _collection } = this;
+		const { _key, _doc, _collection } = this;
 
 		if(!_key)
 			throw new MissingKeyError(this.constructor.name);
 
-		return this.merge(_collection.replace({_key}, doc, options));
+		doc = _doc.emitBefore('replace', doc);
+		return this.merge( _doc.emitAfter('insert', _collection.replace({_key}, doc, options) ));
 	}
 
 	/**
 	 * Removes the document
 	 */
 	remove(options?: ArangoDB.RemoveOptions){
-		const { _key, _collection } = this;
+		const { _key, _doc, _collection } = this;
 
 		if(!_key)
 			throw new MissingKeyError(this.constructor.name);
 
-		return this.merge(_collection.remove({_key}, options));
+		_doc.emitBefore('remove', _key);
+		return this.merge(_doc.emitAfter('remove', _collection.remove({_key}, options)));
 	}
 }

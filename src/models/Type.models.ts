@@ -6,7 +6,6 @@ export namespace Type {
 		[key: string]: string | any
 
 		static _typeArango: string = '0.4';
-
 		static schema: Joi.ObjectSchema = Joi.object().unknown().example({en:'Translation'});
 
 		static forClient(val: any, {req,session}: any){
@@ -16,5 +15,25 @@ export namespace Type {
 			const locale = param || (sess.data ? sess.data.locale : config.defaultLocale);
 			return val[locale] || val[locale.substr(0,2)] || val[config.defaultLocale] || null;
 		}
+	}
+
+	/**
+	 * Sets current Date to attribute when a new document is inserted
+	 */
+	export class DateInsert {
+		static _typeArango: string = '0.7';
+		static schema: Joi.DateSchema = Joi.date();
+
+		static beforeInsert(){ return new Date() }
+	}
+
+	/**
+	 * Sets current Date to attribute whenever the document is updated
+	 */
+	export class DateUpdate {
+		static _typeArango: string = '0.7';
+		static schema: Joi.DateSchema = Joi.date();
+
+		static beforeUpdate(){ return new Date() }
 	}
 }

@@ -3,12 +3,13 @@ import {Collection, Document, Route, Logger, Entities, Entity, Type} from './mod
 import {RequiresFoxxEnvironmentError} from './errors'
 import {Roles, RouteArg, LogLevel, Config, Related, RouteRolesArg} from './types'
 
-export let logger: Logger = new Logger();
-export let collections: Collection[] = [];
-export let documents: Document<any>[] = [];
-export let routes: Route[] = [];
-export let isActive: boolean = isFoxx();
-export let config: Config = {
+export const version: string = require('../package.json').version;
+export const logger: Logger = new Logger();
+export const collections: Collection[] = [];
+export const documents: Document<any>[] = [];
+export const routes: Route[] = [];
+export const isActive: boolean = isFoxx();
+export const config: Config = {
 	prefixCollectionName: false,
 	exposeRouteFunctionsToSwagger: false,
 	dasherizeRoutes: true,
@@ -38,7 +39,7 @@ export let config: Config = {
 // export {Document} from './models'
 export {
 	Collection, Route, Description, Document, Nested, Attribute, Index,
-	OneToOne, OneToMany, Authorized
+	OneToOne, OneToMany, Authorized, Before, After, ForClient, FromClient
 } from './decorators'
 export {RouteArg, RouteRolesArg, LogLevel, Related, isFoxx, Entities, Entity, Type}
 
@@ -52,8 +53,10 @@ export function complete(){
  * TypeArango() - Sets the config of `type-arango`
  */
 export function configure(configuration?: Partial<Config>) {
-	logger.info('Configure:', configuration);
-	if(configuration) config = Object.assign(config, configuration);
+	if(configuration) {
+		Object.assign(config, configuration);
+		logger.info('Configure:', configuration);
+	}
 	return complete;
 }
 export default configure;
