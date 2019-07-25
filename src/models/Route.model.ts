@@ -621,13 +621,13 @@ export class Route {
 	){
 		let json = req.json();
 
-		// add joi defaults to result, this should've been done by foxx instead of me
+		// add joi defaults to result, this should've been done by Foxx instead of me
 		if(body && body._inner){
 			json = removeValues(joiDefaults(body, json), undefined);
 		}
 
 		// remove un-writable attributes
-		if(omitUnwritableAttributes) json = omit(json, stripAttributes);
+		if(json && omitUnwritableAttributes) json = omit(json, stripAttributes);
 
 		// pass to config.fromClient or Document.fromClient
 		if(config.fromClient || fromClient){
