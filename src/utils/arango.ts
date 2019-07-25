@@ -6,6 +6,7 @@ const orders = ['ASC','DESC'];
 export const arango = is ? require('@arangodb') : null;
 export const db = is ? arango.db : null;
 export const aql = is ? arango.aql : null;
+const operators = ['==','!=','<','<=','>','>=','IN','NOT IN','LIKE','=~','!~'];
 
 function escape(val: any){
 	if(val === 'true') return true;
@@ -34,7 +35,7 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 			([key, value]) => q.push(
 				Array.isArray(value) && (String(value[0]).toUpperCase()) === 'IN'
 					? 'FILTER '+escape(value[1])+' IN i.'+clean(key)
-					: 'FILTER i.'+clean(key)+' ' + (Array.isArray(value) ? clean(value[0])+' '+escape(value[1]) : '== '+escape(value))
+					: 'FILTER i.'+clean(key)+' ' + (Array.isArray(value) ? (operators.includes(value[0]) ? value[0] : '==') + ' '+escape(value[1]) : '== '+escape(value))
 			)
 		);
 	}
@@ -67,7 +68,7 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 		q.push('RETURN i');
 	}
 
-	// logger.warn('Query %o', q);
+	// logger.warn('Query %o', q.join(' '));
 
 	return q.join('\n');
 }

@@ -329,8 +329,10 @@ export interface RouteData {
 	handler?: RouteHandler
 }
 
+type QueryFilterOperator = '==' | '!=' | '<' | '<=' | '>' | '>=' | 'IN' | 'NOT IN' | 'LIKE' | '=~' | '!~'
+type QueryFilterValue = string | number | boolean | [QueryFilterOperator, string | number | boolean]
 export interface QueryFilter {
-	[key: string]: string | string[] | number | number[] | boolean | boolean[]
+	[key: string]: QueryFilterValue
 }
 
 export interface QueryOpt {
