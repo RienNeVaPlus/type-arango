@@ -17,9 +17,11 @@
     "ArangoDB",
     "Foxx",
     "TypeScript",
+    "Decorators",
+    "Types",
     "ORM",
     "Routes",
-    "Decorators"
+    "Entity"
   ],
   "author": "RienNeVaPlus <contact@rienneva.plus>",
   "license": "MIT",
