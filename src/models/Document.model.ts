@@ -300,7 +300,7 @@ export class Document<T=any> {
 
 			if(roles) {
 				if(config.addAttributeWritersToReaders && roles.writers){
-					roles.readers = concatUnique(roles.readers, roles.writers);
+					roles.readers = concatUnique(roles.readers, writers||[]);
 				}
 				this.roles = concatUnique(this.roles, roles.readers, roles.writers);
 			}
