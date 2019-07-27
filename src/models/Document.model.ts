@@ -97,7 +97,7 @@ export class Document<T=any> {
 	}
 
 	public decorate(decorator: DecoratorId, data: any){
-		this.decorator[decorator] = [...(this.decorator[decorator]||[]), {...data,decorator}];
+		return this.decorator[decorator] = [...(this.decorator[decorator]||[]), {...data,decorator}];
 	}
 
 	get attributeIdentifierObject(){
@@ -259,7 +259,7 @@ export class Document<T=any> {
 	 * Setup attribute names for doc.attributeIdentifierObject before finalizing
 	 */
 	complete(){
-		const { Attribute } = this.decorator;
+		const { Authorized, Attribute } = this.decorator;
 
 		// if(Document){
 		// 	// const { options } = Document![0];
@@ -268,14 +268,27 @@ export class Document<T=any> {
 		// 	// }
 		// }
 
-		if(Attribute) for(let {attribute} of Attribute){
+		if(Attribute) for(let {attribute} of [...Authorized||[], ...Attribute]){
 			if(attribute) this.attribute[attribute] = {attribute};
 		}
 	}
 
 	finalize(){
-		const { Attribute, OneToOne, OneToMany } = this.decorator;
+		const { Authorized, OneToOne, OneToMany } = this.decorator;
 		let metadata: any;
+
+		// @Authorized
+		if(Authorized) for(let o of Authorized){
+			const A = this.decorator.Attribute || [];
+			let a = (A || []).find(a => a.attribute === o.attribute);
+			if(!a) a = this.decorate('Attribute', o).find(attr => attr.attribute === o.attribute);
+			else {
+				a.readersArrayOrFunction = o.readersArrayOrFunction;
+				a.writersArrayOrFunction = o.writersArrayOrFunction;
+			}
+		}
+
+		const { Attribute } = this.decorator;
 
 		// @Attribute
 		if(Attribute) for(let {

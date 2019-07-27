@@ -166,7 +166,7 @@ export interface SchemaStructure {
 	[key: string]: Schema
 }
 
-export type DecoratorId = 'Attribute' | 'Description' | 'Index' | 'Collection' | 'Document' | 'Nested' | 'Route'
+export type DecoratorId = 'Attribute' | 'Authorized' | 'Description' | 'Index' | 'Collection' | 'Document' | 'Nested' | 'Route'
 	| 'Route.auth' | 'Route.roles' | RelationType | EventDecorator;
 export type DecoratorStorage = {
 	[key in DecoratorId]?: DecoratorObject[]

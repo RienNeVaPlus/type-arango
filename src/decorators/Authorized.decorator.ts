@@ -11,16 +11,16 @@ export function Authorized(readersFunction: RolesFunc, writers: Roles): Property
 export function Authorized(readersFunction: RolesFunc, writersFunction: RolesFunc): PropertyDecorator;
 export function Authorized(readers: Roles, writersFunction: RolesFunc): PropertyDecorator;
 export function Authorized(
-	readersOrFunction: Roles | RolesFunc = [],
-	writersOrFunction: Roles | RolesFunc = []
+	readersArrayOrFunction: Roles | RolesFunc = [],
+	writersArrayOrFunction: Roles | RolesFunc = []
 ): PropertyDecorator {
 	return (prototype: any, attribute: string | symbol) => {
 		if(!isActive) return;
 		if(typeof attribute === 'symbol')
 			throw new SymbolKeysNotSupportedError();
 
-		getDocumentForContainer(prototype.constructor).decorate('Attribute', {
-			prototype, attribute, readersOrFunction, writersOrFunction
+		getDocumentForContainer(prototype.constructor).decorate('Authorized', {
+			prototype, attribute, readersArrayOrFunction, writersArrayOrFunction
 		});
 	}
 }
