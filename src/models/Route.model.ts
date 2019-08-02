@@ -403,8 +403,7 @@ export class Route {
 				Object.keys(attributesWrite).forEach(
 					k => attributesWrite[k] === sum && stripAttributesWrite.push(k));
 
-				// build route argument
-				// const requestedAttributes = req.param('attributes') || null;
+				// build route argument;
 				const data: RouteArg = Object.assign(args, {
 					req, res, userRoles,
 					send: Route.send.bind(null, req, res, doc.forClient.bind(doc), stripAttributesRead, args.requestedAttributes!),

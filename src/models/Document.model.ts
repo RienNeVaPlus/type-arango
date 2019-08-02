@@ -57,6 +57,8 @@ type DocumentMap = [string, (val: any, arg: any) => any];
 
 const _id = Joi.string();
 const _key = Joi.string();
+const _from = Joi.string();
+const _to = Joi.string();
 const eventTypes: EventType[] = [
 	'After.document', 'Before.document',
 	'After.insert', 'Before.insert',
@@ -79,6 +81,7 @@ const eventNames: string[] = [
 export class Document<T=any> {
 	public col?: Collection;
 	public name: string;
+	public isEdge: boolean = false;
 	public options: DocumentOptions = {};
 	public attribute: DocumentAttribute = {
 		_id: {attribute: '_id', metadata: String, schema: _id},
@@ -94,6 +97,12 @@ export class Document<T=any> {
 
 	constructor(public Class: new() => T){
 		this.name = Class.name;
+	}
+
+	public makeEdge(){
+		this.isEdge = true;
+		Object.assign(this.attribute, {_from,_to});
+		Object.assign(this.schema, {_from,_to});
 	}
 
 	public decorate(decorator: DecoratorId, data: any){
@@ -212,7 +221,7 @@ export class Document<T=any> {
 		return args[0];
 	}
 
-	public resolveRelation(rel: Relation, filter: QueryFilter, value: any, set?: typeof Entity | null | string[]) {
+	static resolveRelation(rel: Relation, filter: QueryFilter, value: any, set?: typeof Entity | null | string[]) {
 		const entities = rel.document.col!.Class as typeof Entities;
 
 		if(set === null)
@@ -260,13 +269,6 @@ export class Document<T=any> {
 	 */
 	complete(){
 		const { Authorized, Attribute } = this.decorator;
-
-		// if(Document){
-		// 	// const { options } = Document![0];
-		// 	// if(options){
-		// 	// 	this.options = options;
-		// 	// }
-		// }
 
 		if(Attribute) for(let {attribute} of [...Authorized||[], ...Attribute]){
 			if(attribute) this.attribute[attribute] = {attribute};

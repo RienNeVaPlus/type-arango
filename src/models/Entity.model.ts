@@ -21,6 +21,9 @@ export class Entity {
 	public _key?: string;
 	public _rev?: string;
 
+	public _from?: string;
+	public _to?: string;
+
 	[key: string]: any;
 
 	static get _doc(){
@@ -70,7 +73,7 @@ export class Entity {
 				if(rel && !(target[key] instanceof Entity)){
 					let filter: QueryFilter = {[rel.attribute]:target._key};
 					if(target[key]) filter = {_key:target[key]};
-					return _doc.resolveRelation.bind(_doc, rel, filter, target[key]);
+					return Document.resolveRelation.bind(_doc, rel, filter, target[key]);
 				}
 
 				return target[key];

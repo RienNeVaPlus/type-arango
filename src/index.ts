@@ -38,7 +38,7 @@ export const config: Config = {
 
 // export {Document} from './models'
 export {
-	Collection, Route, Description, Document, Nested, Attribute, Index,
+	Collection, Route, Description, Document, Edge, Nested, Attribute, Index,
 	OneToOne, OneToMany, Authorized, Before, After, ForClient, FromClient
 } from './decorators'
 export {RouteArg, RouteRolesArg, LogLevel, Related, isFoxx, Entities, Entity, Type}

@@ -69,16 +69,6 @@ export class Collection {
 	public roleStripAttributes: RoleObject = {};
 	private decorator: DecoratorStorage = {};
 
-	public get route(){
-		let { name } = this;
-		name = name.charAt(0).toLowerCase() + name.substr(1);
-
-		if(config.dasherizeRoutes)
-			name = name.replace(/[A-Z]/g, m => '-' + m.toLowerCase());
-
-		return name;
-	}
-
 	/**
 	 * Returns a valid collection name
 	 */
@@ -94,9 +84,18 @@ export class Collection {
 		this.db = isActive ? db._collection(this.name) : null;
 	}
 
+	public get route(){
+		let { name } = this;
+		name = name.charAt(0).toLowerCase() + name.substr(1);
+
+		if(config.dasherizeRoutes)
+			name = name.replace(/[A-Z]/g, m => '-' + m.toLowerCase());
+
+		return name;
+	}
+
 	public addRoles(key: RoleTypes, roles: Roles, onlyWhenEmpty: boolean = true){
 		if(onlyWhenEmpty && this.roles[key].length) return;
-		// if(roles.length && onlyWhenEmpty && !this.roles[key].length)
 		this.roles[key] = concatUnique(this.roles[key], roles);
 		if(this.doc) this.doc!.roles = concatUnique(this.doc!.roles, roles);
 		//else console.log('CANNOT ADD ROLES, DOCUMENT NOT READY');
@@ -142,7 +141,9 @@ export class Collection {
 			// create collection
 			if(!this.db){
 				logger.info('Creating ArangoDB Collection "%s"', this.name);
-				this.db = db._createDocumentCollection(this.name, options || {});
+				this.db = doc.isEdge
+					? db._createEdgeCollection(this.name, options || {})
+					: db._createDocumentCollection(this.name, options || {});
 			}
 
 			// create indices
