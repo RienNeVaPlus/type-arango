@@ -25,6 +25,7 @@ A document represents a single entry of a collection.
 
 #### `ClassDecrorator`
 - [@Document](#document) - initializes a new document
+- [@Edge](#edge) - initializes a new document of an edge collection
 - [@Nested](#nested) - initializes a nested document
 - [@FromClient](#fromclientmapper) - parse request body before writing to database
 - [@ForClient](#forclientmapper) - parse document before sending to client
@@ -356,7 +357,7 @@ const profileId = user._profile;
 
 ### `@Document()`
 
-Decorates a class that has been extended by `Entity`. Documents are consumed by `@Collection`*s* and define a schema which is derived from the property types and additional decorator information.
+Decorates a class that has been extended by `Entity`. Documents are consumed by `@Collection(of => Document)` and define a schema which is derived from the property types and additional decorator information.
 
 **Example**
 ```ts
@@ -365,6 +366,16 @@ class User extends Entity { ... }
 ```
 ![divider](./assets/divider.small.png)
 
+### `@Edge()`
+
+Decorates a class that has been extended by `Entity`. Edges are consumed by `@Collection(of => Edge)` and define a schema which is derived from the property types and additional decorator information.
+
+**Example**
+```ts
+@Edge()
+class Relation extends Entity { ... }
+```
+![divider](./assets/divider.small.png)
 ### `@Nested()`
 
 Documents in ArangoDB can be nested. Make sure to define nested classes before the documents.
