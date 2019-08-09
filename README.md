@@ -150,7 +150,7 @@ const complete = typeArango({
     // Configuration
 });
 
-export * from './user';
+export * from './User';
 
 complete();
 ```
