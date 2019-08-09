@@ -21,8 +21,8 @@ export class Entity {
 	public _key?: string;
 	public _rev?: string;
 
-	public _from?: string;
-	public _to?: string;
+	public _from?: string | any;
+	public _to?: string | any;
 
 	[key: string]: any;
 
