@@ -69,7 +69,7 @@ A collection contains documents and provides routes.
   - [@Route.DELETE](#routedeletepath-schema-roles-summary-options)
   
 #### `MethodDecorator`
-- [@AQLFunction]() - register an AQL function
+- [@AQLFunction](#aqlfunctionisdeterministic-customname) - register an AQL function
 - [@Task](#taskperiod-name-params) - periodically execute a function
 
 ![divider](./assets/divider.small.png)
