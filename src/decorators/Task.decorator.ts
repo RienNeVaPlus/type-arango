@@ -10,9 +10,12 @@ interface TaskOptions {
 	offset: number
 	params: {[key:string]:any}
 }
+type PeriodFunc = (returns?: any) => number | TaskOptions;
 type NameOrParam = string | {[key:string]: any};
 type NameOrParamFunc = ((returns?: any) => NameOrParam) | NameOrParam;
 
+export function Task(options: TaskOptions): MethodDecorator;
+export function Task(period: PeriodFunc, name?: NameOrParam, param?: NameOrParam): MethodDecorator;
 export function Task(
 	periodOrFunctionOrOptions: ((returns?: any) => number | TaskOptions) | number | TaskOptions,
 	paramsOrNameOrFunction?: NameOrParamFunc,
