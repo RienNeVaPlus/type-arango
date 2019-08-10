@@ -10,19 +10,20 @@ export const documents: Document<any>[] = [];
 export const routes: Route[] = [];
 export const isActive: boolean = isFoxx();
 export const config: Config = {
+	logLevel: LogLevel.Warn,
 	prefixCollectionName: false,
 	exposeRouteFunctionsToSwagger: false,
 	dasherizeRoutes: true,
 	stripDocumentId: true,
 	stripDocumentRev: true,
 	stripDocumentKey: false,
+	unregisterAQLFunctionEntityGroup: true,
 	addAttributeWritersToReaders: true,
 	defaultLocale: 'en',
 	defaultListLimit: 25,
 	defaultListLimitMax: 100,
 	forClient: null,
 	fromClient: null,
-	logLevel: LogLevel.Warn,
 	providedRolesDefault: ['guest'],
 	requiredRolesFallback: ['user'],
 	requiredWriterRolesFallback: ['admin'],
@@ -39,7 +40,7 @@ export const config: Config = {
 // export {Document} from './models'
 export {
 	Collection, Route, Description, Document, Edge, Nested, Attribute, Index,
-	OneToOne, OneToMany, Authorized, Before, After, ForClient, FromClient, Task
+	OneToOne, OneToMany, Authorized, Before, After, ForClient, FromClient, Task, AQLFunction
 } from './decorators'
 export {RouteArg, RouteRolesArg, LogLevel, Related, isFoxx, Entities, Entity, Type}
 

@@ -82,14 +82,15 @@ export enum LogLevel {
 }
 
 export interface Config {
+	logLevel: LogLevel
 	requiredRolesFallback: Roles
 	requiredWriterRolesFallback: Roles
 	providedRolesDefault: Roles
 	getUserRoles: (req: Foxx.Request) => Roles
 	getAuthorizedRoles: (userRoles: Roles, accessRoles: Roles) => Roles
-	logLevel: LogLevel
 	throwForbidden: ArangoDB.HttpStatus
 	throwUnauthorized: ArangoDB.HttpStatus
+	unregisterAQLFunctionEntityGroup: boolean
 	dasherizeRoutes: boolean
 	defaultLocale: string
 	defaultListLimit: number
@@ -167,7 +168,7 @@ export interface SchemaStructure {
 }
 
 export type DecoratorId = 'Attribute' | 'Authorized' | 'Description' | 'Index' | 'Collection' | 'Document' | 'Nested' | 'Route'
-	| 'Route.auth' | 'Route.roles' | RelationType | EventDecorator | 'Task';
+	| 'Route.auth' | 'Route.roles' | RelationType | EventDecorator | 'Task' | 'Function';
 export type DecoratorStorage = {
 	[key in DecoratorId]?: DecoratorObject[]
 }

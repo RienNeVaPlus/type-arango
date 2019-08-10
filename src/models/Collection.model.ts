@@ -129,7 +129,7 @@ export class Collection {
 	}
 
 	finalize(){
-		const { Collection, Route, Task } = this.decorator;
+		const { Collection, Route, Task, Function } = this.decorator;
 
 		const { ofDocumentFunction, options = {} } = Collection![0];
 		if(options.name) this.name = options.name;
@@ -154,7 +154,7 @@ export class Collection {
 			const task = require('@arangodb/tasks');
 			const tasks = task.get();
 
-			// setup tasks
+			// setup Tasks
 			if(Task) for(let {
 				prototype, attribute, period, offset, id, name, params
 			} of Task){
@@ -177,6 +177,25 @@ export class Collection {
 
 				logger.debug('Register task', opt);
 				task.register(opt);
+			}
+
+
+			const aqlfunction = require('@arangodb/aql/functions');
+
+			// unregister old
+			if(config.unregisterAQLFunctionEntityGroup){
+				logger.debug('Unregister AQLFunction-group "'+this.name+'::*"');
+				aqlfunction.unregisterGroup(this.name);
+			}
+
+			// setup AQLFunctions
+			if(Function) for(let {
+				prototype, attribute, name, isDeterministic
+			} of Function){
+				logger.debug('Register AQLFunction "'+name+'"');
+				let f = null;
+				eval('f = function '+prototype[attribute!].toString());
+				aqlfunction.register(name, f, isDeterministic);
 			}
 		}
 
