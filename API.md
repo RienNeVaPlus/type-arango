@@ -46,7 +46,7 @@ A document represents a single entry of a collection.
 
 ### 🗄️ Collections
 
-A collection contains documents and provides routes.
+A collection contains documents and provides routes and other utilities.
 
 #### `Class` 
 - [Entities](#-entities) - provides ORM functions
@@ -99,6 +99,11 @@ The configuration can be passed into the typeArango function.
 ```ts
 const complete = typeArango({
     /**
+     * Available log levels are `Error`, `Warn`, `Info` & `Debug`
+     */
+    logLevel: LogLevel = LogLevel.Warn;
+    
+    /**
      * Prefix the collection name by applying `module.context.collectionName` to it
      */
     prefixCollectionName: boolean = false;
@@ -141,9 +146,10 @@ const complete = typeArango({
     stripDocumentKey: boolean = false;
     
     /**
-     * Available log levels are `Error`, `Warn`, `Info` & `Debug`
+     * Whether to execute aqlfunctions.unregisterGroup for every collection
+     * Set to false when using custom AQL functions outside of type-arango
      */
-    logLevel: LogLevel = LogLevel.Warn;
+    unregisterAQLFunctionEntityGroup: boolean = true;
     
     /**
      * List of roles that are available for every request
