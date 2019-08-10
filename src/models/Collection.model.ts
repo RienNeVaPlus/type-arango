@@ -129,7 +129,7 @@ export class Collection {
 	}
 
 	finalize(){
-		const { Collection, Route } = this.decorator;
+		const { Collection, Route, Task } = this.decorator;
 
 		const { ofDocumentFunction, options = {} } = Collection![0];
 		if(options.name) this.name = options.name;
@@ -149,6 +149,34 @@ export class Collection {
 			// create indices
 			for(let {options} of doc.indexes!){
 				this.db.ensureIndex(options);
+			}
+
+			const task = require('@arangodb/tasks');
+			const tasks = task.get();
+
+			// setup tasks
+			if(Task) for(let {
+				prototype, attribute, period, offset, id, name, params
+			} of Task){
+				if(tasks.find((t: any) => t.id === id)){
+					logger.debug('Unregister previously active task', id);
+					task.unregister(id);
+				}
+
+				const opt: any = {
+					id,
+					offset,
+					name,
+					params
+				};
+
+				eval('opt.command = function '+prototype[attribute!].toString());
+
+				if(period > 0)
+					opt.period = period;
+
+				logger.debug('Register task', opt);
+				task.register(opt);
 			}
 		}
 
