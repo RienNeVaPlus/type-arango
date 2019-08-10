@@ -61,13 +61,16 @@ A collection contains documents and provides routes.
 - [@Route.auth](#routeauthauthorizefunctions) - authorizes a request depending on a document 
 - [@Route.LIST]() - initializes a special route for fetching a list
 
-#### `ClassAndPropertyDecorator`
+#### `ClassAndMethodDecorator`
   - [@Route.GET](#routegetpath-schema-roles-summary-options)
   - [@Route.POST](#routepostpath-schema-roles-summary-options)
   - [@Route.PUT](#routeputpath-schema-roles-summary-options)
   - [@Route.PATCH](#routepatchpath-schema-roles-summary-options)
   - [@Route.DELETE](#routedeletepath-schema-roles-summary-options)
   
+#### `MethodDecorator`
+- [@Task](#taskperiod-name-params) - periodically execute a function
+
 ![divider](./assets/divider.small.png)
 
 ### 🔌 Types
@@ -1096,6 +1099,30 @@ Creates a `GET` route on `/collectionName` for returning a list of documents. An
 // to return User[] with User.country == 'US'
 @Route.LIST($ => ({country:['US','DE']}), roles => ['guest'])
 class Users extends Entities {}
+```
+![divider](./assets/divider.small.png)
+
+### `@Task(period, name?, params?)`
+
+Creates a task with the [ArangoDB Task Management](https://www.arangodb.com/docs/3.4/appendix-java-script-modules-tasks.html). The task is either invoked once after startup (when using `period => 0`) or every `n` seconds. By default the method name is used as `task.id`.
+
+> ⚠️ It is important to note that the callback function is late bound and will be executed in a different context than in the creation context. The callback function must therefore not access any variables defined outside of its own scope. The callback function can still define and use its own variables. [Read more](https://www.arangodb.com/docs/3.4/appendix-java-script-modules-tasks.html#register-a-task)
+
+- **period**? `() => number | Options` - number of seconds to wait in between executions. Note: when set to zero the function will be executed only once. This argument can also be an options object containing itself and the other arguments below (eg `{period:2,name:'abc'}`).
+- **params**? `{[key:string}: any]` - to pass parameters to a task. Note that the parameters are limited to data types usable in JSON (meaning no callback functions can be passed as parameters into a task).
+- **name**? `string` - names are informational only. They can be used to make a task distinguishable from other tasks also running on the server.
+
+**Example**
+```ts
+@Collection(of => User)
+class Users extends Entities {
+    // runs TASK_ID every 10 seconds
+    // Note: the below is equal to @Task({period:10,name:...,params:...})
+    @Task(period => 10, name => 'Log something', {really:true})
+    static TASK_ID(params){
+        console.log('Hello World',params);
+    }
+}
 ```
 
 ![divider](./assets/divider.png)
