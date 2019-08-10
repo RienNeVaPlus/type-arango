@@ -69,6 +69,7 @@ A collection contains documents and provides routes.
   - [@Route.DELETE](#routedeletepath-schema-roles-summary-options)
   
 #### `MethodDecorator`
+- [@AQLFunction]() - register an AQL function
 - [@Task](#taskperiod-name-params) - periodically execute a function
 
 ![divider](./assets/divider.small.png)
@@ -719,8 +720,8 @@ Returns a list of entity instances.
 - **options** `FilterOptions`
   - **filter**? `QueryFilter` - an object of values to filter the collection
     - **value**? `value | [operator, value]` - a filter value can be an array with an operator like `!=` or `>` etc. 
-  - **sort**? `string[]` - sorts the results AQL style, eg. `['email DESC','name ASC']`
-  - **limit?** `number | [offset, count]` - limits the results AQL style eg. `[10, 2]`
+  - **sort**? `string[]` - sorts the results AQL style, i.e. `['email DESC','name ASC']`
+  - **limit?** `number | [offset, count]` - limits the results AQL style i.e. `[10, 2]`
   - **keep?** `string[]` - list attributes to load from collection
   - **unset?** `string[]` - instead of selecting attributes with `keep`, `unset` loads every other attribute, except the provided ones.
 
@@ -948,7 +949,7 @@ Routes can be further configured by using the following options.
 Creates a `GET` route on `collectionName/{_key}`.
  When used as a `ClassDecorator` a default route for returning a single document of the collection is created. When used on a static method of the collection a custom route executing the very same function with the [RouteArg](#routearg) argument will be created.
 
-- **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
+- **path**? `string` - a rich path string (can contain simple types, i.e. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
@@ -985,7 +986,7 @@ class Users extends Entities {
 
 Creates a `POST` route on `collectionName/{_key}`. Provides a route to create  documents by using `collection._insert`, when called as a `ClassDecorator`.
 
-- **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
+- **path**? `string` - a rich path string (can contain simple types, i.e. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
@@ -1016,7 +1017,7 @@ class Users extends Entities {
 
 Creates a `PATCH` route on `collectionName/{_key}`. Provides a route to update single documents by using `collection._update`, when called as a `ClassDecorator`.
 
-- **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
+- **path**? `string` - a rich path string (can contain simple types, i.e. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
@@ -1062,7 +1063,7 @@ class Users extends Entities {
 
 Creates a `DELETE` route on `collectionName/{_key}`. Provides a route to remove single documents by using `collection._remove`, when called as a `ClassDecorator`.
 
-- **path**? `string` - a rich path string (can contain simple types, eg. `/:var=number`)
+- **path**? `string` - a rich path string (can contain simple types, i.e. `/:var=number`)
 - **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
 - **roles**? `string[]` - roles required to access the route
 - **summary**? `string | RouteOpt` - shortcut for `options.summary`
@@ -1102,9 +1103,36 @@ class Users extends Entities {}
 ```
 ![divider](./assets/divider.small.png)
 
+### `@AQLFunction(isDeterministic?, customName?)`
+
+Extends AQL with a [User Function](https://www.arangodb.com/docs/stable/aql/extending.html). The function name is derived from the collection name and the method name. For example a `USERS::METHOD_NAME()`. The parameter order does not matter.
+
+- **isDeterministic**? `() => boolean` - specify whether the function results are fully deterministic (i.e. depend solely on the input and are the same for repeated calls with the same input values).
+- **customName**? `() => string` - by default the name of the function is concatenated from the collection- and  method name seprated by `::`. A different name can be provided, however the collection name will always be the prefix.
+
+**Example**
+```ts
+@Collection(of => User)
+class Users extends Entities {
+    // registers "USERS::FUNCTION_NAME()"
+    @AQLFunction(isDeterministic => true)
+    static FUNCTION_NAME(arg){
+        return true;
+    }
+    
+    // registers"USERS::LAZYPI()"
+    @AQLFunction(name => 'LAZIPI', isDeterministic => true)
+    static IGNORED(arg){
+        return 3.14;
+    }
+}
+```
+
+![divider](./assets/divider.small.png)
+
 ### `@Task(period, name?, params?)`
 
-Creates a task with the [ArangoDB Task Management](https://www.arangodb.com/docs/3.4/appendix-java-script-modules-tasks.html). The task is either invoked once after startup (when using `period => 0`) or every `n` seconds. By default the method name is used as `task.id`.
+Creates a task with the [ArangoDB Task Management](https://www.arangodb.com/docs/3.4/appendix-java-script-modules-tasks.html). The task is either invoked once after startup (when using `period => 0`) or every `n` seconds. By default the task id equals to `CollectioName/MethodName`.
 
 > ⚠️ It is important to note that the callback function is late bound and will be executed in a different context than in the creation context. The callback function must therefore not access any variables defined outside of its own scope. The callback function can still define and use its own variables. [Read more](https://www.arangodb.com/docs/3.4/appendix-java-script-modules-tasks.html#register-a-task)
 
@@ -1116,10 +1144,10 @@ Creates a task with the [ArangoDB Task Management](https://www.arangodb.com/docs
 ```ts
 @Collection(of => User)
 class Users extends Entities {
-    // runs TASK_ID every 10 seconds
+    // executes the method every 10 seconds (task-id = "Users/MY_TASK")
     // Note: the below is equal to @Task({period:10,name:...,params:...})
     @Task(period => 10, name => 'Log something', {really:true})
-    static TASK_ID(params){
+    static MY_TASK(params){
         console.log('Hello World',params);
     }
 }
