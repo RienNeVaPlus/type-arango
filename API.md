@@ -1243,7 +1243,7 @@ class Users extends Entities { }
 
 ### `@Description(string)`
 
-Does not really do anything as of now. Can be decorate a `Class` or a `Propery` and might be to used to further describe routes / entities in the future.
+Does not really do anything as of now. Can decorate a `Class`, `Propery` or `Method` and might be to used to further describe routes / entities in the future.
 
 **Example**
 ```ts
