@@ -7,6 +7,7 @@ import {Document} from '.'
 const nativeKeys = ['constructor','toString'];
 const unenumerable = ['_saveKeys','_collection'];
 const globalAttributes = ['_key','_rev','_id','_oldRev'];
+const edgeAttributes = ['_from','_to'];
 const accessibleKeys = globalAttributes.concat('_saveKeys');
 
 interface SaveOptions extends ArangoDB.UpdateOptions, ArangoDB.InsertOptions {
@@ -72,7 +73,21 @@ export class Entity {
 				const rel = _doc.relation[key];
 				if(rel && !(target[key] instanceof Entity)){
 					let filter: QueryFilter = {[rel.attribute]:target._key};
-					if(target[key]) filter = {_key:target[key]};
+
+					// related document is an edge, use CollectionName/ID
+					if(rel.document.isEdge && edgeAttributes.includes(rel.attribute)){
+						filter[rel.attribute] = _doc.col!.name + '/' + filter[rel.attribute];
+					}
+
+					// relation key is stored in document
+					if(target[key]){
+						filter = {_key:target[key]};
+						// remove CollectionName/ from relation id
+						if(_doc.isEdge && target[key].startsWith(rel.document.col!.name)){
+							filter._key = target[key].replace(rel.document.col!.name+'/', '');
+						}
+					}
+
 					return Document.resolveRelation.bind(_doc, rel, filter, target[key]);
 				}
 
