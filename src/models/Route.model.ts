@@ -1,4 +1,4 @@
-import {Document,Collection} from '.'
+import {Document, Collection, Entity} from '.'
 import {config, logger, RouteArg, routes} from '../index'
 import {db, joiDefaults, omit, pick, queryBuilder, removeValues, toArray} from '../utils'
 import {
@@ -453,9 +453,17 @@ export class Route {
 	}
 
 	/**
-	 * Request based document cache in order to avoid duplicate calls to collection.document (only active when document() is called without an argument)
+	 * Request based document cache in order to avoid duplicate calls to collection.document
+	 * (only active when document() is called without an argument)
 	 */
-	static document(collection: ArangoDB.Collection, doc: Document, tmp: any = {}, canThrow: boolean = true, key: string, selector?: string | ArangoDB.DocumentLike){
+	static document(
+		collection: ArangoDB.Collection,
+		doc: Document,
+		tmp: any = {},
+		canThrow: boolean = true,
+		key: string,
+		selector?: string | ArangoDB.DocumentLike
+	){
 		let k: string | ArangoDB.DocumentLike = selector || key;
 		if(!k) throw new MissingKeyError(collection.name());
 
@@ -470,7 +478,12 @@ export class Route {
 	/**
 	 * Used by Route.document
 	 */
-	static documentRead(collection: ArangoDB.Collection, doc: Document, canThrow: boolean = true, selector: string | ArangoDB.DocumentLike){
+	static documentRead(
+		collection: ArangoDB.Collection,
+		doc: Document,
+		canThrow: boolean = true,
+		selector: string | ArangoDB.DocumentLike
+	){
 		selector = doc.emitBefore('document', selector);
 		try { return doc.emitAfter('document', collection.document(selector), selector); }
 		catch(e){
@@ -671,6 +684,7 @@ export class Route {
 
 		let resp = pick(doc, requestedAttributes);
 		resp = omitUnreadableAttributes ? omit(resp, stripAttributes) : resp;
+
 		if(config.forClient || forClient){
 			const args = {req, res,
 				_key: req.param('_key') || '',
@@ -681,6 +695,7 @@ export class Route {
 			if(config.forClient) resp = config.forClient!(resp, args);
 			if(forClient) resp = forClient(resp, args);
 		}
+
 		return resp;
 	}
 
@@ -696,12 +711,19 @@ export class Route {
 		doc: DocumentData | any,
 		omitUnreadableAttributes: boolean | string = true
 	): Foxx.Response {
-		const call = Route.forClient.bind(null, req, res, forClient, stripAttributes, requestedAttributes, omitUnreadableAttributes);
+		// convert to entities to objects
+		if(doc instanceof Entity)
+			doc = doc.toObject();
+
+		const call = Route.forClient.bind(null,
+			req, res, forClient, stripAttributes, requestedAttributes, omitUnreadableAttributes
+		);
 		let resp;
+
 		if(Array.isArray(doc)){
-			resp = doc.map(d => call({...d}));
+			resp = doc.map(d => call(d)); // {...d})
 		} else if(doc && typeof doc === 'object') {
-			resp = call({...doc});
+			resp = call(doc); // {...doc}
 		} else {
 			resp = doc;
 		}
@@ -798,12 +820,9 @@ export class Route {
 			limit: offset ? [offset, limit] : limit
 		};
 
-		return db._query(
-			queryBuilder(name, q)
-		)
+		return db
+			._query(queryBuilder(name, q))
 			.toArray()
-			.filter(
-				(doc: DocumentData) => !hasAuth || auth(doc, 'get', 'list')
-			);
+			.filter((doc: DocumentData) => !hasAuth || auth(doc, 'get', 'list'));
 	}
 }
