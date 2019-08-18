@@ -80,12 +80,13 @@ export class Entity {
 					}
 
 					// relation key is stored in document
-					if(target[key]){
-						filter = {_key:target[key]};
+					let ref = target[key];
+					if(ref){
 						// remove CollectionName/ from relation id
-						if(_doc.isEdge && target[key].startsWith(rel.document.col!.name)){
-							filter._key = target[key].replace(rel.document.col!.name+'/', '');
+						if(_doc.isEdge && Array.isArray(ref)){
+							ref = ref.map(r => r.replace(rel.document.col!.name+'/', ''));
 						}
+						filter = {_key:ref};
 					}
 
 					return Document.resolveRelation.bind(_doc, rel, filter, target[key]);
