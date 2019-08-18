@@ -194,9 +194,7 @@ export class Entity {
 		}
 		else {
 			data = _doc.emitBefore('insert', data);
-			console.log('DO insert', data);
 			res = _doc.emitAfter('insert', _collection.insert(data, Object.assign(options, {returnNew:true})).new );
-			console.log('insert res', res);
 		}
 
 		this.merge(res);
