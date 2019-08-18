@@ -98,8 +98,8 @@ export class Users extends Entities {
         path => ':id/friends',
         roles => ['viewer'],
         summary => 'Returns friend users'
-    ) static GET({req, json}: RouteArg){
-        const user = Users.findOne(req.param('id'));
+    ) static GET({param}: RouteArg){
+        const user = Users.findOne(param.id);
         return user.friends();
     }
 }
