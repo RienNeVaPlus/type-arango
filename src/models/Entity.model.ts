@@ -98,7 +98,8 @@ export class Entity {
 					throw new SymbolKeysNotSupportedError();
 
 				if(_doc.relation[key]){
-					// if(val instanceof Entity) val.save().then();
+					target[key] = val;
+					return true;
 				}
 				// check key
 				else if(!keys.includes(String(key))) {
@@ -142,6 +143,13 @@ export class Entity {
 	 */
 	merge(...obj: DocumentData[]){
 		return Object.assign(this, ...obj);
+	}
+
+	/**
+	 * Converts entity to object (strips property listeners)
+	 */
+	toObject(){
+		return Object.assign({}, this);
 	}
 
 	/**

@@ -237,7 +237,7 @@ export class Document<T=any> {
 		switch(rel.type){
 			default:
 			case 'OneToOne': return entities.findOne(opt);
-			case 'OneToMany': return entities.find(opt);
+			case 'OneToMany':	return entities.find(opt);
 		}
 	}
 
