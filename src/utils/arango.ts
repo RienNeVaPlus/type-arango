@@ -33,9 +33,23 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 	if(filter){
 		Object.entries(filter).forEach(
 			([key, value]) => q.push(
-				Array.isArray(value) && (String(value[0]).toUpperCase()) === 'IN'
-					? 'FILTER '+escape(value[1])+' IN i.'+clean(key)
-					: 'FILTER i.'+clean(key)+' ' + (Array.isArray(value) ? (operators.includes(value[0]) ? value[0] : '==') + ' '+escape(value[1]) : '== '+escape(value))
+				'FILTER '+
+				(
+					// ['IN', value] => FILTER value IN i.key
+					Array.isArray(value) && (String(value[0]).toUpperCase()) === 'IN'
+					? escape(value[1])+' IN i.'+clean(key)
+
+					// ['!=', value] => FILTER i.key != value
+					: Array.isArray(value) && operators.includes(value[0])
+					? 'i.' + clean(key) + ' ' + value[0] + ' ' + escape(value[1])
+
+					// ['value1','value2'] => FILTER i.key IN [...values]
+					: Array.isArray(value)
+					? 'i.' + clean(key) + ' IN ' + escape(value)
+
+					// value => FILTER i.key == value
+					: 'i.' + clean(key) + ' == ' + escape(value)
+				)
 			)
 		);
 	}
@@ -68,7 +82,7 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 		q.push('RETURN i');
 	}
 
-	// logger.warn('Query %o', q.join(' '));
+	// console.warn('Query %o', q.join(' '));
 
 	return q.join('\n');
 }

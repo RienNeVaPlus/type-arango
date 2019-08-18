@@ -331,7 +331,7 @@ export interface RouteData {
 }
 
 type QueryFilterOperator = '==' | '!=' | '<' | '<=' | '>' | '>=' | 'IN' | 'NOT IN' | 'LIKE' | '=~' | '!~'
-type QueryFilterValue = string | number | boolean | [QueryFilterOperator, string | number | boolean]
+type QueryFilterValue = string | number | boolean | [QueryFilterOperator, ...(string | number | boolean)[]]
 export interface QueryFilter {
 	[key: string]: QueryFilterValue
 }
