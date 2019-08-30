@@ -100,6 +100,12 @@ export function joiDefaults(obj: any, override: any = {}){
 			if(override[key] || child.schema._flags.default)
 				res[key] = override[key] || child.schema._flags.default;
 		}
+
+		// convert strings to integer / floats when the attribute type is a number (this should be done by joi's .validate, inside ArangoDB Foxx)
+		if(child.schema._type === 'number'){
+			res[key] = child.schema._tests.find((t:any) => t.name === 'integer') ? parseInt(res[key]) : parseFloat(res[key]);
+		}
+
 		return res;
 	}, {}) : undefined;
 }
