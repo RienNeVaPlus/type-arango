@@ -1,4 +1,4 @@
-# 👥 Example #3: Relations
+# 📌 Example #3: Relations
 
 An example of working with relations in type-arango. Please have a look at the [basic example](../1-basic) first.
 
