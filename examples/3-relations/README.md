@@ -6,9 +6,6 @@ Related attributes are decorated by [@OneToOne](../../API.md#onetoonetype-relati
 
 Relations can either be fetched inside custom routes by using [entity.related('attribute')](../../API.md#entityrelatedattribute-keepattributes) or by simply providing the query parameter `relations` on default routes.
 
-
-or from the client side by providing the query parameter `relations=attribute1,attribute2`. Note: all relation is exposed by default.
-
 ![divider](../../assets/divider.small.png)
 
 ### Example Setup
