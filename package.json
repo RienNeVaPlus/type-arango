@@ -23,7 +23,7 @@
     "Routes",
     "Entity"
   ],
-  "author": "RienNeVaPlus <contact@rienneva.plus>",
+  "author": "RienNeVaPlus <?@rienneva.plus>",
   "license": "MIT",
   "dependencies": {
     "@types/arangodb": "^3.5.0",
