@@ -1,1 +1,1 @@
-export * from './User.collection'
+export * from './Users.collection'

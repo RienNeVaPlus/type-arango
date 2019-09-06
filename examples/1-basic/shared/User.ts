@@ -1,12 +1,9 @@
 import { Document, Entity, Collection, Entities, Route, Attribute, Index, RouteArg } from '../../../src' // type-arango
 
-
 @Document()
 export class User extends Entity {
-	// creates a hash index on User.email
-	@Index()
-	// validates changes to user.email to be email addresses
-	@Attribute(type => type.email())
+	@Index() // creates a hash index on User.email
+	@Attribute(type => type.email()) // validates changes to user.email to be email addresses
 	email: string;
 
 	@Attribute()
@@ -15,13 +12,13 @@ export class User extends Entity {
 
 // creates the collection Users
 @Collection(of => User)
-// creates all five `CRUD like` routes (GET=read, POST=create, PUT=replace, PATCH=update, DELETE=remove)
-@Route.all()
+// creates three routes
+@Route.use('GET','POST','PATCH')
 export class Users extends Entities {
 	// creates & documents a route on /users/custom/:user
-	@Route.GET(path => 'custom/:user=number')
-	static GET_CUSTOM({req,error}: RouteArg){
-		const user = Users.findOne(req.param('user'));
+	@Route.GET('custom/:user=number')
+	static GET_CUSTOM({param,error}: RouteArg){
+		const user = Users.findOne(param.user);
 		if(!user) return error('not found');
 		return user;
 	}

@@ -13,7 +13,9 @@ import {
 	StringSchema,
 	ValidationOptions
 } from 'joi'
+import * as Joi from 'joi'
 import {enjoi} from './utils'
+import {Entity} from './models'
 
 // https://stackoverflow.com/questions/45306782/typescript-declaration-for-polymorphic-decorator
 export interface ClassAndMethodDecorator {
@@ -32,23 +34,25 @@ export interface ClassAndPropertyDecorator {
 }
 // declare type PropertyDecorator = (target: Object, propertyKey: string | symbol) => void;
 
-export type Related<T> = (optOrSet?: T | null | string[]) => T;
+export type Related<T> = T// | ((optOrSet?: T | null | string[]) => T);
 
 export type Abstract<T> = Function & {prototype: T};
 export type Constructor<T> = new (...args: any[]) => T;
 export type Class<T = {}> = Abstract<T> | Constructor<T>;
 
-// export interface ClassType<T = any> {
-// 	new(...args: any[]): T;
-// }
-//
-// export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
-// export type TypeValue = ClassType | Function | object | symbol;
-
 export type CollectionName = string;
 
-export interface CreateCollectionOptions extends ArangoDB.CreateCollectionOptions {
+export interface CreateCollectionOptions extends ArangoDB.CreateCollectionOptions, Partial<RouteGroups> {
 	name?: CollectionName
+	of?: typeof Entity
+	auth?: RouteAuth[] | RouteAuth
+	roles?: RouteRoles[] | RouteRoles
+	routes?: Array<RouteDecorator | CollectionRoute | CollectionRouteArray>
+	relations?: string[] | true
+}
+export type CollectionRouteArray = [RouteDecorator, string | CollectionRoute | SchemaFunc, ...any[]]
+export interface CollectionRoute extends RouteOpt {
+	method: RouteDecorator
 }
 
 export interface IndexOptions {
@@ -105,6 +109,7 @@ export interface Config {
 	fromClient: null | DocumentFromClient
 }
 
+export type RoutePreset = '*' | 'ALL' | 'ALL+' | 'CRUD' | 'CRUD+'
 export type RouteDecorator = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE' | 'LIST'
 export type RouteMethod = 'get' | 'post' | 'patch' | 'put' | 'delete'
 export type RouteAction = 'create' | 'read' | 'update' | 'delete' | 'list'
@@ -146,22 +151,7 @@ export interface RoleObject {
 	[key: string]: RoleAttributes
 }
 
-// export interface AuthorizedMetadata {
-// 	authorized: AttributeRoles
-// }
-
-// export interface IndexMetadata extends ArangoDB.IndexDescription<string | string[]> {}
-
-// export interface RouteMetadata {
-// 	method: RouteMethod
-// 	opt?: RouteOpt
-// }
-//
-// export interface AttributeMetadata {
-// 	schema?: Schema
-// 	metadata?: any
-// 	roles?: AttributeRoles
-// }
+export type SchemaFunc = (enjoi: (type?: any) => typeof Joi | any, joi?: any) => typeof Joi | boolean | Object;
 
 export interface SchemaStructure {
 	[key: string]: Schema
@@ -231,6 +221,8 @@ export interface RouteOpt extends RouteBaseOpt {
 	handlerName?: string
 	handler?: (arg: RouteArg) => any
 	roles?: Roles
+	schema?: Schema | SchemaFunc
+	relations?: string[] | true
 }
 
 interface TemplateStringsArray extends ReadonlyArray<string> {
@@ -254,6 +246,7 @@ export interface RouteRolesArg {
 	replace: (selector: string | ArangoDB.DocumentLike, data: DocumentData, options?: ArangoDB.ReplaceOptions) => ArangoDB.UpdateResult
 	remove: (selector: string | ArangoDB.DocumentLike, options?: ArangoDB.RemoveOptions) => ArangoDB.RemoveResult
 	exists: (selector: string) => boolean
+	relations: (data: DocumentData) => DocumentData;
 	req: Foxx.Request
 	res: Foxx.Response
 	roles?: Roles
@@ -263,7 +256,14 @@ export interface RouteRolesArg {
 	auth: RouteAuthorize
 	error: (status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response
 }
-export type RouteRoles = (arg: RouteRolesArg) => Roles;
+export type RouteRoles = (arg: RouteRolesArg) => Roles
+export type RouteAuth = (arg: RouteAuthArg) => boolean
+export interface RouteGroups {
+	creators: Roles
+	readers: Roles
+	updaters: Roles
+	deleters: Roles
+}
 
 export interface RouteArg extends RouteRolesArg, RouteBaseOpt {
 	userRoles: string[]
@@ -323,10 +323,10 @@ export interface RouteData {
 	description: string
 	deprecated?: boolean
 	tags?: string[]
+	resolvable?: string[]
 	routeAuths: Array<RouteAuthorize>
 	routeRoles: Array<RouteRoles>
 	roles: Roles
-	roleStripAttributes: RoleObject
 	handler?: RouteHandler
 }
 

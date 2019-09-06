@@ -10,8 +10,6 @@ export function Nested(
 	return (prototype: any) => {
 		if(!isActive) return;
 		const doc = getDocumentForContainer(prototype);
-		doc.attribute = {};
-		doc.schema = {};
 		doc.decorate('Nested', {prototype, insideDocumentFunction});
 		return prototype;
 	}

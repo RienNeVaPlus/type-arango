@@ -14,7 +14,7 @@ and delete documents within the collection.
 
 #### **[./shared/User.ts]()**:
 ```ts
-import { Document, Entity, Collection, Entities, Route, Index, Attribute, RouteArgs } from 'type-arango';
+import { Document, Entity, Collection, Entities, Route, Index, Attribute, RouteArgs } from 'type-arango'
 
 @Document()
 export class User extends Entity {
@@ -27,25 +27,26 @@ export class User extends Entity {
 }
 
 @Collection(of => User)
-@Route.all()
+@Route.use('GET','POST','PATCH')
 export class Users extends Entities {
-	@Route.GET(path => 'custom/:user=number')
-	static GET_CUSTOM({req,error}: RouteArgs){
-		const user = Users.findOne(req.param('user'));
+	@Route.GET('custom/:user=number')
+	static GET_CUSTOM({param,error}: RouteArg){
+		const user = Users.findOne(param.user);
 		if(!user) return error('not found');
 		return user;
 	}
 }
 ```
 
-Setup a basic `User` entity and it's collection with [CRUD like](../../API.md#crud-like) routes.
+Setup a basic `User` entity and it's collection with three routes.
  
-- [`@Collection`](../../API.md#collectionofdocument-options) looks for the collection `Users` and creates it, in case it does not 
-exist.
+ - [`@Document`](../../API.md#document) initializes an entity
 - [`@Attribute`](../../API.md#attributeschema-readers-writers) marks the property as a database field of the entity.
 The first argument can be a function receiving a [Enjoi](../../API.md#-en-hanced-joi) object of it's defined type (`Joi.string()` above) and returning an input validation schema.
 - [`@Index`](../../API.md#indextype-options) creates a `hash` index on the field `email`.
-- [`@Route.all`](../../API.md#routeallcreators-readers-updaters-deleters-options) creates [CRUD like](../../API.md#crud-like) routes for the entity.
+- [`@Collection`](../../API.md#collectionofdocument-options) looks for the collection `Users` and creates it, in case it does not 
+exist.
+- [`@Route.use`](../../API.md#routeusemethods-options) creates preset & documented routes for the collection.
 
 ![divider](../../assets/divider.small.png)
 

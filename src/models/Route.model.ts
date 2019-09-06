@@ -1,4 +1,4 @@
-import {Document, Collection, Entity} from '.'
+import {Collection, Document, Entity} from '.'
 import {config, logger, RouteArg, routes} from '../index'
 import {db, joiDefaults, omit, pick, queryBuilder, removeValues, toArray} from '../utils'
 import {
@@ -16,7 +16,7 @@ import {
 } from '../types'
 import {Scalar} from './Scalar.model'
 import * as Joi from 'joi'
-import {MissingKeyError} from '../errors';
+import {MissingKeyError} from '../errors'
 
 const REGEX_PATH_PARAM: RegExp = /:+([^=/?&]+)[=]?([^/?&]+)?/gi;
 const mime: string[] = ['application/json'];
@@ -144,19 +144,25 @@ export class Route {
 	setup(router: Foxx.Router): Foxx.Endpoint {
 		const { isCustom, method, path, col, opt } = this;
 		let {
-			response = {status:'ok', schema:col.doc!.joi, mime} as RouteResponse,
+			body,
+			deprecated,
+			description = '',
 			errors = [],
+			handler,
+			handlerName,
 			pathParams = [],
 			queryParams = [],
-			body,
+			relations,
+			response = {status:'ok', schema:col.doc!.joi, mime} as RouteResponse,
 			roles,
 			summary = '',
-			description = '',
-			deprecated,
-			tags,
-			handler,
-			handlerName
+			tags
 		} = opt as RouteOpt;
+
+		// use collection option "relations" by default
+		if(!relations && col.opt && col.opt.relations){
+			relations = col.opt.relations;
+		}
 
 		// let body: RouteBody = opt.body;
 		const name: string = col.doc!.name;
@@ -167,14 +173,25 @@ export class Route {
 
 		const sortValues = Object.keys(col.doc!.schema);
 
+		// `relation` query param
+		const resolvable = relations === true ? Object.keys(col.doc!.relation) : relations;
+		if(resolvable && resolvable.length && (method === 'get' || opt.action === 'list')){
+			queryParams.push([
+				'relations', Joi.string(),
+				`📌 **List of related entities to fetch and return**
+				&nbsp; &nbsp; &nbsp; \`Values: ${resolvable.join(', ')}\`
+				&nbsp; &nbsp; &nbsp; \`Example: ?relations=${resolvable.slice(0,2).join(',')}\``
+			]);
+		}
+
 		// `select` query param
 		if(['get','post','patch','put'].includes(method) || opt.action === 'list'){
-			queryParams = [[
+			queryParams.push([
 				'attributes', Joi.string(),
-				`✂️ **Comma separated list of attributes to return**
+				`✂️ **List of attributes to return**
 				  &nbsp; &nbsp; &nbsp; \`Values: ${sortValues.join(', ')}\`
 				  &nbsp; &nbsp; &nbsp; \`Example: ?attributes=${sortValues.slice(0,2).join(',')}\``
-			]];
+			]);
 		}
 
 		tags = tags || [col.name];
@@ -271,8 +288,6 @@ export class Route {
 				+ (rolesText?', '+rolesText:'')+') '
 				+ (routeAuths.length?'&& Route.auth'+(routeAuths.length>1?'['+routeAuths.length+']':''):'')
 				+ '`<br/><br/>'
-				// + (roles ? '**👪 Roles:** `'+rolesText+'`<br/><br/>' : '')
-				// + (routeAuths.length?'**🔑 Auth:** `'+(routeAuths.join(' && '))+'`<br/><br/>':'')
 				+ description;
 		}
 
@@ -285,8 +300,7 @@ export class Route {
 			method === 'delete' ? 'delete' : 'update';
 
 		const routeData: RouteData = {
-			router, method, action, name: col.name, path, roleStripAttributes: col.doc!.roleStripAttributes,
-			doc: col.doc,
+			router, method, action, name: col.name, path, doc: col.doc, resolvable,
 			tags, summary, description, roles: roles||[], response, errors, deprecated,
 			routeAuths: col.routeAuths, routeRoles: col.routeRoles,
 			body, pathParams, queryParams, handler
@@ -299,26 +313,26 @@ export class Route {
 	 * Setup route
 	 */
 	static setup({
-		doc,
-		router,
-		method,
 		action,
-		routeAuths,
-		routeRoles,
-		roles,
-		roleStripAttributes,
+		body,
+		deprecated,
+		description,
+		doc,
+		errors,
+		handler,
+		method,
 		name,
 		path,
-		tags,
-		response,
-		errors,
-		summary,
-		description,
-		deprecated,
-		body,
-		queryParams,
 		pathParams,
-		handler }: RouteData
+		queryParams,
+	  resolvable,
+		response,
+		roles,
+		routeAuths,
+		router,
+		routeRoles,
+		summary,
+		tags }: RouteData
 	): Foxx.Endpoint {
 		const {aql} = require('@arangodb');
 		const { info, debug, warn } = logger;
@@ -330,6 +344,7 @@ export class Route {
 		const update = Route.modify.bind(null, collection, doc, 'update');
 		const replace = Route.modify.bind(null, collection, doc, 'replace');
 		const remove = Route.remove.bind(null, collection, doc);
+		const relations = Route.relations.bind(null, doc, resolvable);
 		const validParams: string[] = [];
 		queryParams.forEach(qp => validParams.push(qp[0]));
 		pathParams.forEach(qp => validParams.push(qp[0]));
@@ -350,28 +365,39 @@ export class Route {
 					c[n] = req.pathParams[n] || req.queryParams[n];
 					return c;
 				}, {});
-
+				const requestedAttributes = req.queryParams.attributes ? req.queryParams.attributes.split(',') : null;
 				const _key = param._key;
 				const args: RouteRolesArg = {
-					name, req, res, roles, path, method, action, aql, validParams, param,
 					_key,
+					action,
+					aql,
+					auth: Route.auth.bind(null, req, res, roles, routeAuths),
 					collection,
 					document: document.bind(null, tmp, action !== 'create', _key),
+					error: Route.error.bind(null, res),
 					exists: collection.exists.bind(collection),
-					insert,
-					update: update.bind(null, _key),
-					replace: replace.bind(null, _key),
-					remove: remove.bind(null, _key),
-					query: Route.query.bind(null),
-					session: Route.session.bind(null, req, res),
-					requestedAttributes: req.queryParams.attributes ? req.queryParams.attributes.split(',') : null,
 					hasAuth: !!routeAuths.length,
-					auth: Route.auth.bind(null, req, res, roles, routeAuths),
-					error: Route.error.bind(null, res)
+					insert,
+					method,
+					name,
+					param,
+					path,
+					query: Route.query.bind(null),
+					relations: relations.bind(null, req, res, requestedAttributes, userRoles),
+					remove: remove.bind(null, _key),
+					replace: replace.bind(null, _key),
+					req,
+					requestedAttributes,
+					res,
+					roles,
+					session: Route.session.bind(null, req, res),
+					update: update.bind(null, _key),
+					validParams
 				};
 				if(routeRoles.length){
 					userRoles = routeRoles.map(f => f(args) || []).reduce((c, n) => c.concat(n), userRoles);
 				}
+
 				debug('Provided roles %o', userRoles);
 
 				const authorizedRoles = getAuthorizedRoles(userRoles, roles || []);
@@ -382,32 +408,14 @@ export class Route {
 					return res.throw(throwForbidden || 'forbidden');
 				}
 
-				// collect read- & writable attributes into temp object {key:count}
-				let attributesRead: any = {}, attributesWrite: any = {}, sum: number = 0;
-				for(let role of userRoles){
-					if(roleStripAttributes[role]){
-						sum++;
-						for(let read of roleStripAttributes[role].read){
-							attributesRead[read] = (attributesRead[read] || 0) + 1;
-						}
-						for(let write of roleStripAttributes[role].write){
-							attributesWrite[write] = (attributesWrite[write] || 0) + 1;
-						}
-					}
-				}
-				// strip attributes when they are forbidden in all roles
-				let stripAttributesRead: string[] = [], stripAttributesWrite: string[] = [];
-				// const sum = userRoles.length;
-				Object.keys(attributesRead).forEach(
-					k => attributesRead[k] === sum && stripAttributesRead.push(k));
-				Object.keys(attributesWrite).forEach(
-					k => attributesWrite[k] === sum && stripAttributesWrite.push(k));
+				const stripAttributesRead = doc.stripAttributeList(userRoles, 'read');
+				const stripAttributesWrite = doc.stripAttributeList(userRoles, 'write');
 
 				// build route argument;
 				const data: RouteArg = Object.assign(args, {
 					req, res, userRoles,
-					send: Route.send.bind(null, req, res, doc.forClient.bind(doc), stripAttributesRead, args.requestedAttributes!),
-					json: Route.json.bind(null, req, res, doc.fromClient.bind(doc), body ? body[0] : null, stripAttributesWrite),
+					send: Route.send.bind(null, req, res, doc, stripAttributesRead, args.requestedAttributes!),
+					json: Route.json.bind(null, req, res, doc, body ? body[0] : null, stripAttributesWrite),
 					deprecated, tags, summary, description
 				});
 
@@ -626,15 +634,16 @@ export class Route {
 	static json(
 		req: Foxx.Request,
 		res: Foxx.Response,
-		fromClient: any,
+		document: Document,
 		body: any,
 		stripAttributes: string[],
 		omitUnwritableAttributes: boolean = true
 	){
 		let json = req.json();
 
-		// add joi defaults to result, this should've been done by Foxx instead of me
+		// console.log('validate', body.validate(json, {convert:true}));
 		if(body && body._inner){
+			// add joi defaults to result, this should've been done by Foxx instead of me
 			json = removeValues(joiDefaults(body, json), undefined);
 		}
 
@@ -642,7 +651,7 @@ export class Route {
 		if(json && omitUnwritableAttributes) json = omit(json, stripAttributes);
 
 		// pass to config.fromClient or Document.fromClient
-		if(config.fromClient || fromClient){
+		if(config.fromClient || document.fromClient){
 			const args = {req, res,
 				_key: req.param('_key') || '',
 				requestedAttributes: req.param('attributes') || null,
@@ -650,7 +659,7 @@ export class Route {
 				error: Route.error.bind(null, res)
 			};
 			if(config.fromClient) json = config.fromClient!(json, args);
-			if(fromClient) json = fromClient(json, args);
+			if(document.fromClient) json = document.fromClient(json, args);
 		}
 
 		logger.debug('Read input json() %o', json);
@@ -671,7 +680,7 @@ export class Route {
 	static forClient(
 		req: Foxx.Request,
 		res: Foxx.Response,
-		forClient: any,
+		document: any,
 		stripAttributes: string[],
 		requestedAttributes: string[],
 		omitUnreadableAttributes: boolean | string = true,
@@ -682,18 +691,27 @@ export class Route {
 		if(!['PATCH','PUT'].includes(req.method) && config.stripDocumentRev && doc._key)
 			delete doc._rev;
 
-		let resp = pick(doc, requestedAttributes);
+		let resp = requestedAttributes ? pick(doc, requestedAttributes.map(a => a.split('.')[0])) : doc;
 		resp = omitUnreadableAttributes ? omit(resp, stripAttributes) : resp;
 
-		if(config.forClient || forClient){
+		if(config.forClient || document.forClient){
 			const args = {req, res,
 				_key: req.param('_key') || '',
-				requestedAttributes: req.param('attributes') || null,
+				requestedAttributes,//req.param('attributes') || null,
 				session: Route.session.bind(null, req, res),
 				error: Route.error.bind(null, res)
 			};
+
+			// use forClient on related attributes
+			Object.keys(doc).forEach(k => doc[k] instanceof Entity
+				? doc[k] = doc[k]._doc.forClient(doc[k].toObject(), args)
+				: Array.isArray(doc[k]) && doc[k][0] instanceof Entity
+				? doc[k] = doc[k].map((e: Entity) => e._doc.forClient(e.toObject(), args))
+				: null
+			);
+
 			if(config.forClient) resp = config.forClient!(resp, args);
-			if(forClient) resp = forClient(resp, args);
+			if(document.forClient) resp = document.forClient(resp, args);
 		}
 
 		return resp;
@@ -705,25 +723,21 @@ export class Route {
 	static send(
 		req: Foxx.Request,
 		res: Foxx.Response,
-		forClient: any,
+		document: any,
 		stripAttributes: string[],
 		requestedAttributes: string[],
 		doc: DocumentData | any,
 		omitUnreadableAttributes: boolean | string = true
 	): Foxx.Response {
-		// convert to entities to objects
-		if(doc instanceof Entity)
-			doc = doc.toObject();
-
 		const call = Route.forClient.bind(null,
-			req, res, forClient, stripAttributes, requestedAttributes, omitUnreadableAttributes
+			req, res, document, stripAttributes, requestedAttributes, omitUnreadableAttributes
 		);
 		let resp;
 
 		if(Array.isArray(doc)){
-			resp = doc.map(d => call(d)); // {...d})
+			resp = doc.map(d => call({...d}));
 		} else if(doc && typeof doc === 'object') {
-			resp = call(doc); // {...doc}
+			resp = call({...doc});
 		} else {
 			resp = doc;
 		}
@@ -733,11 +747,69 @@ export class Route {
 	}
 
 	/**
+	 * Fetch related documents
+	 */
+	static relations(
+		doc: Document,
+		resolvable: string[] = [],
+		req: Foxx.Request,
+		res: Foxx.Response,
+		attributes: string[] = [],
+		userRoles: Roles,
+		data: DocumentData
+	){
+		if(!resolvable.length) return data;
+
+		let relations = req.queryParams.relations;
+		if(!relations) return data;
+
+		attributes = attributes || [];
+		relations = relations
+			.split(',')
+			.filter((r: string) => resolvable.includes(r));
+
+		let r = Object.assign({}, data);
+
+		const forClient = Route.forClient.bind(null,	req, res);
+
+		// append related documents
+		for(const relation of relations){
+			let id: string = '';
+			let document: any = doc;
+
+			relation.split('.').reduce((o: any, part: string) => {
+				id += part+'.';
+				const parent = document;
+				document = document.relation[part].document;
+				let keep = attributes.filter(a => a.startsWith(id)).map(a => a.substr(id.length));
+				if(!keep.length) keep = Object.keys(document.attribute);
+
+				let result = parent.resolveRelation(o, part, keep);
+				if(!result) return o[part] = null;
+
+				const fc = forClient.bind(null, document, document.stripAttributeList(userRoles, 'read'), keep, true);
+
+				if(Array.isArray(result)){
+					o[part] = result.map(r => fc({...r}));
+				} else if(doc && typeof doc === 'object') {
+					o[part] = fc({...result});
+				}
+
+				return o[part];
+			}, r);
+		}
+
+		return r;
+	}
+
+	/**
 	 * Read document
 	 */
-	static get({_key, auth, name, document}: RouteArg){
+	static get({_key, auth, name, document, relations}: RouteArg){
 		logger.info('GET %s/%s', name, _key);
-		return auth(document(), 'get', 'read');
+		const data = auth(document(), 'get', 'read');
+		if(!data) return false;
+		return relations(data);
 	}
 
 	/**
@@ -808,21 +880,23 @@ export class Route {
 	/**
 	 * List documents
 	 */
-	static list({name, requestedAttributes, param, hasAuth, auth}: RouteArg) {
+	static list({name, requestedAttributes, param, hasAuth, auth, relations}: RouteArg) {
 		logger.info('LIST %s/%s', name);
 
 		const { attributes, offset, limit = config.defaultListLimit, sort, order, ...filter } = param;
+		delete filter.relations;
 
 		let q: QueryOpt = {
 			filter,
-			keep: requestedAttributes,
-			sort: [sort+' '+order],
+			keep: requestedAttributes || undefined,
+			sort: sort ? [sort+' '+(order||'ASC')] : undefined,
 			limit: offset ? [offset, limit] : limit
 		};
 
 		return db
 			._query(queryBuilder(name, q))
 			.toArray()
-			.filter((doc: DocumentData) => !hasAuth || auth(doc, 'get', 'list'));
+			.filter((doc: DocumentData) => !hasAuth || auth(doc, 'get', 'list'))
+			.map((doc: DocumentData) => relations(doc));
 	}
 }

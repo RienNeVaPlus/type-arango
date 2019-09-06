@@ -9,18 +9,20 @@ import {
 	EventType,
 	QueryFilter,
 	QueryOpt,
-	Relation,
 	RelationStructure,
 	RelationType,
 	RoleAttributes,
 	RoleObject,
+	Roles,
 	SchemaStructure
 } from '../types'
 import {config, documents, Entities, Entity, logger, version} from '../index'
-import {argumentResolve, concatUnique, enjoi, removeValues, toArray, toJoi} from '../utils'
+import {argumentResolve, concatUnique, enjoi, removeValues, toArray, toJoi, isObject} from '../utils'
 import {MissingTypeError, RelationNotFoundError} from '../errors'
 import {Collection} from './Collection.model'
 import * as Joi from 'joi'
+
+const edgeAttributes = ['_from','_to'];
 
 /**
  * Creates a new Document for a decorated class
@@ -221,23 +223,49 @@ export class Document<T=any> {
 		return args[0];
 	}
 
-	static resolveRelation(rel: Relation, filter: QueryFilter, value: any, set?: typeof Entity | null | string[]) {
+	/**
+	 * Resolves one or more related entities
+	 */
+	resolveRelation(data: DocumentData | Entity, attribute: string, arg?: string[]){
+		const rel = this.relation[attribute];
+		let filter: QueryFilter = {};
+
+		// related document is an edge, use CollectionName/ID
+		if(rel.document.isEdge && edgeAttributes.includes(rel.attribute)){
+			filter[rel.attribute] = this.col!.name + '/' + filter[rel.attribute];
+		} else {
+			filter[rel.attribute] = data._key!;
+		}
+
+		// relation key is stored in document
+		let ref = data[attribute];
+		if(ref){
+			if(isObject(ref))
+				throw new Error('Invalid relation value of "'+rel.document.name+'._key": '+JSON.stringify(ref));
+
+			// remove CollectionName/ from relation id
+			if(this.isEdge && Array.isArray(ref)){
+				ref = ref.map(r => r.replace(rel.document.col!.name+'/', ''));
+			}
+			filter = {_key:ref};
+		}
+
 		const entities = rel.document.col!.Class as typeof Entities;
 
-		if(set === null)
-			return value;
+		if(arg === null)
+			return data[attribute];
 
 		let opt: QueryOpt = {filter};
 
 		// attributes
-		if(Array.isArray(set)){
-			opt.keep = set;
+		if(Array.isArray(arg)){
+			opt.keep = arg;
 		}
 
 		switch(rel.type){
-			default:
+			default: return null;
 			case 'OneToOne': return entities.findOne(opt);
-			case 'OneToMany':	return entities.find(opt);
+			case 'OneToMany': return entities.find(opt);
 		}
 	}
 
@@ -262,6 +290,27 @@ export class Document<T=any> {
 			}
 			this.roleStripAttributes[role] = roles;
 		}
+	}
+
+	/**
+	 * Creates arrays of document attributes that can be read or written
+	 */
+	stripAttributeList(providedRoles: Roles, method: 'read' | 'write'){
+		// collect attributes into temp object {key:count}
+		let attributes: any = {}, sum: number = 0;
+		for(let role of providedRoles){
+			if(this.roleStripAttributes[role]){
+				sum++;
+				for(let r of this.roleStripAttributes[role][method]){
+					attributes[r] = (attributes[r] || 0) + 1;
+				}
+			}
+		}
+
+		let stripAttributes: string[] = [];
+		Object.keys(attributes).forEach(k => attributes[k] === sum && stripAttributes.push(k));
+
+		return stripAttributes;
 	}
 
 	/**
@@ -298,8 +347,9 @@ export class Document<T=any> {
 		} of Attribute){
 			metadata = attribute && Reflect.getMetadata('design:type', prototype, attribute);
 			const joi = toJoi(metadata);
+			if(!metadata)
+				throw new Error('Invalid design:type for "'+this.name+'.'+attribute+'"');
 
-			// todo implement type param
 			let schema = argumentResolve(typeOrRequiredOrSchemaOrReadersOrFunction, joi, enjoi) || joi;
 			let readers = argumentResolve(readersArrayOrFunction);
 			let writers = argumentResolve(writersArrayOrFunction);

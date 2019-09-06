@@ -1,4 +1,4 @@
-import {collections, config, Entities, isActive, logger} from '../index'
+import {collections, config, isActive, logger} from '..'
 import {Document, getDocumentForContainer, Route as RouteModel, Scalar} from './index'
 import {argumentResolve, concatUnique, db, enjoi, isObject, queryBuilder} from '../utils'
 import {
@@ -6,7 +6,6 @@ import {
 	DecoratorId,
 	DecoratorStorage,
 	QueryOpt,
-	RoleObject,
 	Roles,
 	RouteOpt,
 	RoutePathParam,
@@ -66,7 +65,6 @@ export class Collection {
 		deleters: []
 	};
 	public doc?: Document<any>;
-	public roleStripAttributes: RoleObject = {};
 	private decorator: DecoratorStorage = {};
 
 	/**
@@ -79,7 +77,7 @@ export class Collection {
 	/**
 	 * Creates a new collection instance
 	 */
-	constructor(public Class: new () => typeof Entities){
+	constructor(public Class: any){
 		this.name = Collection.toName(Class.name);
 		this.db = isActive ? db._collection(this.name) : null;
 	}
@@ -98,7 +96,7 @@ export class Collection {
 		if(onlyWhenEmpty && this.roles[key].length) return;
 		this.roles[key] = concatUnique(this.roles[key], roles);
 		if(this.doc) this.doc!.roles = concatUnique(this.doc!.roles, roles);
-		//else console.log('CANNOT ADD ROLES, DOCUMENT NOT READY');
+		// else console.log('CANNOT ADD ROLES, DOCUMENT NOT READY');
 	}
 
 	public decorate(decorator: DecoratorId, data: any){
@@ -131,11 +129,17 @@ export class Collection {
 	finalize(){
 		const { Collection, Route, Task, Function } = this.decorator;
 
-		const { ofDocumentFunction, options = {} } = Collection![0];
+		let { ofDocument, options = {} } = Collection![0];
+		this.opt = options;
 		if(options.name) this.name = options.name;
 
-		const doc = this.doc = getDocumentForContainer(argumentResolve(ofDocumentFunction));
+		const doc = this.doc = getDocumentForContainer(argumentResolve(ofDocument));
 		doc.col = this;
+
+		if(options.creators) this.addRoles('creators', options.creators, false);
+		if(options.readers) this.addRoles('readers', options.readers, false);
+		if(options.updaters) this.addRoles('updaters', options.updaters, false);
+		if(options.deleters) this.addRoles('deleters', options.deleters, false);
 
 		if(isActive){
 			// create collection
@@ -207,7 +211,7 @@ export class Collection {
 			let opt: RouteOpt = Object.assign({
 					queryParams: []
 				},
-				typeof a === 'string' ? {path:a} : Array.isArray(a)  ? {roles:a} : a || {}
+				typeof a === 'string' ? {path:a} : Array.isArray(a) ? {roles:a} : typeof a === 'object' && a && a.isJoi ? {schema:a} : a || {}
 			);
 
 			let schema;
@@ -257,6 +261,10 @@ export class Collection {
 
 			if(options)
 				opt = Object.assign(options, opt);
+
+			if(!schema && opt.schema){
+				schema = argumentResolve(opt.schema, (inp: any) => enjoi(inp, 'required'), Joi);
+			}
 
 			if(method === 'LIST'){
 				method = 'get';

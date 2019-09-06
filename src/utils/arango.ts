@@ -32,7 +32,7 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 	let q = ['FOR i IN '+collection];
 	if(filter){
 		Object.entries(filter).forEach(
-			([key, value]) => q.push(
+			([key, value]) => value !== undefined && q.push(
 				'FILTER '+
 				(
 					// ['IN', value] => FILTER value IN i.key

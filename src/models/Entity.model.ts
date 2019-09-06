@@ -1,13 +1,13 @@
-import {DocumentData, QueryFilter} from '../types'
+import {DocumentData} from '../types'
 import {getDocumentForContainer} from './index'
 import {AttributeNotInEntityError, MissingKeyError, SymbolKeysNotSupportedError} from '../errors'
 import {db} from '../utils'
 import {Document} from '.'
+import {AttributeIsNotARelationError} from '../errors/AttributeIsNotARelationError';
 
-const nativeKeys = ['constructor','toString'];
-const unenumerable = ['_saveKeys','_collection'];
+// const nativeKeys = ['constructor','toString'];
+const unenumerable = ['_saveKeys','_collection','_relations'];
 const globalAttributes = ['_key','_rev','_id','_oldRev'];
-const edgeAttributes = ['_from','_to'];
 const accessibleKeys = globalAttributes.concat('_saveKeys');
 
 interface SaveOptions extends ArangoDB.UpdateOptions, ArangoDB.InsertOptions {
@@ -39,6 +39,10 @@ export class Entity {
 		return (this.constructor as typeof Entity)._doc as Document;
 	}
 
+	static get _relations(){
+		return Object.keys(this._doc.relation);
+	}
+
 	constructor(doc?: DocumentData | string, docIsSync: boolean = false) {
 		if(typeof doc === 'string')
 			doc = {_key:doc};
@@ -59,41 +63,21 @@ export class Entity {
 
 		// setup proxy
 		return new Proxy(this, {
-			get(target: any, key: string){
-				if(nativeKeys.includes(key)) return target[key];
-
-				const cleanKey = key.startsWith('_') ? key.substr(1) : key;
-
-				// return relation values as entity._attribute
-				if(key.startsWith('_') && _doc.relation[cleanKey]){
-					return target[cleanKey];
-				}
-
-				// support relation entity load via entity.relation()
-				const rel = _doc.relation[key];
-				if(rel && !(target[key] instanceof Entity)){
-					let filter: QueryFilter = {[rel.attribute]:target._key};
-
-					// related document is an edge, use CollectionName/ID
-					if(rel.document.isEdge && edgeAttributes.includes(rel.attribute)){
-						filter[rel.attribute] = _doc.col!.name + '/' + filter[rel.attribute];
-					}
-
-					// relation key is stored in document
-					let ref = target[key];
-					if(ref){
-						// remove CollectionName/ from relation id
-						if(_doc.isEdge && Array.isArray(ref)){
-							ref = ref.map(r => r.replace(rel.document.col!.name+'/', ''));
-						}
-						filter = {_key:ref};
-					}
-
-					return Document.resolveRelation.bind(_doc, rel, filter, target[key]);
-				}
-
-				return target[key];
-			},
+			// get(target: any, key: string){
+			// 	if(nativeKeys.includes(key)) return target[key];
+			//
+			// 	// const cleanKey = key.startsWith('_') ? key.substr(1) : key;
+			//
+			// 	// // return relation values as entity._attribute
+			// 	// if(key.startsWith('_') && _doc.relation[cleanKey]){
+			// 	// 	return target[cleanKey];
+			// 	// }
+			// 	//
+			// 	// // support relation entity load via entity.relation()
+			// 	// if(_doc.relation[key]) return _doc.resolveRelation.bind(_doc, target, key);
+			//
+			// 	return target[key];
+			// },
 			set(target: any, key: string, val: any){
 				if(typeof key === 'symbol')
 					throw new SymbolKeysNotSupportedError();
@@ -121,6 +105,15 @@ export class Entity {
 				return true;
 			}
 		})
+	}
+
+	/**
+	 * Returns related entity
+	 */
+	related(attribute: string, attributes?: string[]) {
+		if(!this._doc.relation[attribute])
+			throw new AttributeIsNotARelationError(this.name, attribute);
+		return this._doc.resolveRelation(this, attribute, attributes);
 	}
 
 	/**

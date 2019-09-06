@@ -5,25 +5,22 @@ import {
 	ClassAndMethodDecorator,
 	Roles,
 	RolesFunc,
-	RouteAuthArg,
+	RouteAuth,
 	RouteDecorator,
-	RouteOpt,
-	RouteRoles
+	RouteOpt, RoutePreset,
+	RouteRoles,
+	SchemaFunc
 } from '../types'
 import {SymbolKeysNotSupportedError} from '../errors'
-import * as Joi from 'joi'
 import {Schema} from 'joi'
 
 export type PathFunc = (returns?: string) => any;
 export type SummaryFunc = (returns?: string) => string;
-type SchemaFunc = (enjoi: (type?: any) => typeof Joi | any, joi?: any) => typeof Joi | boolean | Object;
 
 type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt;
 type ArgSchemaOrRolesOrSummaryOrOpt = string | SummaryFunc | boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt;
 
-type RoutePreset = '*' | 'ALL' | 'ALL+' | 'CRUD' | 'CRUD+'
-
-const ROUTE_PRESET: {[key in RoutePreset]: RouteDecorator[]} = {
+export const ROUTE_PRESET: {[key in RoutePreset]: RouteDecorator[]} = {
 	'*': ['GET','POST','PATCH','PUT','DELETE','LIST'],
 	'ALL': ['GET','POST','PATCH','PUT','DELETE'],
 	'ALL+': ['GET','POST','PATCH','PUT','DELETE','LIST'],
@@ -31,7 +28,7 @@ const ROUTE_PRESET: {[key in RoutePreset]: RouteDecorator[]} = {
 	'CRUD+': ['GET','POST','PUT','DELETE','LIST'],
 };
 
-function route(
+export function route(
 	method: RouteDecorator,
 	pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
 	schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
@@ -128,7 +125,7 @@ export const Route = {
 	),
 
 	auth: (
-		...authorizeFunctions: Array<(arg: RouteAuthArg) => boolean>
+		...authorizeFunctions: Array<RouteAuth>
 	): ClassDecorator => {
 		return function(prototype: any): any {
 			const col = getCollectionForContainer(prototype);
@@ -242,9 +239,6 @@ export const Route = {
 			route('POST', creators, globalOptions)(prototype);
 			route('GET', readers, globalOptions)(prototype);
 			route('LIST', readers, globalOptions)(prototype);
-
-			// const col = getCollectionForContainer(prototype);
-			// if(col.completed) col.processMetadata();
 
 			return prototype;
 		};

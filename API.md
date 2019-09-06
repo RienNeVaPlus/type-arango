@@ -21,7 +21,7 @@ A document represents a single entry of a collection.
   - [entity.remove](#entityremoveoptions) - deletes a document
   - [entity.save](#entitysaveoptions) - saves property changes
   - [entity._saveKeys](#entity_savekeys) - returns a list of modified properties
-  - [entity.$relation](#entityrelationkeepattributes) - load related documents
+  - [entity.related](#entityrelatedattribute-keepattributes) - returns related document/s
 
 #### `ClassDecrorator`
 - [@Document](#document) - initializes a new document
@@ -343,24 +343,27 @@ console.log(user._saveKeys); // => []
 ```
 ![divider](./assets/divider.small.png)
 
-### `entity.$relation(keepAttributes?)`
+### `entity.related(attribute, keepAttributes?)`
 
-Properties decorated with [`@OneToOne`](#onetoonetype-relation) or [`@OneToMany`](#onetomanytype-relation) can return related document/s.
+Returns the related document/s of attributes decorated with [`@OneToOne`](#onetoonetype-relation) or [`@OneToMany`](#onetomanytype-relation).
 
+- **attribute** `string` - attribute to load the related document from
 - **keepAttributes**? `string[]` - List of attributes to load from the collection, default is all attributes.
 
 Some relations have values, but these are mainly used for fetching the related document. Type-arango overwrites these values with the fetcher function described here. However the original value is available by simply prefixing the property key with an underscore (eg `entity._profile`).
 
+📘 [Read more on relations](examples/3-relations)
+
 **Example** (in route)
 ```ts
 // in a route
-const user = Users.findOne('123');
+const user = Users.findOne('1');
 // returns an address entity instance
-const address = user.primaryAddress();
+const address = user.related('address');
 // returns a profile entity instance limited to the selected attributes
-const profile = user.profile(['attributes','to','select']);
+const profile = user.related('profile', ['attributes','to','select']);
 // read the profile id when stored inside user.profile
-const profileId = user._profile;
+const profileId = user.profile;
 ```
 
 ![divider](./assets/divider.png)
@@ -512,7 +515,7 @@ age: number;
 
 ### `@OneToOne(type, relation?)`
 
-Defines a 1:1 relation to another entity. Decorated properties have additional functions to fetch related entities, see `entity.relation`. See also [`entity.$relation()`](#entityrelationkeepattributes).
+Defines a 1:1 relation to another entity. Decorated properties have additional functions to fetch related entities, see `entity.relation`. See also [`entity.related('attribute')`](#entityrelatedattribute-keepattributes).
 
 - **type**? `Entity` - The related document entity
 - **relation**? `(TypeEntity) => TypeEntity.attribute` - TypeEntity is an object with the same keys as the related entity and can be used to create a relation to a certain field. The default relation is `Entity._key`.
@@ -520,19 +523,25 @@ Defines a 1:1 relation to another entity. Decorated properties have additional f
 **Example**
 ```ts
 @Document()
-class User {
-    @OneToOne(type => Profile)
-    profile: Related<Profile>;
-    
-    @OneToOne(type => Address, Address => Address.owner)
+class User extends Entity {
+    // use @Attribute when relational data is stored in document
+    @Attribute(string)
+    @OneToOne(type => Address)
     primaryAddress: Related<Address>;
+    
+    // don't use @Attribute when the property is "virtual" and relational data is stored on the other end
+    @OneToOne(type => Profile, Profile => Profile.owner)
+    profile: Related<Profile>;
 }
 ```
+
+📘 [Read more on relations](examples/3-relations)
+
 ![divider](./assets/divider.small.png)
 
 ### `@OneToMany(type, relation?)`
 
-Defines a 1:n relation to another entity. Mostly the same as `@OneToOne` except requesting the relation returns an array of entity instances instead of a single instance. See also [`entity.$relation()`](#entityrelationkeepattributes).
+Defines a 1:n relation to another entity. Mostly the same as `@OneToOne` except requesting the relation returns an array of entity instances instead of a single instance. See also [`entity.related('attribute')`](#entityrelatedattribute-keepattributes).
 
 - **type**? `Entity` - The related document entity
 - **relation**? `(TypeEntity) => TypeEntity.attribute` - See `@OneToOne`
@@ -760,9 +769,18 @@ static route(){
 
 Decorates a class that has been extended by `Entities`. Collections consume `@Document`*s* and provide routes.
 
-- **ofDocument** `Entity | () => Entity` - the entity of the documents in the collection
+- **ofDocument** `Entity | () => Entity` - the entity of the documents in the collection (can be omitted when options are provided).
 - **option**? `ArangoDB.CreateCollectionOptions` - also see [ArangoDB Manual](https://www.arangodb.com/docs/3.4/data-modeling-collections-database-methods.html#create)
+  - **of**? `string` - alias for argument `ofDocument`
   - **name**? `string` - the collection name, by default the class name is used
+  - **creators** `string[]` - list of default creator roles
+  - **readers** `string[]` - list of default reader roles
+  - **updaters** `string[]` - list of default updater roles
+  - **deleters** `string[]` - list of default deleter roles
+  - **auth** `string[]` - alias for [@Route.auth](./API.md#routeauthauthorizefunctions)
+  - **roles** `string[]` - alias for [@Route.roles](./API.md#routerolesrolefunctions)
+  - **routes** `Array<Route | string>` - list of default routes to use
+  - **relations** `string[] | true` - list of related attributes that can be read from client request to any route of the collection. Can also be set to `true` to expose all related attributes.
   - **waitForSync**? `boolean`
   - **journalSize**? `number`
   - **isVolatile**? `boolean`
@@ -895,7 +913,7 @@ class Users extends Entities { ... }
 
 ### `RouteArg`
 
-All route functions receive a single argument, the `RouteArg` which contains useful information and tools to describe, authenticate, read and answer requests. Most of them are well known from the Foxx routes.
+All route functions receive a single argument, the `RouteArg` which contains useful information and tools to describe, authenticate, read and answer requests. A lot of them are well known from the Foxx routes.
 
 - **req** `Foxx.Request`
 - **res** `Foxx.Response`
@@ -910,6 +928,7 @@ All route functions receive a single argument, the `RouteArg` which contains use
 - **_key** `string` - shortcut for `param._key`
 - **exists** `(name: string) => boolean` - shortcut for `collection.exists`
 - **document** `(key = _key) => Document` - resolves and caches a document for the lifetime of the request. Avoids duplicate reads. Loads the current document by default, can load other documents when called with an argument.
+- **relations** `(data: DocumentData) => DocumentData` - loads and adds related entities (provided by `req.queryParams.relations`) to result. [📘 About relations](examples/3-relations)
 - **insert** `(data: DocumentData) => ArangoDB.InsertResult` - inserts a document into the collection, executes callbacks from `@On.insert`.
 - **update** `(dataOrKey = _key, dataOrOptions?, options?) => ArangoDB.UpdateResult` - updates a document of the collection, executes callbacks from `@On.update`. Uses `_key` as default document key.
 - **replace** `(dataOrKey = _key, dataOrOptions?, options?) => ArangoDB.UpdateResult` - replaces a document of the collection, executes callbacks from `@On.replace`. Uses `_key` as default document key.
@@ -918,8 +937,8 @@ All route functions receive a single argument, the `RouteArg` which contains use
 - **aql** `(strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query` - builds aql string
 - **requestedAttributes** `string[]` - list of requested attributes
 - **hasAuth** `boolean` - whether an authorization is required for the current route
-- **auth** `(doc: DocumentData, method?: RouteMethod, action?: RouteAction) => false | DocumentData` - function to determine access to the document
-- **json** `(omitUnwritableAttributes: boolean = true) => DocumentData` - returns request json without inaccessible fields
+- **auth** `(doc: DocumentData, method?: RouteMethod, action?: RouteAction) => false | DocumentData` - function to determine access to the document when working with [Route.auth](#routeauthauthorizefunctions)
+- **json** `(omitUnwritableAttributes: boolean = true) => DocumentData` - returns request json without inaccessible attributes
 - **send** `(data: DocumentData, omitUnreadableAttributes: boolean = true) => Foxx.Response` - strips inaccessible attributes based on roles and sends a response
 - **error** `(status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response` - function to response with an error
 - **tags** `string[]` - tags used for the route (collection.name)
@@ -933,14 +952,15 @@ All route functions receive a single argument, the `RouteArg` which contains use
 
 Routes can be further configured by using the following options.
 
+- **relations**? `string[]` - list of relations that can be fetched using the query param `relations=entity1,entity2`. [📘 About relations](examples/3-relations)
 - **body**? `RouteBody`
 - **pathParams**? `[string, Schema, string?][]`
 - **queryParams**? `[string, Schema, string?][]`
 - **response**? `RouteResponse`
-  - **status** `RouteStatus`
-  - **schema** `Foxx.Schema | Foxx.Model`
-  - **mime** `string[]`
   - **description**? `string`
+  - **mime** `string[]`
+  - **schema** `Foxx.Schema | Foxx.Model`
+  - **status** `RouteStatus`
 - **errors**? `[RouteStatus, string][]`
 - **path**? `string`
 - **process**? `boolean`
