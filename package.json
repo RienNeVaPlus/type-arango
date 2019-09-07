@@ -22,6 +22,9 @@
     "Types",
     "ORM",
     "Routes",
+    "Relations",
+    "Microservices",
+    "ReST",
     "Entity"
   ],
   "author": "RienNeVaPlus <?@rienneva.plus>",
