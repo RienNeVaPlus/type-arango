@@ -13,6 +13,7 @@
     "type": "git",
     "url": "https://github.com/RienNeVaPlus/type-arango.git"
   },
+  "ntl": {"runner": "yarn"},
   "keywords": [
     "ArangoDB",
     "Foxx",
