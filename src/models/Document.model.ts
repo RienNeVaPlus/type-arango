@@ -347,8 +347,8 @@ export class Document<T=any> {
 		} of Attribute){
 			metadata = attribute && Reflect.getMetadata('design:type', prototype, attribute);
 			const joi = toJoi(metadata);
-			if(!metadata)
-				throw new Error('Invalid design:type for "'+this.name+'.'+attribute+'"');
+			// if(!metadata)
+			// 	throw new Error('Invalid design:type for "'+this.name+'.'+attribute+'"');
 
 			let schema = argumentResolve(typeOrRequiredOrSchemaOrReadersOrFunction, joi, enjoi) || joi;
 			let readers = argumentResolve(readersArrayOrFunction);
@@ -419,7 +419,6 @@ export class Document<T=any> {
 				relationAttr = attrObj[docName] ? docName : '_key';
 
 			this.relation[attribute!] = {type:decorator as RelationType, document:relationDoc, attribute:relationAttr};
-			// this.setRelation('OneToOne', attribute!, relationDoc, relationAttr);
 		}
 
 		logger.info('Completed document "%s"', this.name);
