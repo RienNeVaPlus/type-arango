@@ -234,7 +234,8 @@ export class Document<T=any> {
 		if(rel.document.isEdge && edgeAttributes.includes(rel.attribute)){
 			filter[rel.attribute] = this.col!.name + '/' + filter[rel.attribute];
 		} else {
-			filter[rel.attribute] = data._key!;
+			if(data._key)
+				filter[rel.attribute] = data._key;
 		}
 
 		// relation key is stored in document

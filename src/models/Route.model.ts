@@ -763,7 +763,16 @@ export class Route {
 		let relations = req.queryParams.relations;
 		if(!relations) return data;
 
-		attributes = attributes || [];
+		attributes = toArray(attributes).reduce((attr, next) => {
+			next
+				.split('.')
+				.forEach((_part: string, index: number, parts: string[]) =>
+					index && !attr.includes(parts.slice(0, index).join('.')) && attr.push(parts.slice(0, index).join('.'))
+				);
+			if(!attr.includes(next)) attr.push(next);
+			return attr;
+		}, []);
+
 		relations = relations
 			.split(',')
 			.filter((r: string) => resolvable.includes(r));
@@ -778,8 +787,8 @@ export class Route {
 			let document: any = doc;
 
 			relation.split('.').reduce((data: any, part: string) => {
-				id += part+'.';
 				const parent = document;
+				id += part+'.';
 				document = document.relation[part].document;
 				let keep = attributes.filter(a => a.startsWith(id)).map(a => a.substr(id.length));
 				if(!keep.length) keep = Object.keys(document.attribute);
