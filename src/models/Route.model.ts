@@ -777,25 +777,31 @@ export class Route {
 			let id: string = '';
 			let document: any = doc;
 
-			relation.split('.').reduce((o: any, part: string) => {
+			relation.split('.').reduce((data: any, part: string) => {
 				id += part+'.';
 				const parent = document;
 				document = document.relation[part].document;
 				let keep = attributes.filter(a => a.startsWith(id)).map(a => a.substr(id.length));
 				if(!keep.length) keep = Object.keys(document.attribute);
 
-				let result = parent.resolveRelation(o, part, keep);
-				if(!result) return o[part] = null;
-
 				const fc = forClient.bind(null, document, document.stripAttributeList(userRoles, 'read'), keep, true);
 
-				if(Array.isArray(result)){
-					o[part] = result.map(r => fc({...r}));
-				} else if(doc && typeof doc === 'object') {
-					o[part] = fc({...result});
+				// value can be an array
+				for(let o of toArray(data)){
+					let r = parent.resolveRelation(o, part, keep);
+					if(!r) {
+						o[part] = null;
+						continue;
+					}
+
+					if(Array.isArray(r)){
+						o[part] = r.map(r => fc({...r}));
+					} else if(doc && typeof doc === 'object') {
+						o[part] = fc({...r});
+					}
 				}
 
-				return o[part];
+				return data[part];
 			}, r);
 		}
 
@@ -810,6 +816,29 @@ export class Route {
 		const data = auth(document(), 'get', 'read');
 		if(!data) return false;
 		return relations(data);
+	}
+
+	/**
+	 * List documents
+	 */
+	static list({name, requestedAttributes, param, hasAuth, auth, relations}: RouteArg) {
+		logger.info('LIST %s/%s', name);
+
+		const { attributes, offset, limit = config.defaultListLimit, sort, order, ...filter } = param;
+		delete filter.relations;
+
+		let q: QueryOpt = {
+			filter,
+			keep: requestedAttributes || undefined,
+			sort: sort ? [sort+' '+(order||'ASC')] : undefined,
+			limit: offset ? [offset, limit] : limit
+		};
+
+		return db
+			._query(queryBuilder(name, q))
+			.toArray()
+			.filter((doc: DocumentData) => !hasAuth || auth(doc, 'get', 'list'))
+			.map((doc: DocumentData) => relations(doc));
 	}
 
 	/**
@@ -875,28 +904,5 @@ export class Route {
 
 		remove(_key!);
 		return null;
-	}
-
-	/**
-	 * List documents
-	 */
-	static list({name, requestedAttributes, param, hasAuth, auth, relations}: RouteArg) {
-		logger.info('LIST %s/%s', name);
-
-		const { attributes, offset, limit = config.defaultListLimit, sort, order, ...filter } = param;
-		delete filter.relations;
-
-		let q: QueryOpt = {
-			filter,
-			keep: requestedAttributes || undefined,
-			sort: sort ? [sort+' '+(order||'ASC')] : undefined,
-			limit: offset ? [offset, limit] : limit
-		};
-
-		return db
-			._query(queryBuilder(name, q))
-			.toArray()
-			.filter((doc: DocumentData) => !hasAuth || auth(doc, 'get', 'list'))
-			.map((doc: DocumentData) => relations(doc));
 	}
 }
