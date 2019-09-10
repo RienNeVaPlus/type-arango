@@ -763,7 +763,7 @@ export class Route {
 		let relations = req.queryParams.relations;
 		if(!relations) return data;
 
-		attributes = toArray(attributes).reduce((attr, next) => {
+		attributes = Array.isArray(attributes) ? (attributes as any).reduce((attr: string[], next: string) => {
 			next
 				.split('.')
 				.forEach((_part: string, index: number, parts: string[]) =>
@@ -771,7 +771,7 @@ export class Route {
 				);
 			if(!attr.includes(next)) attr.push(next);
 			return attr;
-		}, []);
+		}, []) : [];
 
 		relations = relations
 			.split(',')
