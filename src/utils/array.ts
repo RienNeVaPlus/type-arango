@@ -8,3 +8,4 @@ export function concatUnique(arr1: any | [], ...args: any | any[]): any[] {
 	args = args.map((a: any) => toArray(a));
 	return unique(toArray(arr1).concat(...args));
 }
+export const arraySample = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
