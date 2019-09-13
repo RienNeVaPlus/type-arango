@@ -1,9 +1,8 @@
 import {CreateCollectionOptions, RouteDecorator, RoutePreset} from '../types'
 import {Entity, getCollectionForContainer} from '../models'
 import {isActive} from '..'
-import {argumentResolve, enjoi, isObject} from '../utils'
+import {isObject} from '../utils'
 import {route, ROUTE_PRESET} from './Route.decorator';
-import * as Joi from 'joi';
 
 type DocumentFunc = (returns: any) => typeof Entity;
 
@@ -34,12 +33,12 @@ export function Collection(
 				col.decorate('Route.roles', {prototype,rolesFunction:options.roles});
 			if(options.auth)
 				col.decorate('Route.auth', {prototype,authorizeFunction:options.auth});
-			if(options.routes){
+			if(options.routes) {
 				const arr = typeof options.routes[0] === 'string' && ROUTE_PRESET[options.routes[0] as RoutePreset]
 					? [...ROUTE_PRESET[options.routes[0] as RoutePreset], ...options.routes.slice(1)] : options.routes;
 				arr.forEach((method: any) => {
 					if(Array.isArray(method)){
-						if(typeof method[1] === 'function') method[1] = {schema:argumentResolve(method[1], (inp: any) => enjoi(inp, 'required'), Joi)};
+						if(typeof method[1] === 'function') method[1] = {schema:method[1]};
 						route(method[0], method[1], method[2], method[3], method[4], method[5])(prototype);
 					} else {
 						const opt = typeof method === 'string' ? {method} : method;

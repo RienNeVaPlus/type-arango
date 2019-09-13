@@ -1,3 +1,4 @@
+import {Joi} from './joi'
 import {isFoxx} from './utils'
 import {Collection, Document, Route, Logger, Entities, Entity, Type} from './models'
 import {RequiresFoxxEnvironmentError} from './errors'
@@ -14,6 +15,7 @@ export const config: Config = {
 	prefixCollectionName: false,
 	exposeRouteFunctionsToSwagger: false,
 	dasherizeRoutes: true,
+	paramOperatorSeparator: '|',
 	stripDocumentId: true,
 	stripDocumentRev: true,
 	stripDocumentKey: false,
@@ -37,12 +39,11 @@ export const config: Config = {
 	}
 };
 
-// export {Document} from './models'
 export {
 	Collection, Route, Description, Document, Edge, Nested, Attribute, Index,
 	OneToOne, OneToMany, Authorized, Before, After, ForClient, FromClient, Task, AQLFunction
 } from './decorators'
-export {RouteArg, RouteRolesArg, LogLevel, Related, isFoxx, Entities, Entity, Type}
+export {Joi, RouteArg, RouteRolesArg, LogLevel, Related, isFoxx, Entities, Entity, Type}
 
 export function complete(){
 	if(!isActive) return;

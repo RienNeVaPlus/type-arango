@@ -1,3 +1,4 @@
+import {Joi} from '../joi'
 import {
 	AttributeObject,
 	DecoratorId,
@@ -20,7 +21,6 @@ import {config, documents, Entities, Entity, logger, version} from '../index'
 import {argumentResolve, concatUnique, enjoi, removeValues, toArray, toJoi, isObject} from '../utils'
 import {MissingTypeError, RelationNotFoundError} from '../errors'
 import {Collection} from './Collection.model'
-import * as Joi from 'joi'
 
 const edgeAttributes = ['_from','_to'];
 

@@ -1,4 +1,4 @@
-import {config} from "../index";
+import {config} from '..'
 import * as Joi from 'joi'
 
 export namespace Type {

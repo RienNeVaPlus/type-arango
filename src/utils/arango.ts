@@ -6,13 +6,14 @@ const orders = ['ASC','DESC'];
 export const arango = is ? require('@arangodb') : null;
 export const db = is ? arango.db : null;
 export const aql = is ? arango.aql : null;
-const operators = ['==','!=','<','<=','>','>=','IN','NOT IN','LIKE','=~','!~'];
+
+export const operators = ['==','!=','<','<=','>','>=','IN','NOT IN','LIKE','=~','!~'];
 
 function escape(val: any){
 	if(val === 'true') return true;
 	if(val === 'false') return false;
 	if(val === 'null') return null;
-	if(Array.isArray(val)) return '["'+val.join('","')+'"]';
+	if(Array.isArray(val)) return '["'+clean(val).join('","')+'"]';
 	switch(typeof val){
 		case 'string': return '"'+val+'"';
 		case 'number':
@@ -35,8 +36,8 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 			([key, value]) => value !== undefined && q.push(
 				'FILTER '+
 				(
-					// ['IN', value] => FILTER value IN i.key
-					Array.isArray(value) && (String(value[0]).toUpperCase()) === 'IN'
+					// ['HAS', value] => FILTER value IN i.key
+					Array.isArray(value) && value[0] === 'HAS'
 					? escape(value[1])+' IN i.'+clean(key)
 
 					// ['!=', value] => FILTER i.key != value

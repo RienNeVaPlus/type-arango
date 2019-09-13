@@ -85,9 +85,10 @@ Types are used to better describe common patterns to store and retrieve attribut
 ![divider](./assets/divider.small.png)
 
 ### ❤️ Misc
-- 📜 [Enjoi](#-en-hanced-joi) `(Enjoi, Joi) => Joi` - Enhanced Joi making use of Types
 - [Configuration](#-configuration) - Options for `typeArango()`
 - [@Description](#descriptionstring) - Decorator for describing Classes or Properties
+- 📜 [Enjoi](#-en-hanced-joi) `(Enjoi, Joi) => Joi` - Enhanced Joi making use of Types
+- [Client operators](#client-operators-inside-query-parameters) - Clients can provide operators inside query parameter values
 - ["CRUD-like"](#crud-like) - explained
   
 ![divider](./assets/divider.png)
@@ -117,6 +118,11 @@ const complete = typeArango({
      * Dasherize endpoints (eg `UserProfiles` becomes `user-profiles`)
      */
     dasherizeRoutes: boolean = true;
+    
+    /**
+     * Separator used to split a parameter value (ie /?x=LIKE|y)
+     */
+    paramOperatorSeparator: string = '|'
     
     /**
      * Always add field writer roles to field reader roles
@@ -779,7 +785,7 @@ Decorates a class that has been extended by `Entities`. Collections consume `@Do
   - **deleters** `string[]` - list of default deleter roles
   - **auth** `string[]` - alias for [@Route.auth](./API.md#routeauthauthorizefunctions)
   - **roles** `string[]` - alias for [@Route.roles](./API.md#routerolesrolefunctions)
-  - **routes** `Array<Route | string>` - list of default routes to use
+  - **routes** `Array<Route | string>` - list of default routes to use - see [@Route.*](#route--get-post-put-patch-delete--list)
   - **relations** `string[] | true` - list of related attributes that can be read from client request to any route of the collection. Can also be set to `true` to expose all related attributes.
   - **waitForSync**? `boolean`
   - **journalSize**? `number`
@@ -1294,6 +1300,53 @@ const obj = $({
 });                                 // = Joi.object().keys(...)
 ```
 
+![divider](./assets/divider.png)
+
+### Client operators inside query parameters
+In order to allow clients to provide their own [operators](https://www.arangodb.com/docs/3.4/aql/operators.html) (ie. for [`LIST`](#routelistschema-roles-summary-options) or custom routes), the parameter schema of any route can be extended by calling the custom joi method `StringSchema.operator(nameOrList?)`.
+ 
+ Clients can then provide the operator as a prefix of the parameter value - separated by `config.paramOperatorSeparator` (default `|`). For example `?attr=>=|10`.
+
+> ==, !=, <, <=, >, >=, IN, NOT IN, LIKE
+
+These parameters will be parsed by TypeArango in order to validate them and to transform the value into a tuple of `[OPERATOR, VALUE]` - it can then use it within its internal queryBuilder (for `LIST` requests).
+
+They will also be documented in ArangoDBs Web Interface Swagger Docs.
+
+#### Example setup
+```ts
+@Collection(of => User)
+@Route.LIST('operator', $ => ({
+    param1: $(String), // allow == (default)
+    param2: $(String).operator('!=') //  allow !=
+    param3: $(String).operator(['LIKE','NOT LIKE']), // u get the point
+    param4: $(String).operator() // allow all: ==, !=, <, <=, >, >=, IN, NOT IN, LIKE
+}))
+class Users {
+    @Route.GET('custom', $ => ({
+        test: $(SomeEntity).someAttribute.operator(['!=', 'LIKE'])
+    }))
+    static GET_CUSTOM({param}): RouteArg {
+        return param.test;
+    }
+}
+```
+
+#### Example requests / responses
+
+```http
+GET users/custom?test=LIKE|Searc%
+Response 200: [ 'LIKE', 'Searc%']
+
+GET users/custom?test=A
+Response 200: [ '==', 'A']
+
+GET users/custom?test=!!|Invalid
+Response 200: [ '==', '!!|Invalid'] (invalid operators are ignored)
+
+GET users/custom?test=>=|Nope
+Response 400: query parameter "test" operator ">=" must be one of [!=, LIKE]
+```
 
 ![divider](./assets/divider.png)
 

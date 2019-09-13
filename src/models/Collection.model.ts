@@ -1,6 +1,7 @@
+import {Joi} from '../joi'
 import {collections, config, isActive, logger} from '..'
 import {Document, getDocumentForContainer, Route as RouteModel, Scalar} from './index'
-import {argumentResolve, concatUnique, db, enjoi, isObject, queryBuilder} from '../utils'
+import {argumentResolve, arraySample, concatUnique, db, enjoi, isObject, queryBuilder} from '../utils'
 import {
 	CreateCollectionOptions,
 	DecoratorId,
@@ -12,7 +13,6 @@ import {
 	SchemaStructure
 } from '../types'
 import {getRouteForCollection} from '.'
-import * as Joi from 'joi'
 
 export type RoleTypes = 'creators' | 'readers' | 'updaters' | 'deleters';
 
@@ -131,7 +131,10 @@ export class Collection {
 
 		let { ofDocument, options = {} } = Collection![0];
 		this.opt = options;
-		if(options.name) this.name = options.name;
+
+		if(options.name) {
+			this.name = options.name;
+		}
 
 		const doc = this.doc = getDocumentForContainer(argumentResolve(ofDocument));
 		doc.col = this;
@@ -307,13 +310,18 @@ export class Collection {
 
 						if(method === 'get'){
 							const isRequired = attr.schema._flags.presence === 'required';
-							opt.queryParams = opt.queryParams.concat([[attr.key,
-								attr.schema, Scalar.iconRequired(isRequired) + ' ' + (attr.schema._description ? '**'+attr.schema._description+'**' : (isRequired
+							const operators = attr.schema._flags.operators;
+							opt.queryParams = opt.queryParams.concat([[
+								attr.key,
+								attr.schema,
+								Scalar.iconRequired(isRequired) + ' ' + (attr.schema._description ? '**'+attr.schema._description+'**' : (isRequired
 										? '**Required'
 										: '**Optional'
-								) + ` query parameter**  \`[ ${attr.key}: ${attr.schema._type} ]\``)+`
-				　 \`Example: ?${attr.key}=${attr.schema._examples[0] || attr.schema._type}\``
-							]]);
+								) + ` query parameter** ${operators ? 'with operator': ''}  \`[ ${attr.key}: ${operators ? '[operator, value]' : attr.schema._type} ]\``)
+								+ (operators ? `
+　 \`Operators: ${operators.join(', ')}\`` : '')
+								+ `
+				　 \`Example: ?${attr.key}=${operators ? arraySample(operators)+config.paramOperatorSeparator:''}${attr.schema._examples[0] || attr.schema._type}\``]]);
 						}
 						// else {
 						// 	opt.body = [schema];

@@ -1,4 +1,4 @@
-import * as Joi from 'joi'
+import {Joi} from '../joi'
 import {Schema} from 'joi'
 import {findDocumentForContainer, getDocumentForContainer} from '../models'
 import {isObject} from '.'
@@ -62,14 +62,16 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
 					j = Joi.object().keys(inp);
 				}
 			}
-			else if(typeof inp === 'function' && findDocumentForContainer(inp)) {
+			// @Nested
+			else if(typeof inp === 'function' && findDocumentForContainer(inp)){
 				j = findDocumentForContainer(inp)!.joi;
 			}
 			break;
 	}
 
-	if(!j)
+	if(!j){
 		j = Joi.any();
+	}
 
 	if(presence === 'required'){
 		j = j.required();

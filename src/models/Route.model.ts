@@ -1,5 +1,6 @@
 import {Collection, Document, Entity} from '.'
 import {config, logger, RouteArg, routes} from '../index'
+import {Joi} from '../joi'
 import {db, joiDefaults, omit, pick, queryBuilder, removeValues, toArray} from '../utils'
 import {
 	DocumentData,
@@ -7,15 +8,17 @@ import {
 	Roles,
 	RouteAction,
 	RouteAuthArg,
-	RouteData,
+	RouteBody,
+	RouteError,
+	RouteHandler,
 	RouteMethod,
 	RouteOpt,
+	RoutePathParam,
 	RouteQueryParam,
 	RouteResponse,
 	RouteRolesArg
 } from '../types'
 import {Scalar} from './Scalar.model'
-import * as Joi from 'joi'
 import {MissingKeyError} from '../errors'
 
 const REGEX_PATH_PARAM: RegExp = /:+([^=/?&]+)[=]?([^/?&]+)?/gi;
@@ -299,55 +302,52 @@ export class Route {
 			method === 'post' ? 'create' :
 			method === 'delete' ? 'delete' : 'update';
 
-		const routeData: RouteData = {
-			router, method, action, name: col.name, path, doc: col.doc, resolvable,
-			tags, summary, description, roles: roles||[], response, errors, deprecated,
-			routeAuths: col.routeAuths, routeRoles: col.routeRoles,
-			body, pathParams, queryParams, handler
-		};
+		const validParams: string[] = [];
 
-		return Route.setup(routeData);
+		queryParams.forEach(qp => validParams.push(qp[0]));
+		pathParams.forEach(qp => validParams.push(qp[0]));
+
+		return Route.setup(col, router, method, action, path, validParams, pathParams, queryParams, response, errors,
+			summary, description, roles, body, deprecated, tags, resolvable, handler);
 	}
 
 	/**
 	 * Setup route
 	 */
-	static setup({
-		action,
-		body,
-		deprecated,
-		description,
-		doc,
-		errors,
-		handler,
-		method,
-		name,
-		path,
-		pathParams,
-		queryParams,
-	  resolvable,
-		response,
-		roles,
-		routeAuths,
-		router,
-		routeRoles,
-		summary,
-		tags }: RouteData
+	static setup(
+		col: Collection,
+		router: Foxx.Router,
+		method: RouteMethod,
+		action: RouteAction,
+		path: string,
+		validParams: string[],
+		pathParams: RoutePathParam[],
+		queryParams: RouteQueryParam[],
+		response: RouteResponse,
+		errors: RouteError[],
+		summary: string,
+		description: string,
+		roles: Roles = [],
+		body?: RouteBody,
+		deprecated?: boolean,
+		tags?: string[],
+		resolvable?: string[],
+		handler?: RouteHandler
 	): Foxx.Endpoint {
-		const {aql} = require('@arangodb');
+		const { aql } = require('@arangodb');
 		const { info, debug, warn } = logger;
+		const { name, routeAuths, routeRoles } = col;
+		const doc = col.doc! as any;
+
 		info('- Setup %s %s', method.toUpperCase(), path);
 
-		const collection = db._collection(name);
+		const collection = db._collection(col.name);
 		const document = Route.document.bind(null, collection, doc);
 		const insert = Route.insert.bind(null, collection, doc);
 		const update = Route.modify.bind(null, collection, doc, 'update');
 		const replace = Route.modify.bind(null, collection, doc, 'replace');
 		const remove = Route.remove.bind(null, collection, doc);
 		const relations = Route.relations.bind(null, doc, resolvable);
-		const validParams: string[] = [];
-		queryParams.forEach(qp => validParams.push(qp[0]));
-		pathParams.forEach(qp => validParams.push(qp[0]));
 
 		const route = router[method](
 			path,
@@ -376,7 +376,7 @@ export class Route {
 					document: document.bind(null, tmp, action !== 'create', _key),
 					error: Route.error.bind(null, res),
 					exists: collection.exists.bind(collection),
-					hasAuth: !!routeAuths.length,
+					hasAuth: !!col.routeAuths.length,
 					insert,
 					method,
 					name,
@@ -634,7 +634,7 @@ export class Route {
 	static json(
 		req: Foxx.Request,
 		res: Foxx.Response,
-		document: Document,
+		document: any,
 		body: any,
 		stripAttributes: string[],
 		omitUnwritableAttributes: boolean = true
@@ -735,7 +735,7 @@ export class Route {
 		let resp;
 
 		if(Array.isArray(doc)){
-			resp = doc.map(d => call({...d}));
+			resp = doc.map(d => typeof d === 'object' && d ? call({...d}) : d);
 		} else if(doc && typeof doc === 'object') {
 			resp = call({...doc});
 		} else {

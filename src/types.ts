@@ -96,6 +96,7 @@ export interface Config {
 	throwUnauthorized: ArangoDB.HttpStatus
 	unregisterAQLFunctionEntityGroup: boolean
 	dasherizeRoutes: boolean
+	paramOperatorSeparator: string
 	defaultLocale: string
 	defaultListLimit: number
 	defaultListLimitMax: number
@@ -307,30 +308,7 @@ export type RouteAuthorize = (doc: DocumentData, method?: RouteMethod, action?: 
 export type DocumentForClient = (doc: DocumentData, opt: any) => DocumentData;
 export type DocumentFromClient = (doc: DocumentData, opt: any) => DocumentData;
 
-export interface RouteData {
-	doc: any
-	router: Foxx.Router
-	method: RouteMethod
-	action: RouteAction
-	name: string
-	path: string
-	pathParams: RoutePathParam[]
-	queryParams: RouteQueryParam[]
-	body?: RouteBody
-	response: RouteResponse
-	errors: RouteError[]
-	summary: string
-	description: string
-	deprecated?: boolean
-	tags?: string[]
-	resolvable?: string[]
-	routeAuths: Array<RouteAuthorize>
-	routeRoles: Array<RouteRoles>
-	roles: Roles
-	handler?: RouteHandler
-}
-
-type QueryFilterOperator = '==' | '!=' | '<' | '<=' | '>' | '>=' | 'IN' | 'NOT IN' | 'LIKE' | '=~' | '!~'
+type QueryFilterOperator = '==' | '!=' | '<' | '<=' | '>' | '>=' | 'IN' | 'NOT IN' | 'LIKE' | '=~' | '!~' | 'HAS'
 type QueryFilterValue = string | number | boolean | [QueryFilterOperator, ...(string | number | boolean)[]]
 export interface QueryFilter {
 	[key: string]: QueryFilterValue

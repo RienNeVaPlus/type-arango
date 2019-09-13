@@ -80,8 +80,8 @@ export class User extends Entity {
     @Attribute()
     createdAt: Type.DateInsert;
     
-    @OneToMany(type => User)
-    friends: Related<User[]>
+    @OneToMany(type => Address, Address => Address.owner)
+    addresses: Related<Address[]>
 }
 
 // `Users` collection
@@ -95,12 +95,12 @@ export class User extends Entity {
 @Route.use('GET','POST','PATCH','PUT','DELETE','LIST')
 export class Users extends Entities {
     @Route.GET(
-        path => ':id/friends',
+        path => ':id/addresses',
         roles => ['viewer'],
         summary => 'Returns friend users'
     ) static GET({param}: RouteArg){
         const user = Users.findOne(param.id);
-        return user.friends();
+        return user.relation('addresses');
     }
 }
 ```

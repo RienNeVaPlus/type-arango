@@ -1,6 +1,6 @@
 import {Schema} from 'joi'
+import {Joi} from '../joi'
 import {toJoi} from '../utils'
-import * as Joi from 'joi'
 
 export type ScalarType = 'any' | 'string' | 'number' | 'boolean' | 'enum' | string;
 
