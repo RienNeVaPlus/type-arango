@@ -97,7 +97,7 @@ export class Users extends Entities {
     @Route.GET(
         path => ':id/addresses',
         roles => ['viewer'],
-        summary => 'Returns friend users'
+        summary => 'Returns User Address[]'
     ) static GET({param}: RouteArg){
         const user = Users.findOne(param.id);
         return user.relation('addresses');
