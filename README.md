@@ -187,7 +187,6 @@ Read the 📘 [examples](./examples) first, then dive into the 📗 [API Referen
 
 ### 🌻 Credits
 - type-arango is inspired by [TypeORM](https://github.com/typeorm/typeorm) and [type-graphql](https://github.com/19majkel94/type-graphql)
-- Avocado drawing by [FreePik](https://www.freepik.com/free-photos-vectors/background)
 
 [github-version]: https://img.shields.io/github/package-json/v/riennevaplus/type-arango.svg
 [github-version-url]: https://github.com/RienNeVaPlus/type-arango/blob/master/package.json
