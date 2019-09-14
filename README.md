@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="./assets/logo.png" alt="TypeArango" />
+  <img src="./assets/logo.png" alt="TYPE-ARANGO" />
 </p>
 
-<h5 align="center">
+<h6 align="center">
     Powerful decorators for <a href="https://www.arangodb.com">ArangoDB</a> <a href="https://docs.arangodb.com/3.4/Manual/Foxx/">Foxx Apps</a> when working with TypeScript.
-</h5>
+</h6>
 
 <p align="center">
 	TypeArango manages ArangoDB <code>collections</code>, <code>documents</code>, <code>relations</code> and <code>routes</code><br>by taking advantage of TypeScript's typings. It comes with a fast and easy to use <strong>permission<br/>system</strong>, provides an <strong>ORM</strong>, event <strong>listeners</strong>, <strong>documented endpoints</strong> as well as plenty of<br/>other tools to make it fun to build ReST APIs in a declarative & elegant manner.
