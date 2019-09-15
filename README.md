@@ -127,10 +127,10 @@ If you don't have a foxx service running yet, you can create one by using
 
 ![divider](./assets/divider.small.png)
 
-#### 2. Install `type-arango`
+#### 2. Install
 
 ```
-yarn add --dev type-arango
+yarn add --D type-arango
 ```
 or
 ```
@@ -138,7 +138,14 @@ npm i --save-dev type-arango
 ```
 ![divider](./assets/divider.small.png)
 
-#### 3. Initialize TypeArango
+#### 3. Create the Entities
+
+Read the 📘 [Examples](./examples) or dive into the 📗 [API Reference](./API.md)
+
+
+![divider](./assets/divider.small.png)
+
+#### 4. Setup
 
 `typeArango()` has to be called **before** the entities are imported, it returns a function to be called **after** the decorators have been applied. It takes an optional 📝 [Configuration](./API.md#-configuration) argument.
 
@@ -158,7 +165,7 @@ complete();
 
 ![divider](./assets/divider.small.png)
 
-#### 4. Create routes
+#### 5. Create routes
 When using the `@Route` decorator, it is required to provide the `Foxx.Router`
 to TypeArango by calling `createRoutes(router)`.
 
@@ -181,7 +188,7 @@ entities before calling `createRoutes(Foxx.Router)`.
 
 ### 📚 Documentation
 
-Read the 📘 [examples](./examples) first, then dive into the 📗 [API Reference](./API.md).
+Read the 📘 [Examples](./examples) first, then dive into the 📗 [API Reference](./API.md).
 
 ![divider](./assets/divider.png)
 
