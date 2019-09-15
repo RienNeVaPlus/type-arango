@@ -81,7 +81,7 @@ export class User extends Entity {
     createdAt: Type.DateInsert;
     
     @OneToMany(type => Address, Address => Address.owner)
-    addresses: Related<Address[]>
+    addresses: Related<Address[]>;
 }
 
 // `Users` collection
