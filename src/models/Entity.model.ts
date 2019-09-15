@@ -162,24 +162,10 @@ export class Entity {
 		let data = _saveKeys.reduce((o: any, key: string) => {
 			const v = this[key];
 
-			// replace relation functions with values
 			const relation = _doc.relation[key];
-			if(relation){
-				if(v instanceof Entity && v._saveKeys.length) {
-					v.save();
-				}
-
-				// restore relation keys when provided
-				if(this['_'+key]){
-					o[key] = this['_'+key];
-				}
-				// assign relation id when current entity is not inside relation entity
-				else if(!v[_doc.name.toLowerCase()]) {
-					o[key] = v._key;
-				}
-			}
-			// replace entities with their _key
-			else if(v instanceof Entity){
+			if(relation && v instanceof Entity){
+				// save assigned entity
+				if(v._saveKeys.length) v.save();
 				o[key] = v._key;
 			}
 			else
