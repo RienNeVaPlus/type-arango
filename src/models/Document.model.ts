@@ -329,6 +329,30 @@ export class Document<T=any> {
 		const { Authorized, OneToOne, OneToMany } = this.decorator;
 		let metadata: any;
 
+		// @OneToOne | @OneToMany
+		if(OneToOne || OneToMany) for(let {
+			decorator, prototype, attribute, type, relation
+		} of (OneToOne||[]).concat(OneToMany||[])) {
+			metadata = attribute && Reflect.getMetadata('design:type', prototype, attribute);
+
+			if(!type && ((metadata && ['Array','Function'].includes(metadata.name)) || (!type && !metadata)))
+				throw new MissingTypeError(this.name, attribute!);
+
+			type = type ? argumentResolve(type) : metadata;
+
+			const docName = this.name.toLowerCase();
+			const relationDoc = getDocumentForContainer(type as any);
+			const attrObj = relationDoc.attributeIdentifierObject;
+			let relationAttr = argumentResolve(relation, attrObj);
+
+			if(relation && !relationAttr)
+				throw new RelationNotFoundError('OneToOne', this.name, relation);
+			else if(!relationAttr)
+				relationAttr = attrObj[docName] ? docName : '_key';
+
+			this.relation[attribute!] = {type:decorator as RelationType, document:relationDoc, attribute:relationAttr};
+		}
+
 		// @Authorized
 		if(Authorized) for(let o of Authorized){
 			const A = this.decorator.Attribute || [];
@@ -346,8 +370,17 @@ export class Document<T=any> {
 		if(Attribute) for(let {
 			prototype, attribute, typeOrRequiredOrSchemaOrReadersOrFunction, readersArrayOrFunction, writersArrayOrFunction
 		} of Attribute){
-			metadata = attribute && Reflect.getMetadata('design:type', prototype, attribute);
-			const joi = toJoi(metadata);
+			metadata = Reflect.getMetadata('design:type', prototype, attribute!);
+			const rel = this.relation[attribute!];
+			let joi;
+
+			if(!rel) joi = toJoi(metadata);
+			else switch(rel.type){
+				case 'OneToOne': joi = rel.document.attribute[rel.attribute].schema || Joi.string(); break;
+				case 'OneToMany': joi = Joi.array().items(rel.document.attribute[rel.attribute!].schema || Joi.string()); break;
+				default: joi = toJoi(metadata); break;
+			}
+
 			// if(!metadata)
 			// 	throw new Error('Invalid design:type for "'+this.name+'.'+attribute+'"');
 
@@ -361,6 +394,7 @@ export class Document<T=any> {
 				readers = schema;
 				schema = joi;
 			}
+
 			if(readers)
 				roles = removeValues({readers:readers,writers:writers||config.requiredWriterRolesFallback}, undefined);
 
@@ -397,30 +431,6 @@ export class Document<T=any> {
 
 		// create attribute roles
 		this.buildAttributeRoles();
-
-		// @OneToOne | @OneToMany
-		if(OneToOne || OneToMany) for(let {
-			decorator, prototype, attribute, type, relation
-		} of (OneToOne||[]).concat(OneToMany||[])) {
-			metadata = attribute && Reflect.getMetadata('design:type', prototype, attribute);
-
-			if(!type && ((metadata && ['Array','Function'].includes(metadata.name)) || (!type && !metadata)))
-				throw new MissingTypeError(this.name, attribute!);
-
-			type = type ? argumentResolve(type) : metadata;
-
-			const docName = this.name.toLowerCase();
-			const relationDoc = getDocumentForContainer(type as any);
-			const attrObj = relationDoc.attributeIdentifierObject;
-			let relationAttr = argumentResolve(relation, attrObj);
-
-			if(relation && !relationAttr)
-				throw new RelationNotFoundError('OneToOne', this.name, relation);
-			else if(!relationAttr)
-				relationAttr = attrObj[docName] ? docName : '_key';
-
-			this.relation[attribute!] = {type:decorator as RelationType, document:relationDoc, attribute:relationAttr};
-		}
 
 		logger.info('Completed document "%s"', this.name);
 	}

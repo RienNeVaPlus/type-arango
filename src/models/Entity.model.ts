@@ -83,6 +83,7 @@ export class Entity {
 					throw new SymbolKeysNotSupportedError();
 
 				if(_doc.relation[key]){
+					target._saveKeys.push(key);
 					target[key] = val;
 					return true;
 				}
@@ -163,10 +164,10 @@ export class Entity {
 			const v = this[key];
 
 			const relation = _doc.relation[key];
-			if(relation && v instanceof Entity){
+			if(relation){
 				// save assigned entity
 				if(v._saveKeys.length) v.save();
-				o[key] = v._key;
+				o[key] = v instanceof Entity ? v._key : v;
 			}
 			else
 				o[key] = v;
