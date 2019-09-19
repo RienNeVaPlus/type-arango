@@ -197,7 +197,7 @@ export class Route {
 			]);
 		}
 
-		tags = tags || [col.name];
+		tags = tags || [col.doc!.name];
 
 		// 404
 		if(['get','patch','delete'].includes(method))
