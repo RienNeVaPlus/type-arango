@@ -292,6 +292,8 @@ export class Collection {
 					opt.pathParams = opt.pathParams || [];
 					opt.queryParams = opt.queryParams || [];
 
+					let i = 0;
+
 					// loop schema keys
 					for(const attr of schema._inner.children){
 						// attributes with a default value are optional
@@ -323,12 +325,10 @@ export class Collection {
 								+ `
 				　 \`Example: ?${attr.key}=${operators ? arraySample(operators)+config.paramOperatorSeparator:''}${attr.schema._examples[0] || attr.schema._type}\``]]);
 						}
-						// else {
-						// 	opt.body = [schema];
-						// }
+						i++;
 					}
 
-					if(method !== 'get'){
+					if(i && method !== 'get'){
 						opt.body = [schema];
 					}
 				}
