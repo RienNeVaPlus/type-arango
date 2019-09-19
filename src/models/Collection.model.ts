@@ -308,6 +308,13 @@ export class Collection {
 							// remove attr from schema
 							schema._inner.children = schema._inner.children.filter((a: any) => a.key !== attr.key);
 							continue;
+						} else if(opt.queryParams.find(q => q[0] === attr.key)){
+							// override queryParam schema with route schema in order to specify more details
+							opt.queryParams = opt.queryParams.map(p => p[0] === attr.key ? [p[0], attr.schema, p[2]] as RoutePathParam : p);
+							// remove attr from schema
+							schema._inner.children = schema._inner.children.filter((a: any) => a.key !== attr.key);
+						} else {
+							i++;
 						}
 
 						if(method === 'get'){
@@ -325,7 +332,6 @@ export class Collection {
 								+ `
 				　 \`Example: ?${attr.key}=${operators ? arraySample(operators)+config.paramOperatorSeparator:''}${attr.schema._examples[0] || attr.schema._type}\``]]);
 						}
-						i++;
 					}
 
 					if(i && method !== 'get'){
