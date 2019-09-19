@@ -8,8 +8,6 @@ export function ForClient(
 	return (prototype: any) => {
 		if(!isActive) return;
 		const doc = getDocumentForContainer(prototype);
-		console.log('SET FPR CÖOEMT',doc.options);
 		doc.options = Object.assign(doc.options||{}, {forClient});
-		console.log('options', doc.options);
 	}
 }
