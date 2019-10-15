@@ -82,6 +82,14 @@ export class Collection {
 		this.db = isActive ? db._collection(this.name) : null;
 	}
 
+	/**
+	 * Whether users can provide custom document keys on creation
+	 */
+	public get allowUserKeys(){
+		const keyOptions = this.opt && this.opt.keyOptions;
+		return !keyOptions ? false : (keyOptions && keyOptions.allowUserKeys === true && keyOptions.type !== 'autoincrement');
+	}
+
 	public get route(){
 		let { name } = this;
 		name = name.charAt(0).toLowerCase() + name.substr(1);

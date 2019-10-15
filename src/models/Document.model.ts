@@ -232,7 +232,7 @@ export class Document<T=any> {
 
 		// related document is an edge, use CollectionName/ID
 		if(rel.document.isEdge && edgeAttributes.includes(rel.attribute)){
-			filter[rel.attribute] = this.col!.name + '/' + filter[rel.attribute];
+			filter[rel.attribute] = this.col!.name + '/' + data._key;
 		} else {
 			if(data._key)
 				filter[rel.attribute] = data._key;
@@ -245,8 +245,11 @@ export class Document<T=any> {
 				throw new Error('Invalid relation value of "'+rel.document.name+'._key": '+JSON.stringify(ref));
 
 			// remove CollectionName/ from relation id
-			if(this.isEdge && Array.isArray(ref)){
-				ref = ref.map(r => r.replace(rel.document.col!.name+'/', ''));
+			if(this.isEdge){
+				if(Array.isArray(ref))
+					ref = ref.map(r => r.replace(rel.document.col!.name+'/', ''));
+				else
+					ref = ref.replace(rel.document.col!.name+'/', '');
 			}
 			filter = {_key:ref};
 		}
