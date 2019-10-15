@@ -74,10 +74,8 @@ export class Route {
 	static defaultPath(col: Collection, method: RouteMethod): string {
 		let path: string = col.route+'/:_key';
 
-		// remove `_key` from path when `allowUserKeys` isn't set to false or `type` is set to `autoincrement`
-		if(method === 'post'){
-			const keyOptions = col.opt && col.opt.keyOptions;
-			if(keyOptions && (keyOptions.allowUserKeys !== false || keyOptions.type === 'autoincrement'))
+		// remove `_key` from path when `allowUserKeys` is set to true and `type` isn't set to `autoincrement` or no options are given
+		if(method === 'post' && !col.allowUserKeys){
 				path = col.route;
 		}
 
@@ -169,8 +167,9 @@ export class Route {
 
 		// let body: RouteBody = opt.body;
 		const name: string = col.doc!.name;
+		const validParams: string[] = [];
 
-		if(!isCustom){
+		if(!isCustom && (method !== 'post' || col.allowUserKeys)){
 			pathParams = pathParams.concat([['_key', Joi.string(), '🆔 **Document identifier**']]);
 		}
 
@@ -272,6 +271,7 @@ export class Route {
 			}
 		}
 
+
 		if(opt.action !== 'list' && handler){
 			const handlerId = col.name+'.'+handlerName+'()';
 			summary = opt.summary || 'Calls '+handlerId;
@@ -302,10 +302,12 @@ export class Route {
 			method === 'post' ? 'create' :
 			method === 'delete' ? 'delete' : 'update';
 
-		const validParams: string[] = [];
-
+		// add query & pathParams to `param`
 		queryParams.forEach(qp => validParams.push(qp[0]));
 		pathParams.forEach(qp => validParams.push(qp[0]));
+
+		// add body schema keys to `validParams`
+		if(body && body[0]) (body[0] as any)._inner.children.forEach((o: any) => validParams.push(o.key));
 
 		return Route.setup(col, router, method, action, path, validParams, pathParams, queryParams, response, errors,
 			summary, description, roles, body, deprecated, tags, resolvable, handler);
@@ -362,7 +364,8 @@ export class Route {
 				let tmp = {doc:null};
 
 				const param = validParams.reduce((c: any, n) => {
-					c[n] = req.pathParams[n] || req.queryParams[n];
+					c[n] = req.pathParams[n] || req.queryParams[n] || (req.body ? req.body[n] : undefined);
+					if(c[n] === undefined) delete c[n];
 					return c;
 				}, {});
 				const requestedAttributes = req.queryParams.attributes ? req.queryParams.attributes.split(',') : null;
@@ -474,7 +477,6 @@ export class Route {
 	){
 		let k: string | ArangoDB.DocumentLike = selector || key;
 		if(!k) throw new MissingKeyError(collection.name());
-
 		// temp cache to avoid duplicate reads
 		if(!selector || selector === key){
 			if(tmp.doc) return tmp.doc;
