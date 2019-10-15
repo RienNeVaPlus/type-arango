@@ -72,12 +72,12 @@ const eventTypes: EventType[] = [
 ];
 const eventNames: string[] = [
 	'afterDocument', 'beforeDocument',
-	'afterInsert', 'BeforeInsert',
-	'afterUpdate', 'BeforeUpdate',
-	'afterModify', 'BeforeModify',
-	'afterWrite', 'BeforeWrite',
-	'afterReplace', 'BeforeReplace',
-	'afterRemove', 'BeforeRemove'
+	'afterInsert', 'beforeInsert',
+	'afterUpdate', 'beforeUpdate',
+	'afterModify', 'beforeModify',
+	'afterWrite', 'beforeWrite',
+	'afterReplace', 'beforeReplace',
+	'afterRemove', 'beforeRemove'
 ];
 
 export class Document<T=any> {

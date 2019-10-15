@@ -643,7 +643,6 @@ export class Route {
 	){
 		let json = req.json();
 
-		// console.log('validate', body.validate(json, {convert:true}));
 		if(body && body._inner){
 			// add joi defaults to result, this should've been done by Foxx instead of me
 			json = removeValues(joiDefaults(body, json), undefined);
