@@ -349,7 +349,7 @@ export class Document<T=any> {
 			let relationAttr = argumentResolve(relation, attrObj);
 
 			if(relation && !relationAttr)
-				throw new RelationNotFoundError('OneToOne', this.name, relation);
+				throw new RelationNotFoundError(decorator as any, this.name, relation);
 			else if(!relationAttr)
 				relationAttr = attrObj[docName] ? docName : '_key';
 
