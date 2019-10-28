@@ -610,7 +610,7 @@ const MAP = ['one','two','three']
 
 @Document()
 // add virtual field to documents
-@After.document(doc => Object.assign(doc, {extra:'free'})
+@After.document(doc => Object.assign(doc, {extra:'free'}))
 class User {
     @Attribute()
     @After.document(value => MAP[value])
