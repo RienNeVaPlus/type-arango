@@ -1,11 +1,11 @@
 import {isFoxx} from '../utils'
 import {QueryOpt} from '../types'
+import {logger} from '../index'
 
 const is = isFoxx();
 const orders = ['ASC','DESC'];
 export const arango = is ? require('@arangodb') : null;
 export const db = is ? arango.db : null;
-export const aql = is ? arango.aql : null;
 
 export const operators = ['==','!=','<','<=','>','>=','IN','NOT IN','LIKE','=~','!~'];
 
@@ -24,9 +24,13 @@ function escape(val: any){
 
 function clean(val: any): any {
 	if(Array.isArray(val)) return val.map(v => clean(v));
-	if(typeof val === 'number') return val;
-	const indexOf = val.indexOf(' ');
-	return (indexOf > -1 ? val.substr(0, indexOf) : val).replace(/[^a-zA-Z0-9-_.]/g, '');
+	switch(typeof val){
+		default:
+		case 'number': return val;
+		case 'string':
+			const indexOf = val.indexOf(' ');
+			return (indexOf > -1 ? val.substr(0, indexOf) : val).replace(/[^a-zA-Z0-9-_.]/g, '');
+	}
 }
 
 export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}: QueryOpt){
@@ -36,9 +40,9 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 			([key, value]) => value !== undefined && q.push(
 				'FILTER '+
 				(
-					// ['HAS', value] => FILTER value IN i.key
+					// ['HAS', value] => FILTER value IN TO_ARRAY(i.key)
 					Array.isArray(value) && value[0] === 'HAS'
-					? escape(value[1])+' IN i.'+clean(key)
+					? escape(value[1])+' IN TO_ARRAY(i.'+clean(key)+')'
 
 					// ['!=', value] => FILTER i.key != value
 					: Array.isArray(value) && operators.includes(value[0])
@@ -83,7 +87,7 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 		q.push('RETURN i');
 	}
 
-	// console.warn('Query %o', q.join(' '));
+	logger.info('Query %o', q.join(' '));
 
 	return q.join('\n');
 }
