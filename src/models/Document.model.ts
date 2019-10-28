@@ -235,7 +235,7 @@ export class Document<T=any> {
 			filter[rel.attribute] = this.col!.name + '/' + data._key;
 		} else {
 			if(data._key)
-				filter[rel.attribute] = data._key;
+				filter[rel.attribute] = ['HAS', data._key];
 		}
 
 		// relation key is stored in document
@@ -253,6 +253,9 @@ export class Document<T=any> {
 			}
 			filter = {_key:ref};
 		}
+
+		if(!Object.keys(filter).length)
+			throw new Error('Cannot resolve relation of "'+rel.document.name+'.'+rel.attribute+'": empty filter');
 
 		const entities = rel.document.col!.Class as typeof Entities;
 
