@@ -831,7 +831,7 @@ export class Route {
 	/**
 	 * List documents
 	 */
-	static list({name, requestedAttributes, param, hasAuth, auth, relations}: RouteArg) {
+	static list({name, param, hasAuth, auth, relations}: RouteArg) {
 		logger.info('LIST %s/%s', name);
 
 		const { attributes, offset, limit = config.defaultListLimit, sort, order, ...filter } = param;
@@ -839,7 +839,6 @@ export class Route {
 
 		let q: QueryOpt = {
 			filter,
-			keep: requestedAttributes || undefined,
 			sort: sort ? [sort+' '+(order||'ASC')] : undefined,
 			limit: offset ? [offset, limit] : limit
 		};
