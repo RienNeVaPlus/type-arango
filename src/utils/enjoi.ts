@@ -105,7 +105,7 @@ export function joiDefaults(obj: any, override: any = {}){
 		} else {
 			// convert strings to integer / floats when the attribute type is a number (this should be done by joi's .validate, inside ArangoDB Foxx)
 			if(override[key] && child.schema._type === 'number'){
-				override[key] = child.schema._tests.find((t:any) => t.name === 'integer') ? parseInt(override[key]) : parseFloat(override[key]);
+				override[key] = child.schema._tests.find((t:any) => t.name === 'integer') ? parseInt(override[key], 10) : parseFloat(override[key]);
 			}
 
 			if(override[key] || child.schema._flags.default)
