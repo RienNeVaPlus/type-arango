@@ -26,9 +26,10 @@ const operator: Rules = {
 			allow: oJoi.alternatives([joiOperators.required(), oJoi.array().items(joiOperators)])
 		},
 		setup(this: any, {allow}: any) {
+			const sep = require('./index').config.paramOperatorSeparator;
 			allow = typeof allow === 'string' ? [allow] : allow || OPERATORS;
 			this._flags.operators = allow;
-			this._flags.regexp = new RegExp('^('+OPERATORS.join('|')+'){1}\\'+require('./index').config.paramOperatorSeparator+'{1}(.*)$');
+			this._flags.regexp = new RegExp('^('+OPERATORS.join('|')+'){1}[\\'+sep+'|'+encodeURI(sep).split('').join('\\')+']{1}(.*)$');
 		},
 		validate(this: any, _param, value, state, options){
 			const match = value.match(this._flags.regexp);
