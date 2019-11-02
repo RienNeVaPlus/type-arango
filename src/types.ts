@@ -1,3 +1,4 @@
+import * as Joi from 'joi'
 import {
 	AlternativesSchema,
 	AnySchema,
@@ -13,7 +14,6 @@ import {
 	StringSchema,
 	ValidationOptions
 } from 'joi'
-import * as Joi from 'joi'
 import {enjoi} from './utils'
 import {Entity} from './models'
 
@@ -230,6 +230,11 @@ interface TemplateStringsArray extends ReadonlyArray<string> {
 	readonly raw: ReadonlyArray<string>
 }
 
+interface Aql {
+	(strings: TemplateStringsArray, ...args: any[]): ArangoDB.Query
+	literal(value: any): ArangoDB.AqlLiteral
+}
+
 export interface RouteRolesArg {
 	name: string
 	path: string
@@ -238,7 +243,7 @@ export interface RouteRolesArg {
 	validParams: string[]
 	param: {[key: string]: any}
 	_key: string
-	aql: (strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query
+	aql: Aql,
 	query: (query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor
 	collection: ArangoDB.Collection
 	document: (selector?: string | ArangoDB.DocumentLike) => DocumentData
