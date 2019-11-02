@@ -5,7 +5,7 @@ import {argumentResolve} from '../utils'
 import {getDocumentForContainer} from '../models'
 import {isActive} from '../index';
 
-export type IndexTypeFunct = (returns: ArangoDB.IndexType) => ArangoDB.IndexType;
+export type IndexTypeFunct = (a: void) => ArangoDB.IndexType;
 
 export function Index(): PropertyDecorator;
 export function Index(indexType: ArangoDB.IndexType): PropertyDecorator;

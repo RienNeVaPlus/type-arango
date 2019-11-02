@@ -3,8 +3,8 @@ import {SymbolKeysNotSupportedError} from '../errors'
 import {Roles, TypeFunc, ValidateSchema, ValidateSchemaFunc} from '../types'
 import {isActive} from '../index';
 
-type ReadersFunc = (returns?: void) => Roles;
-type WritersFunc = (returns?: void) => Roles;
+type ReadersFunc = (groups: void) => Roles;
+type WritersFunc = (groups: void) => Roles;
 type RequiredFunc = (a?: any) => true;
 type Required = RequiredFunc | true;
 
