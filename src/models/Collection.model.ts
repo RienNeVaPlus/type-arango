@@ -156,9 +156,10 @@ export class Collection {
 			// create collection
 			if(!this.db){
 				logger.info('Creating ArangoDB Collection "%s"', this.name);
+				const { of, ...opt } = options;
 				this.db = doc.isEdge
-					? db._createEdgeCollection(this.name, options || {})
-					: db._createDocumentCollection(this.name, options || {});
+					? db._createEdgeCollection(this.name, opt || {})
+					: db._createDocumentCollection(this.name, opt || {});
 			}
 
 			// create indices
@@ -218,19 +219,19 @@ export class Collection {
 			prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrSummaryOrFunction,
 			rolesOrSchemaOrSummaryOrFunction, summaryOrSchemaOrRolesOrFunction, options
 		} of Route){
-			const a: any = argumentResolve(pathOrRolesOrFunctionOrOptions);
+			const a: any = argumentResolve(pathOrRolesOrFunctionOrOptions, (inp: any) => enjoi(inp, 'required'), Joi);
 			let opt: RouteOpt = Object.assign({
 					queryParams: []
 				},
-				typeof a === 'string' ? {path:a} : Array.isArray(a) ? {roles:a} : typeof a === 'object' && a && a.isJoi ? {schema:a} : a || {}
+				typeof a === 'string' ? {path:a} : Array.isArray(a) ? {roles:a} : typeof a === 'object' && a ? {schema:a} : a || {}
 			);
 
-			let schema;
+			let schema: any = opt.schema;
 
 			// allow options for schema param
 			if(isObject(schemaOrRolesOrSummaryOrFunction)){
 				opt = Object.assign(schemaOrRolesOrSummaryOrFunction, opt);
-			} else {
+			} else if(!schema) {
 				schema = argumentResolve(schemaOrRolesOrSummaryOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
 				if(schema instanceof Array){
 					opt.roles = schema;

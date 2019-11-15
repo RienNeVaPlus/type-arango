@@ -17,7 +17,7 @@ import {Schema} from 'joi'
 export type PathFunc = (returns?: string) => any;
 export type SummaryFunc = (returns?: string) => string;
 
-type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt;
+type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt | SchemaFunc;
 type ArgSchemaOrRolesOrSummaryOrOpt = string | SummaryFunc | boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt;
 
 export const ROUTE_PRESET: {[key in RoutePreset]: RouteDecorator[]} = {
