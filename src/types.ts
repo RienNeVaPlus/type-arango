@@ -236,31 +236,36 @@ interface Aql {
 }
 
 export interface RouteRolesArg {
-	name: string
-	path: string
-	method: RouteMethod
-	action: RouteAction
-	validParams: string[]
-	param: {[key: string]: any}
+	$: (
+		strings: TemplateStringsArray,
+		...args: any[]
+	) => ArangoDB.Cursor;
 	_key: string
-	aql: Aql,
-	query: (query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor
+	action: RouteAction
+	aql: Aql
+	auth: RouteAuthorize
 	collection: ArangoDB.Collection
+	db: ArangoDB.Database
 	document: (selector?: string | ArangoDB.DocumentLike) => DocumentData
-	insert: (data: DocumentData, options?: ArangoDB.InsertOptions) => ArangoDB.InsertResult
-	update: (selector: string | ArangoDB.DocumentLike, data: DocumentData, options?: ArangoDB.UpdateOptions) => ArangoDB.UpdateResult
-	replace: (selector: string | ArangoDB.DocumentLike, data: DocumentData, options?: ArangoDB.ReplaceOptions) => ArangoDB.UpdateResult
-	remove: (selector: string | ArangoDB.DocumentLike, options?: ArangoDB.RemoveOptions) => ArangoDB.RemoveResult
+	error: (status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response
 	exists: (selector: string) => boolean
+	hasAuth: boolean
+	insert: (data: DocumentData, options?: ArangoDB.InsertOptions) => ArangoDB.InsertResult
+	method: RouteMethod
+	name: string
+	param: {[key: string]: any}
+	path: string
+	query: (query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor
 	relations: (data: DocumentData) => DocumentData;
+	remove: (selector: string | ArangoDB.DocumentLike, options?: ArangoDB.RemoveOptions) => ArangoDB.RemoveResult
+	replace: (selector: string | ArangoDB.DocumentLike, data: DocumentData, options?: ArangoDB.ReplaceOptions) => ArangoDB.UpdateResult
 	req: Foxx.Request
+	requestedAttributes: string[]
 	res: Foxx.Response
 	roles?: Roles
-	requestedAttributes: string[]
 	session: (set?: Partial<Foxx.Session>) => Foxx.Session
-	hasAuth: boolean
-	auth: RouteAuthorize
-	error: (status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response
+	update: (selector: string | ArangoDB.DocumentLike | DocumentData, data?: DocumentData, options?: ArangoDB.UpdateOptions) => ArangoDB.UpdateResult
+	validParams: string[]
 }
 export type RouteRoles = (arg: RouteRolesArg) => Roles
 export type RouteAuth = (arg: RouteAuthArg) => boolean
