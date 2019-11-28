@@ -2,8 +2,8 @@ import {config} from '..'
 import * as Joi from 'joi'
 
 export namespace Type {
-	export class I18n {
-		[key: string]: string | any
+	export class I18n<T = any> {
+		[key: string]: string | any | T
 
 		static _typeArango: string = '0.4';
 		static schema: Joi.ObjectSchema = Joi.object().unknown().example({en:'Translation'});
