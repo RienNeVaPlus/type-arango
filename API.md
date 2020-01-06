@@ -80,8 +80,8 @@ Types are used to better describe common patterns to store and retrieve attribut
 
 - 🌐 [Type.I18n](#-typei18n) - Internationalization support
 - 💱 [Type.Currencies](#-typecurrencies) - Support for multiple currencies
-- 🕒 [Type.DateInsert](#-typedateinsert) - set attribute to `new Date` when creating new documents
-- 🕘 [Type.DateUpdate](#-typedateupdate) - set attribute to `new Date` when updating documents
+- 🕒 [Type.DateInsert](#-typedateinsert) - Set attribute to `new Date` when creating documents
+- 🕘 [Type.DateUpdate](#-typedateupdate) - Set attribute to `new Date` when updating documents
 
 ![divider](./assets/divider.small.png)
 
