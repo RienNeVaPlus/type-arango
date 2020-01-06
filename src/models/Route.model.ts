@@ -20,6 +20,7 @@ import {
 } from '../types'
 import {Scalar} from './Scalar.model'
 import {MissingKeyError} from '../errors'
+import { query } from '@arangodb'
 
 const REGEX_PATH_PARAM: RegExp = /:+([^=/?&]+)[=]?([^/?&]+)?/gi;
 const mime: string[] = ['application/json'];
@@ -48,7 +49,7 @@ export class Route {
 		public col: Collection,
 		public opt: RouteOpt
 	){
-		this.isCustom = !!opt.path;
+		this.isCustom = !!opt.handler;//!!opt.path;
 		this.path = typeof opt.path === 'string' ? opt.path : Route.defaultPath(col, method);
 
 		// is ClassDecorator, save roles to collection
@@ -169,7 +170,8 @@ export class Route {
 		const name: string = col.doc!.name;
 		const validParams: string[] = [];
 
-		if(!isCustom && (method !== 'post' || col.allowUserKeys)){
+		if(this.path.includes('/:_key') && (method !== 'post' || col.allowUserKeys)){
+		// if(this.path.includes('/:_key')){
 			pathParams = pathParams.concat([['_key', Joi.string(), '🆔 **Document identifier**']]);
 		}
 
@@ -208,8 +210,8 @@ export class Route {
 		 */
 
 		if(isCustom){
-			queryParams = (opt.queryParams || []).concat(queryParams||[]);
-
+			queryParams = [...(opt.queryParams || []), ...(queryParams || [])];
+		} else {
 			if(opt.action === 'list'){
 				summary = summary || `Returns ${name}[]`;
 				description = description || `Prints a list of ${name} documents of the collection **${col.name}**.`;
@@ -228,8 +230,8 @@ export class Route {
 				if(!qp.includes('order'))
 					queryParams.push(['order', Joi.any().valid('ASC','DESC').default('ASC'),
 						'**🔃 Order results**\n　    `Values: ASC, DESC`\n　    `Example: ?order=DESC`']);
-			}
-		} else {
+			} else
+
 			switch(method){
 				default:
 				case 'get':
@@ -270,7 +272,6 @@ export class Route {
 					break;
 			}
 		}
-
 
 		if(opt.action !== 'list' && handler){
 			const handlerId = col.name+'.'+handlerName+'()';
@@ -371,11 +372,13 @@ export class Route {
 				const requestedAttributes = req.queryParams.attributes ? req.queryParams.attributes.split(',') : null;
 				const _key = param._key;
 				const args: RouteRolesArg = {
+					$: query,
 					_key,
 					action,
 					aql,
 					auth: Route.auth.bind(null, req, res, roles, routeAuths),
 					collection,
+					db: db,
 					document: document.bind(null, tmp, action !== 'create', _key),
 					error: Route.error.bind(null, res),
 					exists: collection.exists.bind(collection),
@@ -397,6 +400,7 @@ export class Route {
 					update: update.bind(null, _key),
 					validParams
 				};
+
 				if(routeRoles.length){
 					userRoles = routeRoles.map(f => f(args) || []).reduce((c, n) => c.concat(n), userRoles);
 				}
