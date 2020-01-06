@@ -43,6 +43,7 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
 		case Object:
 		case 'object': j = Joi.object(); break;
 
+		case null:
 		case 'any': j = Joi.any(); break;
 
 		case 'alternatives': j = Joi.alternatives(); break;
