@@ -74,10 +74,6 @@ export interface DocumentMap {
 
 export interface DocumentOptions extends DocumentMap {}
 
-export interface IndexOptionsWithType extends IndexOptions {
-	type: ArangoDB.IndexType
-}
-
 export enum LogLevel {
 	Error = 1,
 	Warn,
@@ -98,6 +94,7 @@ export interface Config {
 	dasherizeRoutes: boolean
 	paramOperatorSeparator: string
 	defaultLocale: string
+	defaultCurrency: string
 	defaultListLimit: number
 	defaultListLimitMax: number
 	prefixCollectionName: boolean
