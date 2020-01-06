@@ -23,6 +23,8 @@ export interface CollectionRoles {
 	deleters: Roles;
 }
 
+const METHODS_BODYLESS = ['get', 'delete'];
+
 /**
  * Creates a new Collection for a decorated class
  */
@@ -156,7 +158,7 @@ export class Collection {
 			// create collection
 			if(!this.db){
 				logger.info('Creating ArangoDB Collection "%s"', this.name);
-				const { of, ...opt } = options;
+				const { of, creators, readers, updaters, deleters, roles, auth, routes, ...opt } = options;
 				this.db = doc.isEdge
 					? db._createEdgeCollection(this.name, opt || {})
 					: db._createDocumentCollection(this.name, opt || {});
@@ -219,20 +221,26 @@ export class Collection {
 			prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrSummaryOrFunction,
 			rolesOrSchemaOrSummaryOrFunction, summaryOrSchemaOrRolesOrFunction, options
 		} of Route){
+			let schema: any;
 			const a: any = argumentResolve(pathOrRolesOrFunctionOrOptions, (inp: any) => enjoi(inp, 'required'), Joi);
 			let opt: RouteOpt = Object.assign({
 					queryParams: []
 				},
-				typeof a === 'string' ? {path:a} : Array.isArray(a) ? {roles:a} : typeof a === 'object' && a ? {schema:a} : a || {}
+				typeof a === 'string'
+						? {path:a}
+					: Array.isArray(a)
+						? {roles:a}
+					: typeof a === 'object' && a && !a.method
+						? {schema:a.isJoi ? a : enjoi(a)}
+					: a || {}
 			);
-
-			let schema: any = opt.schema;
 
 			// allow options for schema param
 			if(isObject(schemaOrRolesOrSummaryOrFunction)){
 				opt = Object.assign(schemaOrRolesOrSummaryOrFunction, opt);
-			} else if(!schema) {
+			} else {
 				schema = argumentResolve(schemaOrRolesOrSummaryOrFunction, (inp: any) => enjoi(inp, 'required'), Joi);
+
 				if(schema instanceof Array){
 					opt.roles = schema;
 				} else if(typeof schema === 'string'){
@@ -326,10 +334,11 @@ export class Collection {
 							i++;
 						}
 
-						if(method === 'get'){
+						if(METHODS_BODYLESS.includes(method)){
 							const isRequired = attr.schema._flags.presence === 'required';
 							const operators = attr.schema._flags.operators;
-							opt.queryParams = opt.queryParams.concat([[
+
+							opt.queryParams.push([
 								attr.key,
 								attr.schema,
 								Scalar.iconRequired(isRequired) + ' ' + (attr.schema._description ? '**'+attr.schema._description+'**' : (isRequired
@@ -339,13 +348,17 @@ export class Collection {
 								+ (operators ? `
 　 \`Operators: ${operators.join(', ')}\`` : '')
 								+ `
-				　 \`Example: ?${attr.key}=${operators ? arraySample(operators)+config.paramOperatorSeparator:''}${attr.schema._examples[0] || attr.schema._type}\``]]);
+				　 \`Example: ?${attr.key}=${operators ? arraySample(operators)+config.paramOperatorSeparator:''}${attr.schema._examples[0] || attr.schema._type}\``
+							]);
 						}
 					}
 
-					if(i && method !== 'get'){
+					if(!METHODS_BODYLESS.includes(method) && i){
 						opt.body = [schema];
 					}
+					// if(i && !ROUTEmethod !== 'get' && method !== 'delete'){
+					// 	opt.body = [schema];
+					// }
 				}
 			}
 
