@@ -22,6 +22,7 @@ export const config: Config = {
 	unregisterAQLFunctionEntityGroup: true,
 	addAttributeWritersToReaders: true,
 	defaultLocale: 'en',
+	defaultCurrency: 'USD',
 	defaultListLimit: 25,
 	defaultListLimitMax: 100,
 	forClient: null,

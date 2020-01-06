@@ -2,8 +2,8 @@ import {config} from '..'
 import * as Joi from 'joi'
 
 export namespace Type {
-	export class I18n<T = any> {
-		[key: string]: string | any | T
+	export class I18n<T = string> {
+		[key: string]: T
 
 		static _typeArango: string = '0.4';
 		static schema: Joi.ObjectSchema = Joi.object().unknown().example({en:'Translation'});
@@ -14,6 +14,20 @@ export namespace Type {
 			if(param === '*') return val;
 			const locale = param || (sess.data ? sess.data.locale : config.defaultLocale);
 			return val[locale] || val[locale.split('-')[0]] || val[config.defaultLocale] || null;
+		}
+	}
+
+	export class Currencies {
+		[key: string]: number
+
+		static _typeArango: string = '1.0';
+
+		static forClient(val: any, {req,session}: any){
+			const sess = session();
+			const param = req.param('currency');
+			if(param === '*') return val;
+			const currency = param || (sess.data ? sess.data.currency : config.defaultCurrency);
+			return val[currency] || val[config.defaultLocale] || val['USD'] || null;
 		}
 	}
 
