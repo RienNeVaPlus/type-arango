@@ -33,7 +33,7 @@ A document represents a single entry of a collection.
 #### `PropertyDecorator`
 - [@Attribute](#attributeschema-readers-writers) - defines property name and type as document attribute
 - [@Authorized](#authorizedreaders-writers) - protects the property with read / write roles
-- [@Index](#indextype-options) - creates an index for a property
+- [@Index](#indexadditionalfieldsortype-options) - creates an index for a property
 - [@OneToOne](#onetoonetype-relation) - defines a 1:1 relation
 - [@OneToMany](#onetomanytype-relation) - defines a 1:n relation
 
@@ -78,7 +78,8 @@ A collection contains documents and provides routes and other utilities.
 
 Types are used to better describe common patterns to store and retrieve attribute data.
 
-- 🌐 [Type.I18n](#-typei18n) - internationalization support
+- 🌐 [Type.I18n](#-typei18n) - Internationalization support
+- 💱 [Type.Currencies](#-typecurrencies) - Support for multiple currencies
 - 🕒 [Type.DateInsert](#-typedateinsert) - set attribute to `new Date` when creating new documents
 - 🕘 [Type.DateUpdate](#-typedateupdate) - set attribute to `new Date` when updating documents
 
@@ -491,11 +492,11 @@ email: string;
 ```
 ![divider](./assets/divider.small.png)
 
-### `@Index(type?, options?)`
+### `@Index(additionalFieldsOrType?, options?)`
 
 Creates an index on the attribute.
 
-- **type**? `ArangoDB.IndexType` - Roles with read permission to the attribute
+- **additionalFieldsOrType**? `string[] | ArangoDB.IndexType` - A list of additional fields for the index or the index type.
 - **options**? ``
   - **type**? `"hash" | "skiplist" | "fulltext" | "geo"`
   - **additionalFields**? `string[]`
@@ -512,7 +513,7 @@ Creates an index on the attribute.
 @Attribute()
 name: string;
 
-@Index('skiplist', {additionalFields:['height'],sparse:true})
+@Index(['height'], {type:'skiplist',sparse:true})
 @Attribute()
 age: number;
 ...
@@ -878,7 +879,9 @@ Takes a function to append additional roles for all requests to any route of the
   - **path** `string` - the current path
   - **method** `"get" | "post" | "put" | "patch" | "delete"`
   - **aql** `ArangoDB.aql` - the ArangoDB AQL function used for queries
-  - **query** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor`
+  - **~~query~~** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor` - Deprecated, use <code>$\`AQL\`;</code> instead
+  - **$** `(strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Cursor` - Alias of the `query` function from the package `@arangodb`
+  - **db** `ArangoDB.Database`
   - **roles**? `string[]`
   - **requestedAttributes** `string[]`
   - **hasAuth** `boolean`
@@ -1215,6 +1218,46 @@ class Pages extends Entities { }
 // GET pages/1 && session:{data:{locale:'de-CH'}}  => {title:'Grüezi Welt'} 
 // GET pages/1                                     => {title:'Hello World'} 
 // GET pages/1?locale=*                            => original value
+```
+
+![divider](./assets/divider.png)
+
+### 🌐 `Type.Currencies`
+
+Provides support for storing numbers in multiple currency objects: 
+
+```
+"price": {
+    "EUR": 1,
+    "USD": 1.12,
+    "CAD": 1.45,
+    ...
+}
+```
+
+If this type is returned in a request with a `currency` parameter or `session().data.currency` provided, only the respective value will be returned - or if none provided the value of `config.defaultCurrency` (default: USD).
+
+Set the query parameter `currency` to `*` in order to return all values from a route.
+
+**Example**
+```ts
+@Document()
+class Product extends Entity {
+    @Attribute()
+    price: Type.Currencies;
+}
+
+@Collection(of => Product)
+@Route.GET()
+class Products extends Entities { }
+
+// document in collection
+{ "_key": "1", "price": { "EUR": 1, "USD": 1.12, "CAD": 1.45 } }
+
+// request examples
+// GET products/1?currency=EUR                        => {price:1} 
+// GET products/1 && session:{data:{currency:'CAD'}}  => {price:1.45} 
+// GET products/1?currency=*                          => original value
 ```
 
 ![divider](./assets/divider.small.png)
