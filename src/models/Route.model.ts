@@ -20,7 +20,6 @@ import {
 } from '../types'
 import {Scalar} from './Scalar.model'
 import {MissingKeyError} from '../errors'
-import { query } from '@arangodb'
 
 const REGEX_PATH_PARAM: RegExp = /:+([^=/?&]+)[=]?([^/?&]+)?/gi;
 const mime: string[] = ['application/json'];
@@ -337,7 +336,7 @@ export class Route {
 		resolvable?: string[],
 		handler?: RouteHandler
 	): Foxx.Endpoint {
-		const { aql } = require('@arangodb');
+		const { aql, query } = require('@arangodb');
 		const { info, debug, warn } = logger;
 		const { name, routeAuths, routeRoles } = col;
 		const doc = col.doc! as any;
