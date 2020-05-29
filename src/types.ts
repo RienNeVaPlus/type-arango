@@ -34,7 +34,7 @@ export interface ClassAndPropertyDecorator {
 }
 // declare type PropertyDecorator = (target: Object, propertyKey: string | symbol) => void;
 
-export type Related<T> = T// | ((optOrSet?: T | null | string[]) => T);
+export type Related<T = any> = T | any;
 
 export type Abstract<T> = Function & {prototype: T};
 export type Constructor<T> = new (...args: any[]) => T;
