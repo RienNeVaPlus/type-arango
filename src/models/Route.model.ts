@@ -1,7 +1,7 @@
 import {Collection, Document, Entity} from '.'
 import {config, logger, RouteArg, routes} from '../index'
 import {Joi} from '../joi'
-import {db, joiDefaults, omit, pick, queryBuilder, removeValues, toArray} from '../utils'
+import {arango, db, joiDefaults, omit, pick, queryBuilder, removeValues, toArray} from '../utils'
 import {
 	DocumentData,
 	QueryOpt,
@@ -336,7 +336,7 @@ export class Route {
 		resolvable?: string[],
 		handler?: RouteHandler
 	): Foxx.Endpoint {
-		const { aql, query } = require('@arangodb');
+		const { aql, query } = arango;
 		const { info, debug, warn } = logger;
 		const { name, routeAuths, routeRoles } = col;
 		const doc = col.doc! as any;
