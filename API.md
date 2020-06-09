@@ -278,8 +278,8 @@ user.merge(json());
 
 Replaces the document with the provided object, ignoring `_saveKeys`.
 
-- **doc** `{[key: string]: any}` - object to replace the current document
-- **options**? `ArangoDB.ReplaceOptions` - see [ArangoDB manual](https://www.arangodb.com/docs/stable/data-modeling-documents-document-methods.html#replace)
+- **doc** `{[key: string]: any}` - Object to replace the current document.
+- **options**? `ArangoDB.ReplaceOptions` - See [ArangoDB manual](https://www.arangodb.com/docs/stable/data-modeling-documents-document-methods.html#replace).
 
 **Example** (in route)
 ```ts
@@ -295,7 +295,7 @@ user.replace({email:'test@example.com'}, {overwrite:true});
 
 Removes the document from the collection using `collection._remove`
 
-- **options**? `ArangoDB.RemoveOptions` - see [ArangoDB manual](https://www.arangodb.com/docs/stable/data-modeling-documents-document-methods.html#remove)
+- **options**? `ArangoDB.RemoveOptions` - See [ArangoDB manual](https://www.arangodb.com/docs/stable/data-modeling-documents-document-methods.html#remove).
   - **waitForSync**? `boolean`
   - **overwrite**? `boolean`
   - **returnOld**? `boolean`
@@ -315,7 +315,7 @@ user.remove();
 
 Saves the values of all changed attributes (`entity._saveKeys`) to the documents collection. Creates a new document when no `_key` is provided. Use the option `{update:false}` to always create a new document even when a `_key` is available.
 	 
-- **options**? `EntitySaveOptions` - see [ArangoDB manual for insert / save](https://www.arangodb.com/docs/stable/data-modeling-documents-document-methods.html#insert--save).
+- **options**? `EntitySaveOptions` - See [ArangoDB manual for insert / save](https://www.arangodb.com/docs/stable/data-modeling-documents-document-methods.html#insert--save).
   - **keepNull**? `boolean`
   - **mergeObjects**? `boolean`
   - **waitForSync**? `boolean`
@@ -354,7 +354,7 @@ console.log(user._saveKeys); // => []
 
 Returns the related document/s of attributes decorated with [`@OneToOne`](#onetoonetype-relation) or [`@OneToMany`](#onetomanytype-relation).
 
-- **attribute** `string` - attribute to load the related document from
+- **attribute** `string` - Attribute to load the related document from.
 - **keepAttributes**? `string[]` - List of attributes to load from the collection, default is all attributes.
 
 Some relations have values, but these are mainly used for fetching the related document. Type-arango overwrites these values with the fetcher function described here. However the original value is available by simply prefixing the property key with an underscore (eg `entity._profile`).
@@ -446,9 +446,9 @@ class User extends Entity {}
 
 Defines an attribute of the document. Uses [metadata reflection](https://github.com/rbuckton/reflect-metadata) to derive a Joi schema for the attribute by using the TypeScript type. Schemas will be validated when using routes or modifying entity instances.
 
-- **schema**? `(enjoi: Enjoi, joi: Joi) => Joi` - a function where the first argument is a `Joi` type of the property metadata type (`Joi.string()` in the example below).
-- **readers**? `string[]` - Roles with read permission to the attribute
-- **writers**? `string[]` - Roles with write permission to the attribute
+- **schema**? `(enjoi: Enjoi, joi: Joi) => Joi` - Function where the first argument is a `Joi` type of the property metadata type (`Joi.string()` in the example below).
+- **readers**? `string[]` - Roles with read permission to the attribute.
+- **writers**? `string[]` - Roles with write permission to the attribute.
 
 For more details on roles, see `@Authorized()`.
 
@@ -471,8 +471,8 @@ class User extends Entity {
 
 Defines `reader` and `writer` roles to protect attributes in routes. The the [2nd example](examples/2-roles) for details on role authorization.
 
-- **readers**? `string[]` - Roles with read permission to the attribute
-- **writers**? `string[]` - Roles with write permission to the attribute
+- **readers**? `string[]` - Roles with read permission to the attribute.
+- **writers**? `string[]` - Roles with write permission to the attribute.
  
 **Example**
 ```ts
@@ -496,7 +496,7 @@ email: string;
 
 Creates an index on the attribute.
 
-- **additionalFieldsOrType**? `string[] | ArangoDB.IndexType` - A list of additional fields for the index or the index type.
+- **additionalFieldsOrType**? `string[] | ArangoDB.IndexType` - List of additional fields for the index or the index type.
 - **options**? ``
   - **type**? `"hash" | "skiplist" | "fulltext" | "geo"`
   - **additionalFields**? `string[]`
@@ -524,7 +524,7 @@ age: number;
 
 Defines a 1:1 relation to another entity. Decorated properties have additional functions to fetch related entities, see `entity.relation`. See also [`entity.related('attribute')`](#entityrelatedattribute-keepattributes).
 
-- **type**? `Entity` - The related document entity
+- **type**? `Entity` - The related document entity.
 - **relation**? `(TypeEntity) => TypeEntity.attribute` - TypeEntity is an object with the same keys as the related entity and can be used to create a relation to a certain field. The default relation is `Entity._key`.
 
 **Example**
@@ -550,8 +550,8 @@ class User extends Entity {
 
 Defines a 1:n relation to another entity. Mostly the same as `@OneToOne` except requesting the relation returns an array of entity instances instead of a single instance. See also [`entity.related('attribute')`](#entityrelatedattribute-keepattributes).
 
-- **type**? `Entity` - The related document entity
-- **relation**? `(TypeEntity) => TypeEntity.attribute` - See `@OneToOne`
+- **type**? `Entity` - The related document entity.
+- **relation**? `(TypeEntity) => TypeEntity.attribute` - See `@OneToOne`.
 
 **Example**
 ```ts
@@ -570,14 +570,14 @@ The `@Before.*` and `@After.*` decorators can be used as `ClassDecorator` (to ap
 
 Both decorators provide the same methods with a slightly different resolver syntax.
 - **Single listeners**
-  - `.document(resolver)` - when a document is **loaded**
-  - `.insert(resolver)` - when a document is **inserted**
-  - `.update(resolver)` - when a document is **updated**
-  - `.patch(resolver)` - when a document is **patched**
-  - `.remove(resolver)` - when a document is **removed**
+  - `.document(resolver)` - Document is **loaded**.
+  - `.insert(resolver)` - Document is **inserted**.
+  - `.update(resolver)` - Document is **updated**.
+  - `.patch(resolver)` - Document is **patched**.
+  - `.remove(resolver)` - Document is **removed**.
 - **Combined listeners**
-  - `.modify(resolver)` - when a document is either **updated** or **patched**
-  - `.write(resolver)` - when a document is either **inserted**, **updated** or **patched**.
+  - `.modify(resolver)` - Document is either **updated** or **patched**.
+  - `.write(resolver)` - Document is either **inserted**, **updated** or **patched**.
 
 
 > **Warning:** Resolvers are executed when using [CRUD-Routes](#crud-like), the methods `document`, `insert`, `update`, `replace` and `remove` of [RouteArg](#routearg) or `save`, `insert`, `replace` & `remove` of an [Entity](#-entity) - but not when using `query`.
@@ -621,10 +621,10 @@ class User {
 
 ![divider](./assets/divider.small.png)
 #### Types
-- `DocumentData` - any object that is - or will become a document
-- `ArangoDB.HttpStatus` - string of http status code (eg `forbidden` or `not-found`)
-- `Passive` - `true` or `undefined` - does nothing
-- `Cancel` - `false` or `ArangoDB.HttpStatus` - cancels the operation
+- `DocumentData` - any object that is - or will - become a document
+- `ArangoDB.HttpStatus` - String of http status code (eg `forbidden` or `not-found`).
+- `Passive` - `true` or `undefined` - Does nothing
+- `Cancel` - `false` or `ArangoDB.HttpStatus` - Cancels the operation
 
 ##### Listener arguments when used as `ClassDecorator`
 
@@ -740,12 +740,12 @@ static route(){
 Returns a list of entity instances.
 
 - **options** `FilterOptions`
-  - **filter**? `QueryFilter` - an object of values to filter the collection
-    - **value**? `value | [operator, value]` - a filter value can be an array with an operator like `!=` or `>` etc. 
-  - **sort**? `string[]` - sorts the results AQL style, i.e. `['email DESC','name ASC']`
-  - **limit?** `number | [offset, count]` - limits the results AQL style i.e. `[10, 2]`
-  - **keep?** `string[]` - list attributes to load from collection
-  - **unset?** `string[]` - instead of selecting attributes with `keep`, `unset` loads every other attribute, except the provided ones.
+  - **filter**? `QueryFilter` - Object of values to filter the collection.
+    - **value**? `value | [operator, value]` - Filter value can be an array with an operator like `!=` or `>` etc.
+  - **sort**? `string[]` - Sorts the results AQL style, i.e. `['email DESC','name ASC']`.
+  - **limit?** `number | [offset, count]` - Limits the results AQL style i.e. `[10, 2]`.
+  - **keep?** `string[]` - List of attributes to load from collection
+  - **unset?** `string[]` - Instead of selecting attributes with `keep`, `unset` returns every other attribute, except the provided ones.
 
 **Example**
 ```ts
@@ -760,7 +760,7 @@ static route(){
 
 The same as `entities.find` except it returns a single instance instead of an array and `options` can be a string alias for `{filter:{_key:options}`.
 
-- **options** `FilterOptions | _key` - see [`entities.find`](#entitiesfindoptions)
+- **options** `FilterOptions | _key` - See [`entities.find`](#entitiesfindoptions).
 
 **Example**
 ```ts
@@ -777,17 +777,17 @@ static route(){
 Decorates a class that has been extended by `Entities`. Collections consume `@Document`*s* and provide routes.
 
 - **ofDocument** `Entity | () => Entity` - the entity of the documents in the collection (can be omitted when options are provided).
-- **option**? `ArangoDB.CreateCollectionOptions` - also see [ArangoDB Manual](https://www.arangodb.com/docs/3.4/data-modeling-collections-database-methods.html#create)
-  - **of**? `string` - alias for argument `ofDocument`
-  - **name**? `string` - the collection name, by default the class name is used
-  - **creators** `string[]` - list of default creator roles
-  - **readers** `string[]` - list of default reader roles
-  - **updaters** `string[]` - list of default updater roles
-  - **deleters** `string[]` - list of default deleter roles
-  - **auth** `string[]` - alias for [@Route.auth](./API.md#routeauthauthorizefunctions)
-  - **roles** `string[]` - alias for [@Route.roles](./API.md#routerolesrolefunctions)
-  - **routes** `Array<Route | string>` - list of default routes to use - see [@Route.*](#route--get-post-put-patch-delete--list)
-  - **relations** `string[] | true` - list of related attributes that can be read from client request to any route of the collection. Can also be set to `true` to expose all related attributes.
+- **option**? `ArangoDB.CreateCollectionOptions` - See [ArangoDB Manual](https://www.arangodb.com/docs/3.4/data-modeling-collections-database-methods.html#create).
+  - **of**? `string` - Alias for argument `ofDocument`.
+  - **name**? `string` - Collection name, by default the class name is used.
+  - **creators** `string[]` - List of default creator roles.
+  - **readers** `string[]` - List of default reader roles.
+  - **updaters** `string[]` - List of default updater roles.
+  - **deleters** `string[]` - List of default deleter roles.
+  - **auth** `string[]` - Alias for [@Route.auth](./API.md#routeauthauthorizefunctions).
+  - **roles** `string[]` - Alias for [@Route.roles](./API.md#routerolesrolefunctions).
+  - **routes** `Array<Route | string>` - List of default routes to use - see [@Route.*](#route--get-post-put-patch-delete--list).
+  - **relations** `string[] | true` - List of related attributes that can be read from client request to any route of the collection. Can also be set to `true` to expose all related attributes.
   - **waitForSync**? `boolean`
   - **journalSize**? `number`
   - **isVolatile**? `boolean`
@@ -812,8 +812,8 @@ class Users extends Entities { ... }
 
 Shortcut for creating multiple routes. Creates [`GET`](#routegetpath-schema-roles-summary-options), [`POST`](#routepostpath-schema-roles-summary-options), [`PUT`](#routeputpath-schema-roles-summary-options), [`PATCH`](#routepatchpath-schema-roles-summary-options), [`DELETE`](#routedeletepath-schema-roles-summary-options) & [`LIST`](#routelistschema-roles-summary-options) routes for the collection.
 
-- **...methods** `string[]` - a list of methods or a preset name
-- **options**? `Partial<RouteOpt>` - see [RouteOpt](#routeopt)
+- **...methods** `string[]` - List of methods or a preset name.
+- **options**? `Partial<RouteOpt>` - See [RouteOpt](#routeopt).
 
 **Example**
 ```ts
@@ -839,10 +839,10 @@ Instead of writing out all the methods, extremely lazy developers can use common
 
 Sets roles for all [CRUD-like](./API.md#crud-like) routes.
 
-- **creators** `() => string[] | string[]` - required roles for `POST` requests
-- **readers** `() => string[] | string[]` - required roles for `GET` and `LIST` requests
-- **updaters** `() => string[] | string[]` - required roles for `PUT` and `PATCH` requests
-- **deleters** `() => string[] | string[]` - required roles for `DELETE` requests
+- **creators** `() => string[] | string[]` - Required roles for `POST` requests.
+- **readers** `() => string[] | string[]` - Required roles for `GET` and `LIST` requests.
+- **updaters** `() => string[] | string[]` - Required roles for `PUT` and `PATCH` requests.
+- **deleters** `() => string[] | string[]` - Required roles for `DELETE` requests.
 
 **Example**
 ```ts
@@ -869,24 +869,24 @@ For additional details on these routes checkout the Swagger Docs at the `API` ta
 
 Takes a function to append additional roles for all requests to any route of the collection. It's mainly for generating user specific roles from the client `session`, eg adding a `viewer` role fow own documents.
 
-- **roleFunction** `(arg: RouteRolesArg) => string[]` - a function returning additional roles to grant. The `RouteRolesArg` contain useful tools and information:
+- **roleFunction** `(arg: RouteRolesArg) => string[]` - Function returning additional roles to grant. The `RouteRolesArg` contain useful tools and information:
   - **req** `Foxx.Request`
   - **res** `Foxx.Response` 
-  - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - function to read or write the current session
-  - **_key**? `string` - the document key of the current request when available
-  - **document** `() => DocumentData` - loads & caches the document for the lifetime of the request
-  - **collection** `ArangoDB.Collection` - the ArangoDB collection object
-  - **path** `string` - the current path
+  - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - Function to read or write the current session
+  - **_key**? `string` - Document key of the current request when available
+  - **document** `() => DocumentData` - Loads & caches the document for the lifetime of the request.
+  - **collection** `ArangoDB.Collection` - The ArangoDB collection object.
+  - **path** `string` - The current path.
   - **method** `"get" | "post" | "put" | "patch" | "delete"`
-  - **aql** `ArangoDB.aql` - the ArangoDB AQL function used for queries
-  - **~~query~~** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor` - Deprecated, use <code>$\`AQL\`;</code> instead
-  - **$** `(strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Cursor` - Alias of the `query` function from the package `@arangodb`
+  - **_** `(strings: TemplateStringsArray, ...args: any[]) => any[]` - Fetch documents with AQL - this is a shortcut for ``query(aql`...`).toArray()``.
+  - **aql** `ArangoDB.aql` - The ArangoDB AQL function used for queries.
+  - **query** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor` - Execute a query the conventional way, example: ``query(aql`...`)``. Use the less verbose ``_`...` `` whenever possible.
   - **db** `ArangoDB.Database`
   - **roles**? `string[]`
   - **requestedAttributes** `string[]`
   - **hasAuth** `boolean`
   - **auth**? `RouteAuthorize`
-  - **error** `(status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response` - send an error response
+  - **error** `(status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response` - Send an error response
 
 **Example**
 ```ts
@@ -901,14 +901,14 @@ class Users extends Entities { ... }
 
 Takes a function to determine access permission on a document level. Used whenever there is no other way of determine the permission than deriving them from the document itself. Might cause an additional read, so it is preferred to use [`Route.roles`](#routerolesrolefunctions) whenever possible.
 
-- **authorizeFunction** `(arg: RouteAuthArg) => boolean` - a function returining whether the document can be accessed. The `RouteAuthArg` contain useful tools and information:
+- **authorizeFunction** `(arg: RouteAuthArg) => boolean` - Function returning whether the document can be accessed. The `RouteAuthArg` contain useful tools and information:
   - **req** `Foxx.Request`
   - **res** `Foxx.Response` 
-  - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - function to read or write the current session
+  - **session** `(set?: Partial<Foxx.Session>) => Foxx.Session` - Function to read or write the current session
   - **method** `"get" | "post" | "put" | "patch" | "delete"`
   - **action** `"create" | "read" | "update" | "delete"`
-  - **document** `DocumentData` - the requested document
-  - **doc** `DocumentData` - alias for `document`
+  - **document** `DocumentData` - Requested document
+  - **doc** `DocumentData` - Alias for `document`
 - **method** - 
 
 **Example**
@@ -928,32 +928,33 @@ All route functions receive a single argument, the `RouteArg` which contains use
 - **res** `Foxx.Response`
 - **method** `"get" | "post" | "put" | "patch" | "delete"`
 - **action** `"create" | "read" | "update" | "delete" | "list"`
-- **path** `string` - path of the route
-- **param** `{[key: string]: any}` - object of (only) valid path- and query parameters
-- **validParams** `string[]` - list of path- and query parameter names
-- **roles** `string[]` - roles used to authorize the request
-- **userRoles** `string[]` - all roles of the client
-- **collection** `ArangoDB.Collection` - [collection object](https://www.arangodb.com/docs/3.4/data-modeling-collections-database-methods.html#collection) of the entity
-- **_key** `string` - shortcut for `param._key`
-- **exists** `(name: string) => boolean` - shortcut for `collection.exists`
-- **document** `(key = _key) => Document` - resolves and caches a document for the lifetime of the request. Avoids duplicate reads. Loads the current document by default, can load other documents when called with an argument.
-- **relations** `(data: DocumentData) => DocumentData` - loads and adds related entities (provided by `req.queryParams.relations`) to result. [📘 About relations](examples/3-relations)
-- **insert** `(data: DocumentData) => ArangoDB.InsertResult` - inserts a document into the collection, executes callbacks from `@On.insert`.
-- **update** `(dataOrKey = _key, dataOrOptions?, options?) => ArangoDB.UpdateResult` - updates a document of the collection, executes callbacks from `@On.update`. Uses `_key` as default document key.
-- **replace** `(dataOrKey = _key, dataOrOptions?, options?) => ArangoDB.UpdateResult` - replaces a document of the collection, executes callbacks from `@On.replace`. Uses `_key` as default document key.
-- **remove** `(keyOrOptions = _key, options?) => ArangoDB.RemoveResult` - removes a document of the collection, executes callbacks from `@On.remove`. Uses `_key` as default document key.
-- **query** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor` - executes a query
-- **aql** `(strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query` - builds aql string
-- **requestedAttributes** `string[]` - list of requested attributes
-- **hasAuth** `boolean` - whether an authorization is required for the current route
-- **auth** `(doc: DocumentData, method?: RouteMethod, action?: RouteAction) => false | DocumentData` - function to determine access to the document when working with [Route.auth](#routeauthauthorizefunctions)
-- **json** `(omitUnwritableAttributes: boolean = true) => DocumentData` - returns request json without inaccessible attributes
-- **send** `(data: DocumentData, omitUnreadableAttributes: boolean = true) => Foxx.Response` - strips inaccessible attributes based on roles and sends a response
-- **error** `(status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response` - function to response with an error
-- **tags** `string[]` - tags used for the route (collection.name)
-- **summary** `string` - the summary of the route
-- **description** `string` - the description of the route
-- **deprecated** `boolean` - whether the route has been deprecated
+- **path** `string` - Path of the route.
+- **param** `{[key: string]: any}` - Object of (only) valid path- and query parameters.
+- **validParams** `string[]` - List of path- and query parameter names.
+- **roles** `string[]` - Roles used to authorize the request.
+- **userRoles** `string[]` - All roles of the client.
+- **collection** `ArangoDB.Collection` - [Collection object](https://www.arangodb.com/docs/3.4/data-modeling-collections-database-methods.html#collection) of the entity.
+- **_key** `string` - Shortcut for `param._key`
+- **exists** `(name: string) => boolean` - Shortcut for `collection.exists`
+- **document** `(key = _key) => Document` - Resolves and caches a document for the lifetime of the request. Avoids duplicate reads. Loads the current document by default, can load other documents when called with an argument.
+- **relations** `(data: DocumentData) => DocumentData` - Loads and adds related entities (provided by `req.queryParams.relations`) to result. [📘 About relations](examples/3-relations)
+- **insert** `(data: DocumentData) => ArangoDB.InsertResult` - Inserts a document into the collection, executes callbacks from `@On.insert`.
+- **update** `(dataOrKey = _key, dataOrOptions?, options?) => ArangoDB.UpdateResult` - Updates a document of the collection, executes callbacks from `@On.update`. Uses `_key` as default document key.
+- **replace** `(dataOrKey = _key, dataOrOptions?, options?) => ArangoDB.UpdateResult` - Replaces a document of the collection, executes callbacks from `@On.replace`. Uses `_key` as default document key.
+- **remove** `(keyOrOptions = _key, options?) => ArangoDB.RemoveResult` - Removes a document of the collection, executes callbacks from `@On.remove`. Uses `_key` as default document key.
+- **_** `(strings: TemplateStringsArray, ...args: any[]) => any[]` - Fetch documents with AQL - this is a shortcut for ``query(aql`...`).toArray()``.
+- **query** `(query: ArangoDB.Query, options?: ArangoDB.QueryOptions) => ArangoDB.Cursor` - Executes a query. For example: ``query(aql`...`)``.
+- **aql** `(strings: TemplateStringsArray, ...args: any[]) => ArangoDB.Query` - Builds AQL string.
+- **requestedAttributes** `string[]` - List of requested attributes.
+- **hasAuth** `boolean` - Whether an authorization is required for the current route.
+- **auth** `(doc: DocumentData, method?: RouteMethod, action?: RouteAction) => false | DocumentData` - Function to determine access to the document when working with [Route.auth](#routeauthauthorizefunctions).
+- **json** `(omitUnwritableAttributes: boolean = true) => DocumentData` - Returns request json without inaccessible attributes.
+- **send** `(data: DocumentData, omitUnreadableAttributes: boolean = true) => Foxx.Response` - Strips inaccessible attributes based on roles and sends a response.
+- **error** `(status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response` - Function to response with an error.
+- **tags** `string[]` - Tags used for the route (collection.name).
+- **summary** `string` - Summary of the route
+- **description** `string` - Description of the route
+- **deprecated** `boolean` - Whether the route has been deprecated
 
 ![divider](./assets/divider.small.png)
 
@@ -974,8 +975,8 @@ Routes can be further configured by using the following options.
 - **path**? `string`
 - **process**? `boolean`
 - **handlerName**? `string`
-- **handler**? `(arg: RouteArg) => any` - The handler of the current request
-- **roles**? `string[]` - List of required roles for accessing the current request
+- **handler**? `(arg: RouteArg) => any` - Handler of the current request.
+- **roles**? `string[]` - List of required roles for accessing the current request.
   
 ![divider](./assets/divider.small.png)
 
@@ -984,11 +985,11 @@ Routes can be further configured by using the following options.
 Creates a `GET` route on `collectionName/{_key}`.
  When used as a `ClassDecorator` a default route for returning a single document of the collection is created. When used on a static method of the collection a custom route executing the very same function with the [RouteArg](#routearg) argument will be created.
 
-- **path**? `string` - a rich path string (can contain simple types, i.e. `/:var=number`)
-- **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
-- **roles**? `string[]` - roles required to access the route
-- **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
+- **path**? `string` - Rich path string (can contain simple types, i.e. `/:var=number`).
+- **schema**? `(enjoi: Enjoi) => Joi` - Joi schema for accessing the request.
+- **roles**? `string[]` - Roles required to access the route.
+- **summary**? `string | RouteOpt` - Shortcut for `options.summary`.
+- **options**? `RouteOpt` - See [RouteOpt](#routeopt).
 
 > The order of the arguments does not matter as long as the options are the last argument.
 
@@ -1021,11 +1022,11 @@ class Users extends Entities {
 
 Creates a `POST` route on `collectionName/{_key}`. Provides a route to create  documents by using `collection._insert`, when called as a `ClassDecorator`.
 
-- **path**? `string` - a rich path string (can contain simple types, i.e. `/:var=number`)
-- **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
-- **roles**? `string[]` - roles required to access the route
-- **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
+- **path**? `string` - Rich path string (can contain simple types, i.e. `/:var=number`).
+- **schema**? `(enjoi: Enjoi) => Joi` - Joi schema for accessing the request.
+- **roles**? `string[]` - Roles required to access the route.
+- **summary**? `string | RouteOpt` - Shortcut for `options.summary`.
+- **options**? `RouteOpt` - See [RouteOpt](#routeopt).
 
 > The order of the arguments does not matter as long as the options are the last argument.
 
@@ -1052,11 +1053,11 @@ class Users extends Entities {
 
 Creates a `PATCH` route on `collectionName/{_key}`. Provides a route to update single documents by using `collection._update`, when called as a `ClassDecorator`.
 
-- **path**? `string` - a rich path string (can contain simple types, i.e. `/:var=number`)
-- **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
-- **roles**? `string[]` - roles required to access the route
-- **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
+- **path**? `string` - Rich path string (can contain simple types, i.e. `/:var=number`).
+- **schema**? `(enjoi: Enjoi) => Joi` - Joi schema for accessing the request.
+- **roles**? `string[]` - Roles required to access the route.
+- **summary**? `string | RouteOpt` - Shortcut for `options.summary`.
+- **options**? `RouteOpt` - See [RouteOpt](#routeopt).
 
 > The order of the arguments does not matter as long as the options are the last argument.
 
@@ -1098,11 +1099,11 @@ class Users extends Entities {
 
 Creates a `DELETE` route on `collectionName/{_key}`. Provides a route to remove single documents by using `collection._remove`, when called as a `ClassDecorator`.
 
-- **path**? `string` - a rich path string (can contain simple types, i.e. `/:var=number`)
-- **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the request
-- **roles**? `string[]` - roles required to access the route
-- **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
+- **path**? `string` - Rich path string (can contain simple types, i.e. `/:var=number`).
+- **schema**? `(enjoi: Enjoi) => Joi` - Joi schema for accessing the request.
+- **roles**? `string[]` - Roles required to access the route.
+- **summary**? `string | RouteOpt` - Shortcut for `options.summary`.
+- **options**? `RouteOpt` - See [RouteOpt](#routeopt).
 
 **Example**
 ```ts
@@ -1123,10 +1124,10 @@ class Users extends Entities {
 
 Creates a `GET` route on `/collectionName` for returning a list of documents. Any provided `queryParams` will be used to filter the list. Additionally the parameters **limit**, **offset**, **sort** & **order** can be used. For more information see swagger docs.
 
-- **schema**? `(enjoi: Enjoi) => Joi` - a Joi schema for accessing the requests `queryParams` Any values will be used to filter the result list. Use required attributes to avoid full collection access.
-- **roles**? `string[]` - roles required to access the route
-- **summary**? `string | RouteOpt` - shortcut for `options.summary`
-- **options**? `RouteOpt` - see [RouteOpt](#routeopt)
+- **schema**? `(enjoi: Enjoi) => Joi` - Joi schema for accessing the requests `queryParams` Any values will be used to filter the result list. Use required attributes to avoid full collection access.
+- **roles**? `string[]` - Roles required to access the route.
+- **summary**? `string | RouteOpt` - Shortcut for `options.summary`.
+- **options**? `RouteOpt` - See [RouteOpt](#routeopt).
 
 **Example**
 ```ts
@@ -1142,8 +1143,8 @@ class Users extends Entities {}
 
 Extends AQL with a [User Function](https://www.arangodb.com/docs/stable/aql/extending.html). The function name is derived from the collection name and the method name. For example a `USERS::METHOD_NAME()`. The parameter order does not matter.
 
-- **isDeterministic**? `() => boolean` - specify whether the function results are fully deterministic (i.e. depend solely on the input and are the same for repeated calls with the same input values).
-- **customName**? `() => string` - by default the name of the function is concatenated from the collection- and  method name seprated by `::`. A different name can be provided, however the collection name will always be the prefix.
+- **isDeterministic**? `() => boolean` - Specify whether the function results are fully deterministic (i.e. depend solely on the input and are the same for repeated calls with the same input values).
+- **customName**? `() => string` - By default the name of the function is concatenated from the collection- and  method name seprated by `::`. A different name can be provided, however the collection name will always be the prefix.
 
 **Example**
 ```ts
@@ -1171,8 +1172,8 @@ Creates a task with the [ArangoDB Task Management](https://www.arangodb.com/docs
 
 > ⚠️ It is important to note that the callback function is late bound and will be executed in a different context than in the creation context. The callback function must therefore not access any variables defined outside of its own scope. The callback function can still define and use its own variables. [Read more](https://www.arangodb.com/docs/3.4/appendix-java-script-modules-tasks.html#register-a-task)
 
-- **period**? `() => number | Options` - number of seconds to wait in between executions. Note: when set to zero the function will be executed only once. This argument can also be an options object containing itself and the other arguments below (eg `{period:2,name:'abc'}`).
-- **params**? `{[key:string}: any]` - to pass parameters to a task. Note that the parameters are limited to data types usable in JSON (meaning no callback functions can be passed as parameters into a task).
+- **period**? `() => number | Options` - Number of seconds to wait in between executions. Note: when set to zero the function will be executed only once. This argument can also be an options object containing itself and the other arguments below (eg `{period:2,name:'abc'}`).
+- **params**? `{[key:string}: any]` - To pass parameters to a task. Note that the parameters are limited to data types usable in JSON (meaning no callback functions can be passed as parameters into a task).
 - **name**? `string` - names are informational only. They can be used to make a task distinguishable from other tasks also running on the server.
 
 **Example**
