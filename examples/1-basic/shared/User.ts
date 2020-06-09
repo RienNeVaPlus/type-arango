@@ -1,4 +1,4 @@
-import { Document, Entity, Collection, Entities, Route, Attribute, Index, RouteArg } from '../../../src' // type-arango
+import {Attribute, Collection, Document, Entities, Entity, Index, Route, RouteArg} from '../../../src' // type-arango
 
 @Document()
 export class User extends Entity {
