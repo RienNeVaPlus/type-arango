@@ -343,6 +343,7 @@ export class Route {
 
 		info('- Setup %s %s', method.toUpperCase(), path);
 
+		const _ = Route.fetch.bind(null, query);
 		const collection = db._collection(col.name);
 		const document = Route.document.bind(null, collection, doc);
 		const insert = Route.insert.bind(null, collection, doc);
@@ -371,7 +372,9 @@ export class Route {
 				const requestedAttributes = req.queryParams.attributes ? req.queryParams.attributes.split(',') : null;
 				const _key = param._key;
 				const args: RouteRolesArg = {
+					// @deprecated
 					$: query,
+					_,
 					_key,
 					action,
 					aql,
@@ -381,6 +384,7 @@ export class Route {
 					document: document.bind(null, tmp, action !== 'create', _key),
 					error: Route.error.bind(null, res),
 					exists: collection.exists.bind(collection),
+					fetch: _,
 					hasAuth: !!col.routeAuths.length,
 					insert,
 					method,
@@ -631,6 +635,15 @@ export class Route {
 	static query(query: ArangoDB.Query, _options?: ArangoDB.QueryOptions){
 		logger.debug('Query %o', query);
 		return db._query.apply(db, arguments);
+	}
+
+	/**
+	 * Fetch data from a query
+	 * _`FOR Item IN Items RETURN Item` => Item[]
+	 */
+	static fetch(query: any, strings: TemplateStringsArray, ...args: any[]){
+		logger.debug('Query %o', query);
+		return query(strings, ...args).toArray();
 	}
 
 	/**

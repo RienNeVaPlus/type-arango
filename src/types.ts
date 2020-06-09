@@ -232,11 +232,15 @@ interface Aql {
 	literal(value: any): ArangoDB.AqlLiteral
 }
 
+type RouteArgFetch = (strings: TemplateStringsArray, ...args: any[]) => any[]
+
 export interface RouteRolesArg {
+	// @deprecated
 	$: (
 		strings: TemplateStringsArray,
 		...args: any[]
 	) => ArangoDB.Cursor;
+	_: RouteArgFetch
 	_key: string
 	action: RouteAction
 	aql: Aql
@@ -246,6 +250,7 @@ export interface RouteRolesArg {
 	document: (selector?: string | ArangoDB.DocumentLike) => DocumentData
 	error: (status: ArangoDB.HttpStatus, reason?: string) => Foxx.Response
 	exists: (selector: string) => boolean
+	fetch: RouteArgFetch
 	hasAuth: boolean
 	insert: (data: DocumentData, options?: ArangoDB.InsertOptions) => ArangoDB.InsertResult
 	method: RouteMethod
