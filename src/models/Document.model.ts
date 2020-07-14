@@ -90,7 +90,7 @@ export class Document<T=any> {
 		_key: {attribute: '_key', metadata: String, schema: _key}
 	};
 	public schema: SchemaStructure = {_id, _key};
-	public relation: RelationStructure<Document<any>> = {};
+	public relation: RelationStructure<Document> = {};
 	public roles: string[] = ['guest'];
 	public roleStripAttributes: RoleObject = {};
 	private decorator: DecoratorStorage = {Index:[]};
@@ -238,11 +238,11 @@ export class Document<T=any> {
 				filter[rel.attribute] = ['HAS', data._key];
 		}
 
-		// relation key is stored in document
+		// relation key/s stored in document
 		let ref = data[attribute];
 		if(ref){
 			if(isObject(ref))
-				throw new Error('Invalid relation value of "'+rel.document.name+'._key": '+JSON.stringify(ref));
+				throw new Error(`Invalid relation value of "${rel.document.name}.${rel.attribute}": ${JSON.stringify(ref)}`);
 
 			// remove CollectionName/ from relation id
 			if(this.isEdge){
@@ -255,7 +255,7 @@ export class Document<T=any> {
 		}
 
 		if(!Object.keys(filter).length)
-			throw new Error('Cannot resolve relation of "'+rel.document.name+'.'+rel.attribute+'": empty filter');
+			throw new Error(`Cannot resolve relation of "${rel.document.name}.${rel.attribute}": empty filter`);
 
 		const entities = rel.document.col!.Class as typeof Entities;
 
