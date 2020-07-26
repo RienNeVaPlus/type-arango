@@ -60,12 +60,11 @@ The example will setup a User entity stored inside a Users collection with a tot
 > Various other examples of how to use typeArango with certain features can be found in the 📘 **[examples](./examples)** folder.
 
 ```ts
-import { Document, Entity, Collection, Entities, Route, Authorized, Index, Related, Attribute } 
+import { Document, Entity, Type, Collection, Entities, Route, Authorized, Index, Related, Attribute, OneToMany, RouteArg } 
   from 'type-arango'
 
 // `User` document entity
-@Document()
-export class User extends Entity {
+@Document() class User extends Entity {
     @Index(type => 'hash')
     @Attribute(str => str.email())
     email: string;
@@ -101,6 +100,22 @@ export class Users extends Entities {
     ) static GET({param}: RouteArg){
         const user = Users.findOne(param.id);
         return user.relation('addresses');
+    }
+    
+    @Route.GET(
+        path => 'query',
+        $ => ({
+            id: $(String).required()
+        }),
+        roles => ['guest'],
+        summary => 'Runs a query'
+    )
+    static QUERY({_, param: { id }}: RouteArg){
+        return _`
+            FOR item IN Items
+                FILTER item.id == ${id}
+                RETURN item
+        `;
     }
 }
 ```
