@@ -10,7 +10,7 @@ type AdditionalField = string;
 
 export function Index(): PropertyDecorator;
 export function Index(indexType: ArangoDB.IndexType): PropertyDecorator;
-export function Index(additionalFields: AdditionalField[], options: IndexOptions): PropertyDecorator;
+export function Index(additionalFields: AdditionalField[], options?: IndexOptions): PropertyDecorator;
 export function Index(indexTypeFunction: IndexTypeFunct): PropertyDecorator;
 export function Index(indexType: ArangoDB.IndexType, options: IndexOptions): PropertyDecorator;
 export function Index(indexTypeFunction: IndexTypeFunct, options: IndexOptions): PropertyDecorator;
