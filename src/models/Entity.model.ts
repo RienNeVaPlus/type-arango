@@ -1,13 +1,11 @@
+import {getDocumentForContainer, Document} from '.'
 import {DocumentData} from '../types'
-import {getDocumentForContainer} from './index'
-import {AttributeNotInEntityError, MissingKeyError, SymbolKeysNotSupportedError} from '../errors'
+import {AttributeNotInEntityError, MissingKeyError, AttributeIsNotARelationError, SymbolKeysNotSupportedError} from '../errors'
 import {db} from '../utils'
-import {Document} from '.'
-import {AttributeIsNotARelationError} from '../errors/AttributeIsNotARelationError';
 
 // const nativeKeys = ['constructor','toString'];
-const unenumerable = ['_saveKeys','_collection','_relations'];
-const globalAttributes = ['_key','_rev','_id','_oldRev'];
+const unenumerable = ['_saveKeys', '_collection', '_relations'];
+const globalAttributes = ['_key', '_rev', '_id', '_oldRev'];
 const accessibleKeys = globalAttributes.concat('_saveKeys');
 
 interface SaveOptions extends ArangoDB.UpdateOptions, ArangoDB.InsertOptions {
@@ -166,7 +164,7 @@ export class Entity {
 			const relation = _doc.relation[key];
 			if(relation){
 				// save assigned entity
-				if(v._saveKeys.length) v.save();
+				if(v instanceof Entity && v._saveKeys.length) v.save();
 				o[key] = v instanceof Entity ? v._key : v;
 			}
 			else
