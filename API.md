@@ -1351,27 +1351,29 @@ In order to allow clients to provide their own [operators](https://www.arangodb.
  
  Clients can then provide the operator as a prefix of the parameter value - separated by `config.paramOperatorSeparator` (default `|`). For example `?attr=>=|10`.
 
-> ==, !=, <, <=, >, >=, IN, NOT IN, LIKE, =~, !~
+> ==, !=, <, <=, >, >=, IN, NOT IN, LIKE, =\~, !\~, HAS
 
 These parameters will be parsed by TypeArango in order to validate them and to transform the value into a tuple of `[OPERATOR, VALUE]` - it can then use it within its internal queryBuilder (for `LIST` requests).
 
 They will also be documented in ArangoDBs Web Interface Swagger Docs.
+
+> Note: Use `HAS` to filter array values. For example attribute=HAS|1 will result in `FILTER '1' IN TO_ARRAY(col.attribute)`.
 
 #### Example setup
 ```ts
 @Collection(of => User)
 @Route.LIST('operator', $ => ({
     param1: $(String), // allow == (default)
-    param2: $(String).operator('!=') //  allow !=
+    param2: $(String).operator('!='), //  allow !=
     param3: $(String).operator(['LIKE','NOT LIKE']), // u get the point
-    param4: $(String).operator() // allow all: ==, !=, <, <=, >, >=, IN, NOT IN, LIKE
+    param4: $(String).operator() // allow all
 }))
 class Users {
     @Route.GET('custom', $ => ({
         test: $(SomeEntity).someAttribute.operator(['!=', 'LIKE'])
     }))
     static GET_CUSTOM({param}): RouteArg {
-        return param.test;
+        return param.test
     }
 }
 ```

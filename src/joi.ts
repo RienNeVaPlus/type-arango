@@ -2,7 +2,7 @@ import * as oJoi from 'joi'
 import {Rules} from 'joi';
 
 // can't import them because of rc
-const OPERATORS = ['==', '!=', '<', '<=', '>', '>=', 'IN', 'NOT IN', 'LIKE', '=~', '!~'];
+const OPERATORS = ['==', '!=', '<', '<=', '>', '>=', 'IN', 'NOT IN', 'LIKE', '=~', '!~', 'HAS'];
 
 interface ExtendedNumberSchema extends oJoi.NumberSchema {
 	round(): this;

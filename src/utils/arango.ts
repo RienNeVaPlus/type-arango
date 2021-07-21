@@ -7,7 +7,7 @@ const orders = ['ASC','DESC'];
 export const arango = is ? require('@arangodb') : null;
 export const db = is ? arango.db : null;
 
-export const operators = ['==','!=','<','<=','>','>=','IN','NOT IN','LIKE','=~','!~'];
+export const operators = ['==', '!=', '<', '<=', '>', '>=', 'IN', 'NOT IN', 'LIKE', '=~', '!~', 'HAS'];
 
 function escape(val: any){
 	if(val === 'true') return true;
@@ -35,7 +35,7 @@ function clean(val: any): any {
 
 export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}: QueryOpt){
 	let q = ['FOR i IN '+collection];
-	if(filter){
+  if(filter){
 		Object.entries(filter).forEach(
 			([key, value]) => value !== undefined && q.push(
 				'FILTER '+
@@ -89,5 +89,5 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 
 	logger.info('Query %o', q.join(' '));
 
-	return q.join('\n');
+  return q.join('\n');
 }
