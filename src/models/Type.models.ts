@@ -27,7 +27,7 @@ export namespace Type {
 			const param = req.param('currency');
 			if(param === '*') return val;
 			const currency = param || (sess.data ? sess.data.currency : config.defaultCurrency);
-			return val[currency] || val[config.defaultLocale] || val['USD'] || null;
+			return val[currency] || val[config.defaultCurrency] || val['USD'] || null;
 		}
 	}
 
