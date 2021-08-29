@@ -12,8 +12,8 @@ export namespace Type {
 			const sess = session();
 			const param = req.param('locale');
 			if(param === '*') return val;
-			const locale = param || (sess.data ? sess.data.locale : config.defaultLocale);
-			return val[locale] || val[locale.split('-')[0]] || val[config.defaultLocale] || null;
+			const locale = param || (sess.data ? sess.data.locale || config.defaultLocale : config.defaultLocale);
+      return val[locale] || val[locale.split('-')[0]] || val[config.defaultLocale] || null;
 		}
 	}
 
