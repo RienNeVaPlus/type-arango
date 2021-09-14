@@ -108,17 +108,37 @@ class Books extends Entities {
 }
 ```
 
-
-
 ![divider](../../assets/divider.small.png)
 
 #### Virtual relations
 
-Virtual relations are the simplest type of relations. They don't require any information to be stored  and the attribute does not exist in the database - therefore the `@Attribute` decorator is not used. 
+Virtual relations are the simplest type of relations. They don't require any information to be stored, and the attribute does not exist in the database - therefore the `@Attribute` decorator is not used. 
 
 #### Link relations
 
 Link relations are attributes containing either a single or a list of references to the related document/s.
+
+### Tuple link relations 
+The values of link relations can be tuples `[KEY, VALUE]` containing an additional value, which will be merged with the related document within `relationValue`:
+
+```
+{
+    "ratings": [
+        [ 2, { stars: 5 } ],
+        [ 5, { stars: 3 } ]
+    ]
+}
+
+// The computed value will be merged with the related document and relationValue:
+{
+    "ratings": [
+        { ...DOCUMENT(2), relationValue: { stars: 5 } },
+        { ...DOCUMENT(5), relationValue: { stars: 3 } }
+    ]
+}
+```
+
+> Note: Make sure to define the attribute `relationValue` and it's permissions on the related document schema, otherwise the value will be stripped.
 
 ![divider](../../assets/divider.small.png)
 
