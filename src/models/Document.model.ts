@@ -288,7 +288,7 @@ export class Document<T=any> {
 
 		// merge values back into result
 		if(merge)
-		  res = res.map((res: any) => ({...res, relationValue: merge.find((r: any) => r[0] === res._key)[1] }))
+		  res = res.map((res: any) => ({...res, _value: merge.find((r: any) => r[0] === res._key)[1] }))
 
     return res
 	}

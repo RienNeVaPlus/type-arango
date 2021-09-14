@@ -119,7 +119,7 @@ Virtual relations are the simplest type of relations. They don't require any inf
 Link relations are attributes containing either a single or a list of references to the related document/s.
 
 ### Tuple link relations 
-The values of link relations can be tuples `[KEY, VALUE]` containing an additional value, which will be merged with the related document within `relationValue`:
+The values of link relations can be tuples `[KEY, VALUE]` containing an additional value, which will be merged with the related document within `_value`:
 
 ```
 {
@@ -129,16 +129,16 @@ The values of link relations can be tuples `[KEY, VALUE]` containing an addition
     ]
 }
 
-// The computed value will be merged with the related document and relationValue:
+// The computed value will be merged with the related document as `_value`:
 {
     "ratings": [
-        { ...DOCUMENT(2), relationValue: { stars: 5 } },
-        { ...DOCUMENT(5), relationValue: { stars: 3 } }
+        { ...DOCUMENT(2), _value: { stars: 5 } },
+        { ...DOCUMENT(5), _value: { stars: 3 } }
     ]
 }
 ```
 
-> Note: Make sure to define the attribute `relationValue` and it's permissions on the related document schema, otherwise the value will be stripped.
+> Note: Make sure to define the attribute `_value` and it's permissions on the related document schema, otherwise the value will be stripped.
 
 ![divider](../../assets/divider.small.png)
 
