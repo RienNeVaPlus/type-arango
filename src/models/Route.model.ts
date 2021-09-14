@@ -641,10 +641,10 @@ export class Route {
 	 * Fetch data from a query
 	 * _`FOR Item IN Items RETURN Item` => Item[]
 	 */
-	static fetch(query: any, strings: TemplateStringsArray, ...args: any[]){
-		logger.debug('Query %o', query);
-		return query(strings, ...args).toArray();
-	}
+  static fetch(query: any, strings: TemplateStringsArray, ...args: any[]){
+    logger.debug('Query %o', query);
+    return query(strings, ...args).toArray();
+  }
 
 	/**
 	 * Returns a picked version containing only writable attributes from `req.json()`
@@ -796,7 +796,7 @@ export class Route {
 
 		let r = Object.assign({}, data);
 
-		const forClient = Route.forClient.bind(null,	req, res);
+		const forClient = Route.forClient.bind(null, req, res);
 
 		// append related documents
 		for(const relation of relations){
@@ -812,10 +812,10 @@ export class Route {
 
 				const fc = forClient.bind(null, document, document.stripAttributeList(userRoles, 'read'), keep, true);
 
-				// value can be an array
+        // value can be an array
 				for(let o of toArray(data)){
 					let r = parent.resolveRelation(o, part, keep);
-					if(!r) {
+          if(!r) {
 						o[part] = null;
 						continue;
 					}
@@ -859,7 +859,7 @@ export class Route {
 			limit: offset ? [offset, limit] : limit
 		};
 
-		return db
+    return db
 			._query(queryBuilder(name, q))
 			.toArray()
 			.filter((doc: DocumentData) => !hasAuth || auth(doc, 'get', 'list'))

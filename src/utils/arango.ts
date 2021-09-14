@@ -87,7 +87,7 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
 		q.push('RETURN i');
 	}
 
-	logger.info('Query %o', q.join(' '));
+  logger.info('Query %o', q.join(' '));
 
   return q.join('\n');
 }
