@@ -229,6 +229,7 @@ export class Document<T=any> {
 	resolveRelation(data: DocumentData | Entity, attribute: string, arg?: string[]){
 		const rel = this.relation[attribute];
 		let filter: QueryFilter = {};
+		let merge: any = null
 
 		// related document is an edge, use CollectionName/ID
 		if(rel.document.isEdge && edgeAttributes.includes(rel.attribute)){
@@ -241,20 +242,27 @@ export class Document<T=any> {
 		// relation key/s stored in document
 		let ref = data[attribute];
 		if(ref){
-			if(isObject(ref))
+      if(isObject(ref))
 				throw new Error(`Invalid relation value of "${rel.document.name}.${rel.attribute}": ${JSON.stringify(ref)}`);
 
-			// remove CollectionName/ from relation id
+      // remove CollectionName/ from relation id
 			if(this.isEdge){
 				if(Array.isArray(ref))
 					ref = ref.map(r => r.replace(rel.document.col!.name+'/', ''));
 				else
-					ref = ref.replace(rel.document.col!.name+'/', '');
-			}
-			filter = {_key:ref};
-		}
+          ref = ref.replace(rel.document.col!.name+'/', '');
+      }
 
-		if(!Object.keys(filter).length)
+			// support tuples with key and value [[KEY, VALUE],...]
+      if(Array.isArray(ref[0])){
+        merge = [...ref]
+        ref = ref.map((r: any) => r[0])
+      }
+
+			filter = {_key:ref};
+    }
+
+    if(!Object.keys(filter).length)
 			throw new Error(`Cannot resolve relation of "${rel.document.name}.${rel.attribute}": empty filter`);
 
 		const entities = rel.document.col!.Class as typeof Entities;
@@ -264,16 +272,25 @@ export class Document<T=any> {
 
 		let opt: QueryOpt = {filter};
 
-		// attributes
+    // attributes
 		if(Array.isArray(arg)){
 			opt.keep = arg;
 		}
 
+		let res: any;
+
+		// retrieve document/s
 		switch(rel.type){
 			default: return null;
-			case 'OneToOne': return entities.findOne(opt);
-			case 'OneToMany': return entities.find(opt);
+			case 'OneToOne': res = entities.findOne(opt); break;
+			case 'OneToMany': res = entities.find(opt); break;
 		}
+
+		// merge values back into result
+		if(merge)
+		  res = res.map((res: any) => ({...res, relationValue: merge.find((r: any) => r[0] === res._key)[1] }))
+
+    return res
 	}
 
 	/**
