@@ -113,9 +113,9 @@ export class Route {
 		let str = path;
 		let match;
 		while((match = REGEX_PATH_PARAM.exec(str)) !== null) {
-			const scalar = new Scalar(match[2], match[1]);
-			scalar.isRequired = true;
-			opt.path = opt.path.replace('='+match[2],'');
+      const scalar = new Scalar(match[2], match[1]);
+      scalar.isRequired = true;
+			opt.path = opt.path.replace('='+match[2], '');
 			opt.pathParams = toArray(opt.pathParams).concat([[
 				scalar.name, scalar.joi, scalar.requiredIcon + ' ' + (scalar.isRequired
 						? '**Required'
@@ -124,9 +124,9 @@ export class Route {
 				　 \`Example: ${scalar.path}\``
 			]]);
 		}
-		if(opt.queryParams) logger.debug('Added `pathParams` %o', opt.queryParams);
+		if(opt.pathParams) logger.debug('Added `pathParams` %o', opt.pathParams);
 
-		// queryParams
+    // queryParams
 		query.split('&').filter(f => f).forEach(part => {
 			const scalar = new Scalar(part);
 			opt.queryParams = toArray(opt.queryParams).concat([[
@@ -364,12 +364,22 @@ export class Route {
 				let userRoles = getUserRoles(req);
 				let tmp = {doc:null};
 
-				const param = validParams.reduce((c: any, n) => {
+        // change array[] to array
+        req.queryParams = {
+          ...req.queryParams, ...Object.keys(req.queryParams)
+          .filter(k => k.endsWith('[]'))
+          .reduce((p, n) => ({
+            ...p, [n.replace('[]','')]: req.queryParams[n]
+          }), {})
+        }
+
+        const param = validParams.reduce((c: any, n) => {
 					c[n] = req.pathParams[n] || req.queryParams[n] || (req.body ? req.body[n] : undefined);
 					if(c[n] === undefined) delete c[n];
 					return c;
 				}, {});
-				const requestedAttributes = req.queryParams.attributes ? req.queryParams.attributes.split(',') : null;
+
+        const requestedAttributes = req.queryParams.attributes ? req.queryParams.attributes.split(',') : null;
 				const _key = param._key;
 				const args: RouteRolesArg = {
 					// @deprecated
