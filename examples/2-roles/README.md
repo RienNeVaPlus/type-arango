@@ -15,33 +15,33 @@ import {Attribute, Document, Entity, Index, Nested} from 'type-arango'
 
 @Nested()
 class UserAuth {
-	@Attribute()
-	method: string;
-
-	@Attribute()
-	hash: string;
-
-	@Attribute()
-	salt: string;
+    @Attribute()
+    method: string
+    
+    @Attribute()
+    hash: string
+    
+    @Attribute()
+    salt: string
 }
 
 @Document()
 export class User extends Entity {
-	@Attribute()
-	name: string;
-
-	@Index(type => 'skiplist')
-	@Attribute(string => string.email(), readers => ['viewer', 'admin'])
-	email: string;
-
-	@Attribute(readers => ['admin'])
-	auth: UserAuth;
-
-	@Attribute((array, $) => array.items($(String)), readers => ['viewer'], writers => ['admin'])
-	roles: string[];
-
-	@Attribute(readers => ['viewer', 'admin'], writers => ['admin'])
-	secret: string;
+    @Attribute()
+    name: string
+    
+    @Index(type => 'skiplist')
+    @Attribute(string => string.email(), readers => ['viewer', 'admin'])
+    email: string
+    
+    @Attribute(readers => ['admin'])
+    auth: UserAuth
+    
+    @Attribute((array, $) => array.items($(String)), readers => ['viewer'], writers => ['admin'])
+    roles: string[]
+    
+    @Attribute(readers => ['viewer', 'admin'], writers => ['admin'])
+    secret: string
 }
 ```
 
@@ -53,55 +53,55 @@ There is also a [`@Nested`](../../API.md#nested) document which is used to store
 
 #### **[./foxx/collections/User.collection.ts]()**:
 ```ts
-import {Collection, Entities, Route, RouteArg} from '../../../../src';
-import {User} from '../../shared';
+import {Collection, Entities, Route, RouteArg} from '../../../../src'
+import {User} from '../../shared'
 
 @Collection(of => User)
 @Route.roles(({session, _key}) => session().uid === _key ? ['viewer'] : [])
 @Route.GET(roles => ['guest', 'viewer', 'admin'])
 @Route.PATCH(roles => ['viewer', 'admin'])
 export class Users extends Entities {
-	@Route.POST('register', $ => ({
-			...$(User),
-			password: $(String)
-		}),
-		roles => ['guest'],
-		summary => 'Creates a new User'
-	)
-	static REGISTER({json}: RouteArg){
-		const auth = require('@arangodb/foxx/auth')();
-		const { password, ...user } = json();
-		return new User({
-			...user,
-			roles: ['user'],
-			secret: 42,
-			auth: auth.create(password)
-		}).save()
-	}
-
-	@Route.POST(
-		path => 'login',
-		summary => 'Auth user and init session',
-		$ => ({
-			email: $(User).email,
-			password: $(String).min(6)
-		})
-	)
-	static LOGIN({json,error,session}: RouteArg){
-		const { email, password } = json();
-		const user = Users.findOne({filter:{email}, keep:['_key', 'auth', 'roles']});
-
-		const auth = require('@arangodb/foxx/auth')();
-		if(!user || !auth.verify(user.auth, password))
-			return error('unauthorized');
-
-		return session({
-			uid: user._key,
-			data: {
-				roles: user.roles
-			}
-		});
-	}
+    @Route.POST('register', $ => ({
+            ...$(User),
+            password: $(String)
+        }),
+        roles => ['guest'],
+        summary => 'Creates a new User'
+    )
+    static REGISTER({json}: RouteArg){
+        const auth = require('@arangodb/foxx/auth')()
+        const { password, ...user } = json()
+        return new User({
+            ...user,
+            roles: ['user'],
+            secret: 42,
+            auth: auth.create(password)
+        }).save()
+    }
+    
+    @Route.POST(
+        path => 'login',
+        summary => 'Auth user and init session',
+        $ => ({
+            email: $(User).email,
+            password: $(String).min(6)
+        })
+    )
+    static LOGIN({json,error,session}: RouteArg){
+        const { email, password } = json()
+        const user = Users.findOne({filter:{email}, keep:['_key', 'auth', 'roles']})
+    
+        const auth = require('@arangodb/foxx/auth')()
+        if(!user || !auth.verify(user.auth, password))
+            return error('unauthorized')
+    
+        return session({
+            uid: user._key,
+            data: {
+                roles: user.roles
+            }
+        })
+    }
 }
 ```
 
@@ -125,7 +125,7 @@ Updates the user when a valid `X-Session-Id` header with a matching `uid` is pro
 
 #### **[./shared/index.ts]()**:
 ```ts
-import typeArango, { LogLevel, config } from '../../../src'; // type-arango
+import typeArango, { LogLevel, config } from '../../../src' // type-arango
 
 const complete = typeArango({
 	// verbose
@@ -142,18 +142,18 @@ const complete = typeArango({
 
 	// extracts the users `roles` from req.session.data.roles (this is the default config value)
 	getUserRoles(req: Foxx.Request): string[] {
-		return (req.session && req.session.data && req.session.data.roles || []).concat(config.providedRolesDefault);
+		return (req.session && req.session.data && req.session.data.roles || []).concat(config.providedRolesDefault)
 	},
 
 	// returns the user access roles that can be applied to the current route (this is the default config value)
 	getAuthorizedRoles(userRoles: string[], accessRoles: string[]): string[] {
-		return userRoles.filter((role: string) => accessRoles.includes(role));
+		return userRoles.filter((role: string) => accessRoles.includes(role))
 	}
-});
+})
 
-export * from './User.entity';
+export * from './User.entity'
 
-complete();
+complete()
 ```
 
 The `shared/index.ts` file configures `typeArango` before it exports the entities.
@@ -169,23 +169,23 @@ The `shared/index.ts` file configures `typeArango` before it exports the entitie
 
 #### **[./foxx/main.ts]()**:
 ```ts
-import { context } from '@arangodb/locals';
-import {createRoutes} from '../../../src/';
+import { context } from '@arangodb/locals'
+import {createRoutes} from '../../../src/'
 import sessionsMiddleware from '@arangodb/foxx/sessions'
-import jwtStorage from '@arangodb/foxx/sessions/storages/jwt';
-import createRouter from '@arangodb/foxx/router';
+import jwtStorage from '@arangodb/foxx/sessions/storages/jwt'
+import createRouter from '@arangodb/foxx/router'
 
 // Setup any session middleware, this is the default from ArangoDB using JWT
 context.use( sessionsMiddleware({
 	storage: jwtStorage('YOUR_SECRET'),
 	transport: 'header'
-}) );
+}) )
 
 // Import entities and collections before creating routes
-import * as _Collections from './collections';
+import * as _Collections from './collections'
 
 // Derive the routes from your entities after they have been decorated and export the router to Foxx
-context.use( createRoutes( createRouter() ) );
+context.use( createRoutes( createRouter() ) )
 ```
 
 ![divider](../../assets/divider.png)

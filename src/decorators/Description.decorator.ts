@@ -1,27 +1,27 @@
 import {SymbolKeysNotSupportedError} from '../errors'
 import {Entities, Entity, getCollectionForContainer, getDocumentForContainer} from '../models'
-import {isActive} from '../index';
+import {isActive} from '../index'
 
 export function Description(
-	description: string
+  description: string
 ) {
-	return function(prototype: any, attribute?: string | symbol): any {
-		if(!isActive) return;
-		if(typeof attribute === 'symbol')
-			throw new SymbolKeysNotSupportedError();
+  return function(prototype: any, attribute?: string | symbol): any {
+    if(!isActive) return
+    if(typeof attribute === 'symbol')
+      throw new SymbolKeysNotSupportedError()
 
-		const data = {prototype, attribute, description};
+    const data = {prototype, attribute, description}
 
-		if(prototype instanceof Entity || prototype.prototype instanceof Entity){
-			getDocumentForContainer(attribute ? prototype.constructor : prototype)
-				.decorate('Description', data);
-		}
-		else if(prototype instanceof Entities || prototype.prototype instanceof Entities){
-			getCollectionForContainer(attribute ? prototype.constructor : prototype)
-				.decorate('Description', data);
-		}
+    if(prototype instanceof Entity || prototype.prototype instanceof Entity){
+      getDocumentForContainer(attribute ? prototype.constructor : prototype)
+        .decorate('Description', data)
+    }
+    else if(prototype instanceof Entities || prototype.prototype instanceof Entities){
+      getCollectionForContainer(attribute ? prototype.constructor : prototype)
+        .decorate('Description', data)
+    }
 
-		if(!attribute)
-			return prototype;
-	}
+    if(!attribute)
+      return prototype
+  }
 }

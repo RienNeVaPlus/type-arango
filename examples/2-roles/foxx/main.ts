@@ -6,12 +6,12 @@ import createRouter from '@arangodb/foxx/router'
 
 // Setup any session middleware, this is the default from ArangoDB using JWT
 context.use( sessionsMiddleware({
-	storage: jwtStorage('YOUR_SECRET'),
-	transport: 'header'
-}) );
+  storage: jwtStorage('YOUR_SECRET'),
+  transport: 'header'
+}) )
 
 // Import entities and collections before creating routes
-import * as _Collections from './collections';
+import * as _Collections from './collections'
 
 // Derive the routes from your entities after they have been decorated and export the router to Foxx
-context.use( createRoutes( createRouter() ) );
+context.use( createRoutes( createRouter() ) )

@@ -67,39 +67,39 @@ import { Document, Entity, Type, Collection, Entities, Route, Authorized, Index,
 @Document() class User extends Entity {
     @Index(type => 'hash')
     @Attribute(str => str.email())
-    email: string;
+    email: string
     
     @Attribute()
-    name: string;
+    name: string
     
     @Authorized(readers => ['viewer','admin'], writers => ['admin'])
     @Attribute(nr => nr.min(0).max(100))
-    rating: number;
+    rating: number
     
     @Attribute()
-    createdAt: Type.DateInsert;
+    createdAt: Type.DateInsert
     
     @OneToMany(type => Address, Address => Address.owner)
-    addresses: Related<Address[]>;
+    addresses: Related<Address[]>
 }
 
 // `Users` collection
 @Collection(of => User)
 @Route.groups(
     creators => ['guest'],
-    readers => ['user','admin'],
-    writers => ['viewer','admin'],
+    readers => ['user', 'admin'],
+    writers => ['viewer', 'admin'],
     deleters => ['admin']
 )
-@Route.use('GET','POST','PATCH','PUT','DELETE','LIST')
+@Route.use('GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'LIST')
 export class Users extends Entities {
     @Route.GET(
         path => ':id/addresses',
         roles => ['viewer'],
         summary => 'Returns User Address[]'
     ) static GET({param}: RouteArg){
-        const user = Users.findOne(param.id);
-        return user.relation('addresses');
+        const user = Users.findOne(param.id)
+        return user.relation('addresses')
     }
     
     @Route.GET(
@@ -111,11 +111,9 @@ export class Users extends Entities {
         summary => 'Runs a query'
     )
     static QUERY({_, param: { id }}: RouteArg){
-        return _`
-            FOR item IN Items
-                FILTER item.id == ${id}
-                RETURN item
-        `;
+        return _ `FOR item IN Items
+                    FILTER item.id == ${id}
+                    RETURN item`
     }
 }
 ```
@@ -170,11 +168,11 @@ import typeArango from 'type-arango'
 
 const complete = typeArango({
     // Configuration
-});
+})
 
-export * from './User';
+export * from './User'
 
-complete();
+complete()
 ```
 
 
@@ -186,14 +184,14 @@ to TypeArango by calling `createRoutes(router)`.
 
 **foxx-service/main.ts**:
 ```ts
-import createRouter from '@arangodb/foxx/router';
-import {createRoutes} from 'type-arango';
+import createRouter from '@arangodb/foxx/router'
+import {createRoutes} from 'type-arango'
 
 // Initialize all entities before creating the routes
-import * as _Entities from 'shared/entities';
+import * as _Entities from 'shared/entities'
 
 // Create the foxx router and hand it to type-arango
-const router = createRoutes( createRouter() );
+const router = createRoutes( createRouter() )
 ```
 
 As the routes are built by the `@Route.*` decorators, it is required to import all

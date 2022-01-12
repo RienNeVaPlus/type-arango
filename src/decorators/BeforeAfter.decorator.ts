@@ -102,40 +102,40 @@ type ResolverRemove = BeforeRemoveResolver | AfterRemoveResolver
 type Resolver = ResolverDocument | ResolverInsert | ResolverUpdate | ResolverReplace | ResolverModify | ResolverWrite | ResolverRemove
 
 function on(
-	event: EventType,
-	resolver: Resolver
+  event: EventType,
+  resolver: Resolver
 ): ClassAndPropertyDecorator {
-	return function(prototype: any, attribute?: string | symbol): any {
-		if (!isActive) return;
-		if(typeof attribute === 'symbol')
-			throw new SymbolKeysNotSupportedError();
+  return function(prototype: any, attribute?: string | symbol): any {
+    if (!isActive) return
+    if(typeof attribute === 'symbol')
+      throw new SymbolKeysNotSupportedError()
 
-		getDocumentForContainer(attribute ? prototype.constructor : prototype)
-			.decorate(event+'.'+(attribute?'prop':'class') as DecoratorId, {
-				prototype, attribute, resolver
-			});
+    getDocumentForContainer(attribute ? prototype.constructor : prototype)
+      .decorate(event+'.'+(attribute?'prop':'class') as DecoratorId, {
+        prototype, attribute, resolver
+      })
 
-		if(!attribute)
-			return prototype;
-	}
+    if(!attribute)
+      return prototype
+  }
 }
 
 export const Before = {
-	document: (resolver: BeforeDocumentResolver) => on('Before.document', resolver),
-	insert: (resolver: BeforeInsertResolver) => on('Before.insert', resolver),
-	update: (resolver: BeforeUpdateResolver) => on('Before.update', resolver),
-	replace: (resolver: BeforeReplaceResolver) => on('Before.replace', resolver),
-	modify: (resolver: BeforeModifyResolver) => on('Before.modify', resolver), // update + replace
-	write: (resolver: BeforeInsertResolver) => on('Before.write', resolver), // insert + update + replace
-	remove: (resolver: BeforeRemoveResolver) => on('Before.remove', resolver)
-};
+  document: (resolver: BeforeDocumentResolver) => on('Before.document', resolver),
+  insert: (resolver: BeforeInsertResolver) => on('Before.insert', resolver),
+  update: (resolver: BeforeUpdateResolver) => on('Before.update', resolver),
+  replace: (resolver: BeforeReplaceResolver) => on('Before.replace', resolver),
+  modify: (resolver: BeforeModifyResolver) => on('Before.modify', resolver), // update + replace
+  write: (resolver: BeforeInsertResolver) => on('Before.write', resolver), // insert + update + replace
+  remove: (resolver: BeforeRemoveResolver) => on('Before.remove', resolver)
+}
 
 export const After = {
-	document: (resolver: AfterDocumentResolver) => on('After.document', resolver),
-	insert: (resolver: AfterInsertResolver) => on('After.insert', resolver),
-	update: (resolver: AfterUpdateResolver) => on('After.update', resolver),
-	replace: (resolver: AfterReplaceResolver) => on('After.replace', resolver),
-	modify: (resolver: AfterModifyResolver) => on('After.modify', resolver), // update + replace
-	write: (resolver: AfterReplaceResolver) => on('After.write', resolver), // insert + update + replace
-	remove: (resolver: AfterRemoveResolver) => on('After.remove', resolver)
-};
+  document: (resolver: AfterDocumentResolver) => on('After.document', resolver),
+  insert: (resolver: AfterInsertResolver) => on('After.insert', resolver),
+  update: (resolver: AfterUpdateResolver) => on('After.update', resolver),
+  replace: (resolver: AfterReplaceResolver) => on('After.replace', resolver),
+  modify: (resolver: AfterModifyResolver) => on('After.modify', resolver), // update + replace
+  write: (resolver: AfterReplaceResolver) => on('After.write', resolver), // insert + update + replace
+  remove: (resolver: AfterRemoveResolver) => on('After.remove', resolver)
+}

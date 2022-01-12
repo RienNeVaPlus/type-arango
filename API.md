@@ -103,116 +103,116 @@ const complete = typeArango({
     /**
      * Available log levels are `Error`, `Warn`, `Info` & `Debug`
      */
-    logLevel: LogLevel = LogLevel.Warn;
+    logLevel: LogLevel = LogLevel.Warn,
     
     /**
      * Prefix the collection name by applying `module.context.collectionName` to it
      */
-    prefixCollectionName: boolean = false;
+    prefixCollectionName: boolean = false,
     
     /**
      * Display the source of your routes in Swagger
      */
-    exposeRouteFunctionsToSwagger: boolean = true;
+    exposeRouteFunctionsToSwagger: boolean = true,
     
     /**
      * Dasherize endpoints (eg `UserProfiles` becomes `user-profiles`)
      */
-    dasherizeRoutes: boolean = true;
+    dasherizeRoutes: boolean = true,
     
     /**
      * Separator used to split a parameter value (ie /?x=LIKE|y)
      */
-    paramOperatorSeparator: string = '|'
+    paramOperatorSeparator: string = '|',
     
     /**
      * Always add field writer roles to field reader roles
      * By default an `@Authorized(readers => ['user'], writers => ['admin'])`
      * evaluates to `readers = ['users','admin'], writers = ['admin']`
      */
-    addAttributeWritersToFieldReaders: boolean = true;
+    addAttributeWritersToFieldReaders: boolean = true,
     
     /**
      * When using Type.I18n the defaultLocale is used when other locales do not match
      */
-    defaultLocale: string = 'en';
+    defaultLocale: string = 'en',
     
     /**
      * Whether to strip the `_id` key from documents
      */
-    stripDocumentId: boolean = true;
+    stripDocumentId: boolean = true,
     
     /**
      * Whether to strip the `_rev` key from documents
      */
-    stripDocumentRev: boolean = true;
+    stripDocumentRev: boolean = true,
     
     /**
      * Whether to strip the `_key` key from documents
      */
-    stripDocumentKey: boolean = false;
+    stripDocumentKey: boolean = false,
     
     /**
      * Whether to execute aqlfunctions.unregisterGroup for every collection
      * Set to false when using custom AQL functions outside of type-arango
      */
-    unregisterAQLFunctionEntityGroup: boolean = true;
+    unregisterAQLFunctionEntityGroup: boolean = true,
     
     /**
      * List of roles that are available for every request
      */
-    providedRolesDefault: string[] = ['guest']
+    providedRolesDefault: string[] = ['guest'],
     
     /**
      * List of required roles for a route when no other roles are defined
      */
-    requiredRolesFallback: string[] = ['user']
+    requiredRolesFallback: string[] = ['user'],
     
     /**
      * List of required writer roles for a route when no other roles are defined
      */
-    requiredWriterRolesFallback: string[] = ['admin']
+    requiredWriterRolesFallback: string[] = ['admin'],
     
     /**
      * Returns the roles of the current viewer user
      */
     getUserRoles = function(req: Foxx.Request): string[] {
-        return (req.session && req.session.data && req.session.data.roles || []).concat('guest');
-    };
+        return (req.session && req.session.data && req.session.data.roles || []).concat('guest')
+    },
     
     /**
      * Returns all authorized roles for a request
      */
     getAuthorizedRoles = function(providedRoles: string[], requiredRoles: string[]): string[] {
-        return providedRoles.filter((role: string) => requiredRoles.includes(role));
-    }
+        return providedRoles.filter((role: string) => requiredRoles.includes(role))
+    },
     
     /**
      * HTTP Status to return when an unauthorized (no auth provided) request occurs
      */
-    throwUnauthorized: ArangoDB.HttpStatus = 'unauthorized';
+    throwUnauthorized: ArangoDB.HttpStatus = 'unauthorized',
     
     /**
      * HTTP Status to return when an forbidden (invalid auth provided) request occurs
      */
-    throwForbidden: ArangoDB.HttpStatus = 'unauthorized';
+    throwForbidden: ArangoDB.HttpStatus = 'unauthorized',
     
     /**
      * Applied on client data when using `json()` inside a route
      */
-    fromClient?: (doc: DocumentData, opt: RequestInfo) => DocumentData;
+    fromClient?: (doc: DocumentData, opt: RequestInfo) => DocumentData,
     
     /**
      * Applied on response data when using `send()` inside a route
      */
-    forClient?: (doc: DocumentData, opt: RequestInfo) => DocumentData;
-});
+    forClient?: (doc: DocumentData, opt: RequestInfo) => DocumentData
+})
 
 // initialize documents and collection after calling typeArango
-import * as _Collections from './collections';
+import * as _Collections from './collections'
 
 // completing the setup
-complete();
+complete()
 ```
 ![divider](./assets/divider.png)
 
@@ -234,16 +234,16 @@ When using the entity inside a route, it comes with handy ORM features:
 ```ts
 static route(){
     // create a user instance
-    const user = new User({email:'contact@example.com'});
+    const user = new User({email:'contact@example.com'})
     // save the user to the collection
-    user.insert();
+    user.insert()
     
     // change the user and return a list of modified properties
-    user.name = 'RienNeVaPlus';
-    console.log(user._saveKeys); // => ['name']
+    user.name = 'RienNeVaPlus'
+    console.log(user._saveKeys) // => ['name']
     
     // save the changes
-    user.save();
+    user.save()
 }
 ```
 ![divider](./assets/divider.small.png)
@@ -255,22 +255,22 @@ Stores the instance to the collection. Throws when the document already exists. 
 **Example** (in route)
 ```ts
 // create entity
-const user = new User({email:'hello@example.com'});
+const user = new User({email:'hello@example.com'})
 // store in collection
-user.insert();
+user.insert()
 ```
 ![divider](./assets/divider.small.png)
 
 ### `entity.merge(doc)`
 
-Merges `doc` into the entity, it's as simple as `Object.assign(this, doc);`.
+Merges `doc` into the entity, it's as simple as `Object.assign(this, doc)`.
 
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123');
+const user = Users.findOne('123')
 // merge request body into entity
-user.merge(json());
+user.merge(json())
 ```
 ![divider](./assets/divider.small.png)
 
@@ -284,10 +284,10 @@ Replaces the document with the provided object, ignoring `_saveKeys`.
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123');
-user.name = 'This will be ignored';
+const user = Users.findOne('123')
+user.name = 'This will be ignored'
 // replace the user using Foxx collection._replace
-user.replace({email:'test@example.com'}, {overwrite:true});
+user.replace({email:'test@example.com'}, {overwrite:true})
 ```
 ![divider](./assets/divider.small.png)
 
@@ -304,9 +304,9 @@ Removes the document from the collection using `collection._remove`
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123');
+const user = Users.findOne('123')
 // deletes the document from the collection
-user.remove();
+user.remove()
 ```
 ![divider](./assets/divider.small.png)
 
@@ -325,9 +325,9 @@ Saves the values of all changed attributes (`entity._saveKeys`) to the documents
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123');
+const user = Users.findOne('123')
 // deletes the document from the collection
-user.remove();
+user.remove()
 ```
 ![divider](./assets/divider.small.png)
 
@@ -338,15 +338,15 @@ Returns a list of unsaved / modified properties. Is used by `entity.save` in ord
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123');
+const user = Users.findOne('123')
 // modify the user
-user.name = 'RienNeVaPlus';
+user.name = 'RienNeVaPlus'
 // return a list of modified properties
-console.log(user._saveKeys); // => ['name']
+console.log(user._saveKeys) // => ['name']
 // save changes
-user.save();
+user.save()
 // _saveKeys is now empty
-console.log(user._saveKeys); // => []
+console.log(user._saveKeys) // => []
 ```
 ![divider](./assets/divider.small.png)
 
@@ -364,13 +364,13 @@ Some relations have values, but these are mainly used for fetching the related d
 **Example** (in route)
 ```ts
 // in a route
-const user = Users.findOne('1');
+const user = Users.findOne('1')
 // returns an address entity instance
-const address = user.related('address');
+const address = user.related('address')
 // returns a profile entity instance limited to the selected attributes
-const profile = user.related('profile', ['attributes','to','select']);
+const profile = user.related('profile', ['attributes','to','select'])
 // read the profile id when stored inside user.profile
-const profileId = user.profile;
+const profileId = user.profile
 ```
 
 ![divider](./assets/divider.png)
@@ -405,13 +405,13 @@ Documents in ArangoDB can be nested. Make sure to define nested classes before t
 @Nested()
 class UserPerson {
     @Attribute()
-    gender: string;
+    gender: string
 }
 
 @Document()
 class User extends Entity {
     @Attribute()
-    person: UserPerson;
+    person: UserPerson
 }
 ```
 ![divider](./assets/divider.small.png)
@@ -458,11 +458,11 @@ For more details on roles, see `@Authorized()`.
 class User extends Entity {
     // attribute has to be an email address
     @Attribute(string => string.email())
-    email: string;
+    email: string
     
     // attribute has to be a positive integer with a max of 100
     @Attribute(number => number.integer().positive().max(100))
-    age: number;
+    age: number
 }
 ```
 ![divider](./assets/divider.small.png)
@@ -479,15 +479,15 @@ Defines `reader` and `writer` roles to protect attributes in routes. The the [2n
 ...
 @Attribute()
 @Authorized(readers => ['user'], writers => ['admin'])
-name: string;
+name: string
 
 // roles can also be defined by only using attribute
 @Attribute(readers => ['viewer'], writers => ['viewer','admin'])
-age: number;
+age: number
 
 // even when the attribute has a type
 @Attribute(string => string.email(), readers => ['viewer'], writers => ['viewer'])
-email: string;
+email: string
 ...
 ```
 ![divider](./assets/divider.small.png)
@@ -511,11 +511,11 @@ Creates an index on the attribute.
 ...
 @Index(type => 'hash')
 @Attribute()
-name: string;
+name: string
 
 @Index(['height'], {type:'skiplist',sparse:true})
 @Attribute()
-age: number;
+age: number
 ...
 ```
 ![divider](./assets/divider.small.png)
@@ -534,11 +534,11 @@ class User extends Entity {
     // use @Attribute when relational data is stored in document
     @Attribute(string)
     @OneToOne(type => Address)
-    primaryAddress: Related<Address>;
+    primaryAddress: Related<Address>
     
     // don't use @Attribute when the property is "virtual" and relational data is stored on the other end
     @OneToOne(type => Profile, Profile => Profile.owner)
-    profile: Related<Profile>;
+    profile: Related<Profile>
 }
 ```
 
@@ -558,7 +558,7 @@ Defines a 1:n relation to another entity. Mostly the same as `@OneToOne` except 
 @Document()
 class User {
     @OneToMany(type => Address, Address => Address.owner)
-    addresses: Related<Address[]>;
+    addresses: Related<Address[]>
 }
 ```
 
@@ -596,7 +596,7 @@ class User {
     @Attribute()
     // use `new Date` as a default value when inserting documents
     @Before.insert(value => value || new Date)
-    createdAt: Date;
+    createdAt: Date
 }
 ```
 
@@ -615,7 +615,7 @@ const MAP = ['one','two','three']
 class User {
     @Attribute()
     @After.document(value => MAP[value])
-    numericIndex: Date;
+    numericIndex: Date
 }
 ```
 
@@ -728,9 +728,9 @@ When using the collection inside a route, it comes with handy ORM features:
 ```ts
 static route(){
     // returns a single User instance
-    const user: User = Users.findOne('myDocumentKey');
+    const user: User = Users.findOne('myDocumentKey')
     // returns a list of matching User instances
-    const users: User[] = Users.find({filter:{name:'RienNeVaPlus'},limit:10});
+    const users: User[] = Users.find({filter:{name:'RienNeVaPlus'},limit:10})
 }
 ```
 ![divider](./assets/divider.small.png)
@@ -751,7 +751,7 @@ Returns a list of entity instances.
 ```ts
 static route(){
     // returns a single User instance
-    const user: User[] = Users.find({filter:{email:['LIKE', '%@gmail.com']});
+    const user: User[] = Users.find({filter:{email:['LIKE', '%@gmail.com']})
 }
 ```
 ![divider](./assets/divider.small.png)
@@ -766,7 +766,7 @@ The same as `entities.find` except it returns a single instance instead of an ar
 ```ts
 static route(){
     // returns a single User instance
-    const user: User = Users.findOne('123');
+    const user: User = Users.findOne('123')
 }
 ```
 
@@ -1008,11 +1008,11 @@ class Users extends Entities {
         })
     )
     static GET({ json, error, collection }: RouteArg){
-        const { password } = json();
+        const { password } = json()
         if(password !== 'top-secret')
-            return error('forbidden');
+            return error('forbidden')
         
-        return collection._document('123');
+        return collection._document('123')
     } 
 }
 ```
@@ -1070,7 +1070,7 @@ class Users extends Entities {
     // executed as a ProperyDecorator - creates a route on `PATCH users/foo`
     @Route.PATCH('foo', ['admin'])
     static PATCH({ res }: RouteArg){
-        res.send('foo');
+        res.send('foo')
     } 
 }
 ```
@@ -1089,7 +1089,7 @@ class Users extends Entities {
     // executed as a ProperyDecorator - creates a route on `PUT users/bar`
     @Route.PUT('bar', ['admin'])
     static PUT({ res }: RouteArg){
-        res.send('bar');
+        res.send('bar')
     } 
 }
 ```
@@ -1114,7 +1114,7 @@ class Users extends Entities {
     // executed as a ProperyDecorator - creates a route on `DELETE users/baz`
     @Route.DELETE('baz', ['admin'])
     static DELETE({ res }: RouteArg){
-        res.send('baz');
+        res.send('baz')
     } 
 }
 ```
@@ -1153,13 +1153,13 @@ class Users extends Entities {
     // registers "USERS::FUNCTION_NAME()"
     @AQLFunction(isDeterministic => true)
     static FUNCTION_NAME(arg){
-        return true;
+        return true
     }
     
     // registers"USERS::LAZYPI()"
     @AQLFunction(name => 'LAZIPI', isDeterministic => true)
     static IGNORED(arg){
-        return 3.14;
+        return 3.14
     }
 }
 ```
@@ -1184,7 +1184,7 @@ class Users extends Entities {
     // Note: the below is equal to @Task({period:10,name:...,params:...})
     @Task(period => 10, name => 'Log something', {really:true})
     static MY_TASK(params){
-        console.log('Hello World',params);
+        console.log('Hello World',params)
     }
 }
 ```
@@ -1204,7 +1204,7 @@ Set the query parameter `locale` to `*` in order to return all values from a rou
 @Document()
 class Page extends Entity {
     @Attribute()
-    title: Type.I18n;
+    title: Type.I18n
 }
 
 @Collection(of => Page)
@@ -1245,7 +1245,7 @@ Set the query parameter `currency` to `*` in order to return all values from a r
 @Document()
 class Product extends Entity {
     @Attribute()
-    price: Type.Currencies;
+    price: Type.Currencies
 }
 
 @Collection(of => Product)
@@ -1274,7 +1274,7 @@ Sets a value of `new Date()` whenever a new document is created.
 @Document()
 class User extends Entity {
     @Attribute()
-    createdAt: Type.DateInsert;
+    createdAt: Type.DateInsert
 }
 
 @Collection(of => User)
@@ -1298,7 +1298,7 @@ Sets a value of `new Date()` whenever a document is updated.
 @Document()
 class User extends Entity {
     @Attribute()
-    updatedAt: Type.DateUpdate;
+    updatedAt: Type.DateUpdate
 }
 
 @Collection(of => User)
@@ -1335,13 +1335,13 @@ Joi originates from plain JavaScript, but now that we have access to Types, it c
 
 **Example**
 ```ts
-const string = $(String)            // = Joi.string();
+const string = $(String)            // = Joi.string()
 const obj = $({
     bool: Boolean                   // = Joi.boolean()
     number: $(Number).integer(),    // = Joi.number().integer()
     valid: ['valid','strings'],     // = Joi.any().valid('valid','strings')
     attribute: $(User).email        // = Joi.string().email() (from User entity)
-});                                 // = Joi.object().keys(...)
+})                                 // = Joi.object().keys(...)
 ```
 
 ![divider](./assets/divider.png)

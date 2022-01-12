@@ -18,35 +18,35 @@ import { Document, Entity, Collection, Entities, Route, Index, Attribute, RouteA
 
 @Document()
 export class User extends Entity {
-	@Index()
-	@Attribute(type => type.email())
-	email: string;
-
-	@Attribute()
-	name: string;
+    @Index()
+    @Attribute(type => type.email())
+    email: string
+    
+    @Attribute()
+    name: string
 }
 
 @Collection(of => User)
 @Route.use('GET','POST','PATCH')
 export class Users extends Entities {
-	@Route.GET('custom/:user=number')
-	static GET_CUSTOM({param,error}: RouteArg){
-		const user = Users.findOne(param.user);
-		if(!user) return error('not found');
-		return user;
-	}
+    @Route.GET('custom/:user=number')
+    static GET_CUSTOM({param,error}: RouteArg){
+        const user = Users.findOne(param.user)
+        if(!user) return error('not found')
+        return user
+    }
 }
 ```
 
 Setup a basic `User` entity and it's collection with three routes.
  
- - [`@Document`](../../API.md#document) initializes an entity
-- [`@Attribute`](../../API.md#attributeschema-readers-writers) marks the property as a database field of the entity.
-The first argument can be a function receiving a [Enjoi](../../API.md#-en-hanced-joi) object of it's defined type (`Joi.string()` above) and returning an input validation schema.
-- [`@Index`](../../API.md#indextype-options) creates a `hash` index on the field `email`.
-- [`@Collection`](../../API.md#collectionofdocument-options) looks for the collection `Users` and creates it, in case it does not 
+- [`@Document`](../../API.md#document) initializes an entity
+  - [`@Attribute`](../../API.md#attributeschema-readers-writers) marks the property as a database field of the entity.
+  The first argument can be a function receiving a [Enjoi](../../API.md#-en-hanced-joi) object of it's defined type (`Joi.string()` above) and returning an input validation schema.
+  - [`@Index`](../../API.md#indextype-options) creates a `hash` index on the field `email`.
+  - [`@Collection`](../../API.md#collectionofdocument-options) looks for the collection `Users` and creates it, in case it does not 
 exist.
-- [`@Route.use`](../../API.md#routeusemethods-options) creates preset & documented routes for the collection.
+  - [`@Route.use`](../../API.md#routeusemethods-options) creates preset & documented routes for the collection.
 
 ![divider](../../assets/divider.small.png)
 
@@ -57,16 +57,16 @@ import typeArango, { LogLevel } from 'type-arango'
 const complete = typeArango({
 	getAuthorizedRoles(){ return ['admin'] },
 	logLevel: LogLevel.Debug
-});
+})
 
-export * from './Users';
+export * from './Users'
 
-complete();
+complete()
 ```
 
 The entities `index.ts` configures type-arango before it exports the entities.
 - `getAuthorizedRoles` returns `['admin']` for presentation purposes, **do not use this in a public environment.**
-- Activate debug logs (printed in `arangod` or `/var/log/arangodb3/arangod.log`). 
+  - Activate debug logs (printed in `arangod` or `/var/log/arangodb3/arangod.log`). 
 
 For details, see [configuration](../../API.md#-configuration).
 
@@ -84,7 +84,7 @@ context.use(
     createRoutes(
         createRouter()
     )
-);
+)
 ```
 
 TypeArango requires the Foxx router in order to be able to setup the

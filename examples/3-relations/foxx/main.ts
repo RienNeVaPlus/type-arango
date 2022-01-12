@@ -6,4 +6,4 @@ import createRouter from '@arangodb/foxx/router'
 import * as _Collections from './collections'
 
 // Derive the routes from your entities after they have been decorated and export the router to Foxx
-context.use( createRoutes( createRouter() ) );
+context.use( createRoutes( createRouter() ) )

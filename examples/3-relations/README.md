@@ -15,19 +15,19 @@ import { Document, Entity, Entities, OneToMany, Related } from 'type-arango'
 
 @Document() class Author extends Entity {
     @Attribute()
-    name: string;
+    name: string
     
     @OneToMany(type => Book, Books => Books.author)
-    books: Related<Book[]>;
+    books: Related<Book[]>
     
     @Attribute(type => number)
     @OneToMany(type => Book)
-    favorites: Related<Book[]>;
+    favorites: Related<Book[]>
 }
 
 @Document() class Book extends Entity {
     @Attribute()
-    title: string;
+    title: string
     
     @Attribute(type => number)
     @OneToOne(type => Author)
@@ -102,8 +102,8 @@ type-arango provides the method `related` for loading related & exposed entities
 class Books extends Entities {
     @Route.GET('custom', {relations:'author'})
     static GET_CUSTOM({relations}: RouteArg){
-        const book = Books.findOne(1);
-        return relations(book);
+        const book = Books.findOne(1)
+        return relations(book)
     }
 }
 ```
