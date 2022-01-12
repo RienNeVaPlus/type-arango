@@ -1,7 +1,7 @@
 import {getDocumentForContainer, Document} from '.'
 import {DocumentData} from '../types'
 import {AttributeNotInEntityError, MissingKeyError, AttributeIsNotARelationError, SymbolKeysNotSupportedError} from '../errors'
-import {db} from '../utils'
+import {db, isFoxx} from '../utils'
 
 // const nativeKeys = ['constructor','toString'];
 const unenumerable = ['_saveKeys', '_collection', '_relations'];
@@ -54,7 +54,12 @@ export class Entity {
 		const constructor = (this.constructor as typeof Entity);
 		const attribute = _doc.attribute;
 		const keys = Object.keys(attribute).concat(accessibleKeys);
-		this._collection = _doc.col!.db;
+
+    this._collection = isFoxx() ? _doc.col!.db : {} as any;
+
+    if(!isFoxx()){
+      return this
+    }
 
 		// hide some attrs
 		unenumerable.forEach(attr => Object.defineProperty(this, attr, {enumerable:false}));
