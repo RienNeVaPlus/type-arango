@@ -369,7 +369,7 @@ export class Route {
           ...req.queryParams, ...Object.keys(req.queryParams)
           .filter(k => k.endsWith('[]'))
           .reduce((p, n) => ({
-            ...p, [n.replace('[]','')]: req.queryParams[n]
+            ...p, [n.replace('[]','')]: toArray(req.queryParams[n])
           }), {})
         }
 
