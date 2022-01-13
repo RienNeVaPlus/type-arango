@@ -383,7 +383,11 @@ export class Route {
           return c
         }, {})
 
-        const requestedAttributes = req.queryParams.attributes ? req.queryParams.attributes.split(',') : null
+        const requestedAttributes = req.queryParams.attributes
+          ? typeof req.queryParams.attributes === 'string'
+            ? req.queryParams.attributes.split(',')
+            : req.queryParams.attributes
+          : null
         const _key = param._key
         const args: RouteRolesArg = {
           // @deprecated
