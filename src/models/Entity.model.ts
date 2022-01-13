@@ -57,12 +57,11 @@ export class Entity {
 
     this._collection = isFoxx() ? _doc.col!.db : {} as any
 
-    if(!isFoxx()){
-      return this
-    }
-
     // hide some attrs
     unenumerable.forEach(attr => Object.defineProperty(this, attr, {enumerable:false}))
+
+    if(!isFoxx())
+      return this
 
     // setup proxy
     return new Proxy(this, {
