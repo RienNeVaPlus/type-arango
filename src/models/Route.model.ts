@@ -374,7 +374,11 @@ export class Route {
         }
 
         const param = validParams.reduce((c: any, n) => {
-          c[n] = req.pathParams[n] || req.queryParams[n] || (req.body ? req.body[n] : undefined)
+          c[n] = req.pathParams[n] !== undefined
+            ? req.pathParams[n]
+            : req.queryParams[n] !== undefined
+            ? req.queryParams[n]
+            : req.body ? req.body[n] : undefined
           if(c[n] === undefined) delete c[n]
           return c
         }, {})
