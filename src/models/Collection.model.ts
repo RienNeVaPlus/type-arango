@@ -114,11 +114,11 @@ export class Collection {
   }
 
   get routeAuths(){
-    return (this.decorator['Route.auth']||[]).map(d => d.authorizeFunction).reverse()
+    return (this.decorator['Route.auth']||[]).map(d => d.authorizeFn).reverse()
   }
 
   get routeRoles(){
-    return (this.decorator['Route.roles']||[]).map(d => d.rolesFunction).reverse()
+    return (this.decorator['Route.roles']||[]).map(d => d.rolesFn).reverse()
   }
 
   query(q: string | QueryOpt){
@@ -218,11 +218,11 @@ export class Collection {
     }
 
     if(Route) for(let {
-      prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrSummaryOrFunction,
-      rolesOrSchemaOrSummaryOrFunction, summaryOrSchemaOrRolesOrFunction, options
+      prototype, attribute, method, pathOrRolesOrOptions, schemaOrRolesOrSummary,
+      rolesOrSchemaOrSummary, summaryOrSchemaOrRoles, options
     } of Route){
       let schema: any
-      const a: any = argumentResolve(pathOrRolesOrFunctionOrOptions, (inp: any) => enjoi(inp, 'required'), Joi)
+      const a: any = argumentResolve(pathOrRolesOrOptions, (inp: any) => enjoi(inp, 'required'), Joi)
       let opt: RouteOpt = Object.assign({
           queryParams: []
         },
@@ -236,10 +236,10 @@ export class Collection {
       )
 
       // allow options for schema param
-      if(isObject(schemaOrRolesOrSummaryOrFunction)){
-        opt = Object.assign(schemaOrRolesOrSummaryOrFunction, opt)
+      if(isObject(schemaOrRolesOrSummary)){
+        opt = Object.assign(schemaOrRolesOrSummary, opt)
       } else {
-        schema = argumentResolve(schemaOrRolesOrSummaryOrFunction, (inp: any) => enjoi(inp, 'required'), Joi)
+        schema = argumentResolve(schemaOrRolesOrSummary, (inp: any) => enjoi(inp, 'required'), Joi)
 
         if(schema instanceof Array){
           opt.roles = schema
@@ -251,10 +251,10 @@ export class Collection {
       }
 
       // allow options for roles param
-      if(isObject(rolesOrSchemaOrSummaryOrFunction)){
-        opt = Object.assign(rolesOrSchemaOrSummaryOrFunction, opt)
+      if(isObject(rolesOrSchemaOrSummary)){
+        opt = Object.assign(rolesOrSchemaOrSummary, opt)
       } else {
-        let roles = argumentResolve(rolesOrSchemaOrSummaryOrFunction, (inp: any) => enjoi(inp, 'required'), Joi)
+        let roles = argumentResolve(rolesOrSchemaOrSummary, (inp: any) => enjoi(inp, 'required'), Joi)
 
         if(roles instanceof Array){
           opt.roles = roles
@@ -266,10 +266,10 @@ export class Collection {
       }
 
       // allow options for summary param
-      if(isObject(summaryOrSchemaOrRolesOrFunction)){
-        opt = Object.assign(summaryOrSchemaOrRolesOrFunction, opt)
+      if(isObject(summaryOrSchemaOrRoles)){
+        opt = Object.assign(summaryOrSchemaOrRoles, opt)
       } else {
-        let summary = argumentResolve(summaryOrSchemaOrRolesOrFunction, (inp: any) => enjoi(inp, 'required'), Joi)
+        let summary = argumentResolve(summaryOrSchemaOrRoles, (inp: any) => enjoi(inp, 'required'), Joi)
         if(summary instanceof Array){
           opt.roles = summary
         } else if(typeof summary === 'string'){

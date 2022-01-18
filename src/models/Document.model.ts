@@ -382,8 +382,8 @@ export class Document<T=any> {
       let a = (A || []).find(a => a.attribute === o.attribute)
       if(!a) a = this.decorate('Attribute', o).find(attr => attr.attribute === o.attribute)
       else {
-        a.readersArrayOrFunction = o.readersArrayOrFunction
-        a.writersArrayOrFunction = o.writersArrayOrFunction
+        a.readersArray = o.readersArray
+        a.writersArray = o.writersArray
       }
     }
 
@@ -391,7 +391,7 @@ export class Document<T=any> {
 
     // @Attribute
     if(Attribute) for(let {
-      prototype, attribute, typeOrRequiredOrSchemaOrReadersOrFunction, readersArrayOrFunction, writersArrayOrFunction
+      prototype, attribute, typeOrRequiredOrSchemaOrReaders, readersArray, writersArray
     } of Attribute){
       metadata = Reflect.getMetadata('design:type', prototype, attribute!)
       const rel = this.relation[attribute!]
@@ -407,9 +407,9 @@ export class Document<T=any> {
       // if(!metadata)
       //   throw new Error('Invalid design:type for "'+this.name+'.'+attribute+'"')
 
-      let schema = argumentResolve(typeOrRequiredOrSchemaOrReadersOrFunction, joi, enjoi) || joi
-      let readers = argumentResolve(readersArrayOrFunction)
-      let writers = argumentResolve(writersArrayOrFunction)
+      let schema = argumentResolve(typeOrRequiredOrSchemaOrReaders, joi, enjoi) || joi
+      let readers = argumentResolve(readersArray)
+      let writers = argumentResolve(writersArray)
       let roles
 
       if(Array.isArray(schema)){

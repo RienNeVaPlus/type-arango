@@ -4,21 +4,21 @@ import {argumentResolve} from '../utils'
 import {
   ClassAndMethodDecorator,
   Roles,
-  RolesFunc,
+  RolesFn,
   RouteAuth,
   RouteDecorator,
   RouteOpt, RoutePreset,
   RouteRoles,
-  SchemaFunc
+  SchemaFn
 } from '../types'
 import {SymbolKeysNotSupportedError} from '../errors'
 import {Schema} from 'joi'
 
-export type PathFunc = (returns?: string) => any
-export type SummaryFunc = (returns?: string) => string
+export type PathFn = (returns?: string) => any
+export type SummaryFn = (returns?: string) => string
 
-type ArgPathOrRolesOrOpt = string | PathFunc | Roles | RolesFunc | RouteOpt | SchemaFunc
-type ArgSchemaOrRolesOrSummaryOrOpt = string | SummaryFunc | boolean | Schema | SchemaFunc | Roles | RolesFunc | RouteOpt
+type ArgPathOrRolesOrOpt = string | PathFn | Roles | RolesFn | RouteOpt | SchemaFn
+type ArgSchemaOrRolesOrSummaryOrOpt = string | SummaryFn | boolean | Schema | SchemaFn | Roles | RolesFn | RouteOpt
 
 export const ROUTE_PRESET: {[key in RoutePreset]: RouteDecorator[]} = {
   '*': ['GET','POST','PATCH','PUT','DELETE','LIST'],
@@ -30,10 +30,10 @@ export const ROUTE_PRESET: {[key in RoutePreset]: RouteDecorator[]} = {
 
 export function route(
   method: RouteDecorator,
-  pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-  schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-  rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-  summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+  pathOrRolesOrOptions?: ArgPathOrRolesOrOpt,
+  schemaOrRolesOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+  rolesOrSchemaOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+  summaryOrSchemaOrRoles?: ArgSchemaOrRolesOrSummaryOrOpt,
   options?: RouteOpt
 ): ClassAndMethodDecorator {
   return function(prototype: any, attribute?: string | symbol): any {
@@ -42,8 +42,8 @@ export function route(
       throw new SymbolKeysNotSupportedError()
 
     getCollectionForContainer(prototype).decorate('Route', {
-      prototype, attribute, method, pathOrRolesOrFunctionOrOptions, schemaOrRolesOrSummaryOrFunction,
-      rolesOrSchemaOrSummaryOrFunction, summaryOrSchemaOrRolesOrFunction, options
+      prototype, attribute, method, pathOrRolesOrOptions, schemaOrRolesOrSummary,
+      rolesOrSchemaOrSummary, summaryOrSchemaOrRoles, options
     })
     return prototype
   }
@@ -51,86 +51,86 @@ export function route(
 
 export const Route = {
   GET: (
-    pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-    schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+    pathOrRolesOrOptions?: ArgPathOrRolesOrOpt,
+    schemaOrRolesOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    rolesOrSchemaOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    summaryOrSchemaOrRoles?: ArgSchemaOrRolesOrSummaryOrOpt,
     options?: RouteOpt
   ): ClassAndMethodDecorator => route('GET',
-    pathOrRolesOrFunctionOrOptions,
-    schemaOrRolesOrSummaryOrFunction,
-    rolesOrSchemaOrSummaryOrFunction,
-    summaryOrSchemaOrRolesOrFunction,
+    pathOrRolesOrOptions,
+    schemaOrRolesOrSummary,
+    rolesOrSchemaOrSummary,
+    summaryOrSchemaOrRoles,
     options),
   POST: (
-    pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-    schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+    pathOrRolesOrOptions?: ArgPathOrRolesOrOpt,
+    schemaOrRolesOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    rolesOrSchemaOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    summaryOrSchemaOrRoles?: ArgSchemaOrRolesOrSummaryOrOpt,
     options?: RouteOpt
   ): ClassAndMethodDecorator => route('POST',
-    pathOrRolesOrFunctionOrOptions,
-    schemaOrRolesOrSummaryOrFunction,
-    rolesOrSchemaOrSummaryOrFunction,
-    summaryOrSchemaOrRolesOrFunction,
+    pathOrRolesOrOptions,
+    schemaOrRolesOrSummary,
+    rolesOrSchemaOrSummary,
+    summaryOrSchemaOrRoles,
     options),
   PATCH: (
-    pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-    schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+    pathOrRolesOrOptions?: ArgPathOrRolesOrOpt,
+    schemaOrRolesOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    rolesOrSchemaOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    summaryOrSchemaOrRoles?: ArgSchemaOrRolesOrSummaryOrOpt,
     options?: RouteOpt
   ): ClassAndMethodDecorator => route('PATCH',
-    pathOrRolesOrFunctionOrOptions,
-    schemaOrRolesOrSummaryOrFunction,
-    rolesOrSchemaOrSummaryOrFunction,
-    summaryOrSchemaOrRolesOrFunction,
+    pathOrRolesOrOptions,
+    schemaOrRolesOrSummary,
+    rolesOrSchemaOrSummary,
+    summaryOrSchemaOrRoles,
     options),
   PUT: (
-    pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-    schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+    pathOrRolesOrOptions?: ArgPathOrRolesOrOpt,
+    schemaOrRolesOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    rolesOrSchemaOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    summaryOrSchemaOrRoles?: ArgSchemaOrRolesOrSummaryOrOpt,
     options?: RouteOpt
   ): ClassAndMethodDecorator => route('PUT',
-    pathOrRolesOrFunctionOrOptions,
-    schemaOrRolesOrSummaryOrFunction,
-    rolesOrSchemaOrSummaryOrFunction,
-    summaryOrSchemaOrRolesOrFunction,
+    pathOrRolesOrOptions,
+    schemaOrRolesOrSummary,
+    rolesOrSchemaOrSummary,
+    summaryOrSchemaOrRoles,
     options),
   DELETE: (
-    pathOrRolesOrFunctionOrOptions?: ArgPathOrRolesOrOpt,
-    schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+    pathOrRolesOrOptions?: ArgPathOrRolesOrOpt,
+    schemaOrRolesOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    rolesOrSchemaOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    summaryOrSchemaOrRoles?: ArgSchemaOrRolesOrSummaryOrOpt,
     options?: RouteOpt
   ): ClassAndMethodDecorator => route('DELETE',
-    pathOrRolesOrFunctionOrOptions,
-    schemaOrRolesOrSummaryOrFunction,
-    rolesOrSchemaOrSummaryOrFunction,
-    summaryOrSchemaOrRolesOrFunction,
+    pathOrRolesOrOptions,
+    schemaOrRolesOrSummary,
+    rolesOrSchemaOrSummary,
+    summaryOrSchemaOrRoles,
     options),
 
   LIST: (
-    schemaOrRolesOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    rolesOrSchemaOrSummaryOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
-    summaryOrSchemaOrRolesOrFunction?: ArgSchemaOrRolesOrSummaryOrOpt,
+    schemaOrRolesOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    rolesOrSchemaOrSummary?: ArgSchemaOrRolesOrSummaryOrOpt,
+    summaryOrSchemaOrRoles?: ArgSchemaOrRolesOrSummaryOrOpt,
     options?: RouteOpt
   ): ClassDecorator => route('LIST',
     undefined,
-    schemaOrRolesOrSummaryOrFunction,
-    rolesOrSchemaOrSummaryOrFunction,
-    summaryOrSchemaOrRolesOrFunction,
+    schemaOrRolesOrSummary,
+    rolesOrSchemaOrSummary,
+    summaryOrSchemaOrRoles,
     options
   ),
 
   auth: (
-    ...authorizeFunctions: Array<RouteAuth>
+    ...authorizeFns: Array<RouteAuth>
   ): ClassDecorator => {
     return function(prototype: any): any {
       const col = getCollectionForContainer(prototype)
-      for(const authorizeFunction of authorizeFunctions) {
-        col.decorate('Route.auth', {prototype, authorizeFunction})
+      for(const authorizeFn of authorizeFns) {
+        col.decorate('Route.auth', {prototype, authorizeFn})
       }
     }
   },
@@ -139,12 +139,12 @@ export const Route = {
    * Add roles based on request session
    */
   roles: (
-    ...rolesFunctions: RouteRoles[]
+    ...rolesFns: RouteRoles[]
   ): ClassDecorator => {
     return function(prototype: any): any {
       const col = getCollectionForContainer(prototype)
-      for(const rolesFunction of rolesFunctions){
-        col.decorate('Route.roles', {prototype,rolesFunction})
+      for(const rolesFn of rolesFns){
+        col.decorate('Route.roles', {prototype,rolesFn})
       }
       return prototype
     }
@@ -154,30 +154,30 @@ export const Route = {
    * Set global roles
    */
   groups: (
-    rolesOrCreatorsOrFunction: Roles | RolesFunc = [],
-    readersOrFunction?: Roles | RolesFunc,
-    updatersOrFunction?: Roles | RolesFunc,
-    deletersOrFunction?: Roles | RolesFunc
+    rolesOrCreators: Roles | RolesFn = [],
+    readers?: Roles | RolesFn,
+    updaters?: Roles | RolesFn,
+    deleters?: Roles | RolesFn
   ): ClassDecorator => {
     return function(prototype: any): any {
       const col = getCollectionForContainer(prototype)
 
-      let creators = argumentResolve(rolesOrCreatorsOrFunction)
-      let readers = argumentResolve(readersOrFunction)
-      let updaters = argumentResolve(updatersOrFunction)
-      let deleters = argumentResolve(deletersOrFunction)
+      let creator = argumentResolve(rolesOrCreators)
+      let reader = argumentResolve(readers)
+      let updater = argumentResolve(updaters)
+      let deleter = argumentResolve(deleters)
 
       // call (globalRoles)
-      if(!readers && !updaters && !deleters){
-        readers = creators
-        updaters = creators
-        deleters = creators
+      if(!reader && !updater && !deleter){
+        reader = creator
+        updater = creator
+        deleter = creator
       }
 
-      col.addRoles('creators', creators)
-      col.addRoles('readers', readers)
-      col.addRoles('updaters', updaters)
-      col.addRoles('deleters', deleters)
+      col.addRoles('creators', creator)
+      col.addRoles('readers', reader)
+      col.addRoles('updaters', updater)
+      col.addRoles('deleters', deleter)
       return prototype
     }
   },
@@ -206,17 +206,17 @@ export const Route = {
    * @deprecated
    */
   all: (
-    rolesOrCreatorsOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
-    readersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
-    updatersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
-    deletersOrFunctionOrOptions?: Roles | RolesFunc | RouteOpt,
+    rolesOrCreatorsOrOptions?: Roles | RolesFn | RouteOpt,
+    readersOrOptions?: Roles | RolesFn | RouteOpt,
+    updatersOrOptions?: Roles | RolesFn | RouteOpt,
+    deletersOrOptions?: Roles | RolesFn | RouteOpt,
     globalOptions?: RouteOpt
   ): ClassDecorator => {
     return function(prototype: any): any {
-      let creators = argumentResolve(rolesOrCreatorsOrFunctionOrOptions)
-      let readers = argumentResolve(readersOrFunctionOrOptions)
-      let updaters = argumentResolve(updatersOrFunctionOrOptions)
-      let deleters = argumentResolve(deletersOrFunctionOrOptions)
+      let creators = argumentResolve(rolesOrCreatorsOrOptions)
+      let readers = argumentResolve(readersOrOptions)
+      let updaters = argumentResolve(updatersOrOptions)
+      let deleters = argumentResolve(deletersOrOptions)
 
       // call (opt)
       if(creators && !Array.isArray(creators)){

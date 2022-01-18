@@ -10,16 +10,16 @@ interface TaskOptions {
   offset: number
   params: {[key:string]:any}
 }
-type PeriodFunc = (returns?: any) => number | TaskOptions
+type PeriodFn = (returns?: any) => number | TaskOptions
 type NameOrParam = string | {[key:string]: any}
-type NameOrParamFunc = ((returns?: any) => NameOrParam) | NameOrParam
+type NameOrParamFn = ((returns?: any) => NameOrParam) | NameOrParam
 
 export function Task(options: TaskOptions): MethodDecorator
-export function Task(period: PeriodFunc, name?: NameOrParam, param?: NameOrParam): MethodDecorator
+export function Task(period: PeriodFn, name?: NameOrParam, param?: NameOrParam): MethodDecorator
 export function Task(
-  periodOrFunctionOrOptions: ((returns?: any) => number | TaskOptions) | number | TaskOptions,
-  paramsOrNameOrFunction?: NameOrParamFunc,
-  nameOrParamOrFunction?: NameOrParamFunc
+  periodOrOptions: ((returns?: any) => number | TaskOptions) | number | TaskOptions,
+  paramsOrName?: NameOrParamFn,
+  nameOrParam?: NameOrParamFn
 ): MethodDecorator {
   return (prototype: any, attribute: string | symbol) => {
     if(!isActive) return
@@ -27,9 +27,9 @@ export function Task(
       throw new SymbolKeysNotSupportedError()
 
     const col = getCollectionForContainer(prototype)
-    let period = argumentResolve(periodOrFunctionOrOptions)
-    let params = argumentResolve(paramsOrNameOrFunction)
-    let name = argumentResolve(nameOrParamOrFunction)
+    let period = argumentResolve(periodOrOptions)
+    let params = argumentResolve(paramsOrName)
+    let name = argumentResolve(nameOrParam)
     let id = col.name+'/'+attribute
     let offset
 

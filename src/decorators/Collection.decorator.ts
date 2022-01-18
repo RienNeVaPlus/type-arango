@@ -4,14 +4,14 @@ import {isActive} from '..'
 import {isObject} from '../utils'
 import {route, ROUTE_PRESET} from './Route.decorator'
 
-type DocumentFunc = (returns: any) => typeof Entity
+type DocumentFn = (returns: any) => typeof Entity
 
 export function Collection(ofDocument: typeof Entity): ClassDecorator
-export function Collection(ofDocumentFunction: DocumentFunc): ClassDecorator
+export function Collection(ofDocumentFn: DocumentFn): ClassDecorator
 export function Collection(options: CreateCollectionOptions): ClassDecorator
-export function Collection(ofDocument: typeof Entity | DocumentFunc, options: CreateCollectionOptions): ClassDecorator
+export function Collection(ofDocument: typeof Entity | DocumentFn, options: CreateCollectionOptions): ClassDecorator
 export function Collection(
-  ofDocument: typeof Entity | DocumentFunc | CreateCollectionOptions,
+  ofDocument: typeof Entity | DocumentFn | CreateCollectionOptions,
   options?: CreateCollectionOptions
 ): ClassDecorator {
   return (prototype: any) => {
@@ -30,9 +30,9 @@ export function Collection(
 
     if(options){
       if(options.roles)
-        col.decorate('Route.roles', {prototype,rolesFunction:options.roles})
+        col.decorate('Route.roles', {prototype,rolesFn:options.roles})
       if(options.auth)
-        col.decorate('Route.auth', {prototype,authorizeFunction:options.auth})
+        col.decorate('Route.auth', {prototype,authorizeFn:options.auth})
       if(options.routes) {
         const arr = typeof options.routes[0] === 'string' && ROUTE_PRESET[options.routes[0] as RoutePreset]
           ? [...ROUTE_PRESET[options.routes[0] as RoutePreset], ...options.routes.slice(1)] : options.routes

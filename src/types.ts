@@ -50,7 +50,7 @@ export interface CreateCollectionOptions extends ArangoDB.CreateCollectionOption
   routes?: Array<RouteDecorator | CollectionRoute | CollectionRouteArray>
   relations?: string[] | true
 }
-export type CollectionRouteArray = [RouteDecorator, string | CollectionRoute | SchemaFunc, ...any[]]
+export type CollectionRouteArray = [RouteDecorator, string | CollectionRoute | SchemaFn, ...any[]]
 export interface CollectionRoute extends RouteOpt {
   method: RouteDecorator
 }
@@ -116,7 +116,7 @@ export type RouteAction = 'create' | 'read' | 'update' | 'delete' | 'list'
 // export type MetadataTypes = AttributeMetadata | IndexMetadata | RouteMetadata
 
 export type Roles = string[]
-export type RolesFunc = (returns?: void) => Roles
+export type RolesFn = (returns?: void) => Roles
 
 // export interface Metadata<T> {
 //   id: MetadataId,
@@ -149,7 +149,7 @@ export interface RoleObject {
   [key: string]: RoleAttributes
 }
 
-export type SchemaFunc = (enjoi: (type?: any) => typeof Joi | any, joi?: any) => typeof Joi | boolean | Object
+export type SchemaFn = (enjoi: (type?: any) => typeof Joi | any, joi?: any) => typeof Joi | boolean | Object
 
 export interface SchemaStructure {
   [key: string]: Schema
@@ -198,7 +198,7 @@ export type AnyJoiSchema = AnySchema
   & LazySchema
 export type Enjoi = typeof enjoi
 export type ValidateSchema = Schema | JoiContainer
-export type ValidateSchemaFunc = (returns: AnyJoiSchema, enjoi: Enjoi) => AnyJoiSchema
+export type ValidateSchemaFn = (returns: AnyJoiSchema, enjoi: Enjoi) => AnyJoiSchema
 
 export interface RouteBaseOpt {
   deprecated?: boolean
@@ -219,7 +219,7 @@ export interface RouteOpt extends RouteBaseOpt {
   handlerName?: string
   handler?: (arg: RouteArg) => any
   roles?: Roles
-  schema?: Schema | SchemaFunc
+  schema?: Schema | SchemaFn
   relations?: string[] | true
 }
 
@@ -285,7 +285,7 @@ export interface RouteArg extends RouteRolesArg, RouteBaseOpt {
 }
 
 // const inp = {session:req.session,method,doc,req,res}
-export type TypeFunc = (returns?: void) => Class
+export type TypeFn = (returns?: void) => Class
 
 type RouteStatus = number | ArangoDB.HttpStatus
 

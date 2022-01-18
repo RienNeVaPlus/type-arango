@@ -3,15 +3,15 @@ import {getCollectionForContainer} from '../models'
 import {SymbolKeysNotSupportedError} from '../errors'
 import {argumentResolve} from '../utils'
 
-type NameFunc = (returns?: void) => string
-type IsDeterministicFunc = (returns?: void) => boolean
+type NameFn = (returns?: void) => string
+type IsDeterministicFn = (returns?: void) => boolean
 
 export function AQLFunction(): MethodDecorator
-export function AQLFunction(name: NameFunc | string, isDeterministic?: IsDeterministicFunc | boolean): MethodDecorator
-export function AQLFunction(isDeterministic: IsDeterministicFunc | boolean, name?: NameFunc | string): MethodDecorator
+export function AQLFunction(name: NameFn | string, isDeterministic?: IsDeterministicFn | boolean): MethodDecorator
+export function AQLFunction(isDeterministic: IsDeterministicFn | boolean, name?: NameFn | string): MethodDecorator
 export function AQLFunction(
-  nameOrIsDeterministicOrFunction?: NameFunc | IsDeterministicFunc | boolean | string,
-  isDeterministicOrNameOrFunction?: NameFunc | IsDeterministicFunc | boolean | string
+  nameOrIsDeterministic?: NameFn | IsDeterministicFn | boolean | string,
+  isDeterministicOrName?: NameFn | IsDeterministicFn | boolean | string
 ): MethodDecorator {
   return (prototype: any, attribute: string | symbol) => {
     if(!isActive) return
@@ -19,8 +19,8 @@ export function AQLFunction(
       throw new SymbolKeysNotSupportedError()
 
     const col = getCollectionForContainer(prototype)
-    let name = argumentResolve(nameOrIsDeterministicOrFunction)
-    let isDeterministic = argumentResolve(isDeterministicOrNameOrFunction)
+    let name = argumentResolve(nameOrIsDeterministic)
+    let isDeterministic = argumentResolve(isDeterministicOrName)
     let tmp: any
 
     if(typeof name === 'boolean'){

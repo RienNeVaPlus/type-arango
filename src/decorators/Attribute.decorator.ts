@@ -1,33 +1,33 @@
 import {getDocumentForContainer} from '../models'
 import {SymbolKeysNotSupportedError} from '../errors'
-import {Roles, TypeFunc, ValidateSchema, ValidateSchemaFunc} from '../types'
+import {Roles, TypeFn, ValidateSchema, ValidateSchemaFn} from '../types'
 import {isActive} from '../index'
 
-type ReadersFunc = (groups: void) => Roles
-type WritersFunc = (groups: void) => Roles
-type RequiredFunc = (a?: any) => true
-type Required = RequiredFunc | true
+type ReadersFn = (groups: void) => Roles
+type WritersFn = (groups: void) => Roles
+type RequiredFn = (a?: any) => true
+type Required = RequiredFn | true
 
 export function Attribute(): PropertyDecorator
 export function Attribute(required: Required): PropertyDecorator
-export function Attribute(schemaOrReadersOrFunction: ValidateSchema | ValidateSchemaFunc | ReadersFunc | Roles): PropertyDecorator
+export function Attribute(schemaOrReaders: ValidateSchema | ValidateSchemaFn | ReadersFn | Roles): PropertyDecorator
 export function Attribute(
-  schemaOrFunction: ValidateSchema | ValidateSchemaFunc | ReadersFunc | Roles,
-  readersArrayOrFunction: WritersFunc | ReadersFunc | Roles
+  schema: ValidateSchema | ValidateSchemaFn | ReadersFn | Roles,
+  readersArray: WritersFn | ReadersFn | Roles
 ): PropertyDecorator
 export function Attribute(
-  readersArrayOrFunction: ReadersFunc | Roles,
-  writersArrayOrFunction?: WritersFunc | Roles
+  readersArray: ReadersFn | Roles,
+  writersArray?: WritersFn | Roles
 ): PropertyDecorator
 export function Attribute(
-  schemaOrFunction: ValidateSchema | ValidateSchemaFunc,
-  readersArrayOrFunction: ReadersFunc | Roles,
-  writersArrayOrFunction?: WritersFunc | Roles
+  schema: ValidateSchema | ValidateSchemaFn,
+  readersArray: ReadersFn | Roles,
+  writersArray?: WritersFn | Roles
 ): PropertyDecorator
 export function Attribute(
-  typeOrRequiredOrSchemaOrReadersOrFunction?: Required | TypeFunc | ValidateSchema | ValidateSchemaFunc | ReadersFunc | Roles,
-  readersArrayOrFunction?: ReadersFunc | Roles,
-  writersArrayOrFunction?: WritersFunc | Roles
+  typeOrRequiredOrSchemaOrReaders?: Required | TypeFn | ValidateSchema | ValidateSchemaFn | ReadersFn | Roles,
+  readersArray?: ReadersFn | Roles,
+  writersArray?: WritersFn | Roles
 ): PropertyDecorator {
   return (prototype: any, attribute: string | symbol) => {
     if(!isActive) return
@@ -35,7 +35,7 @@ export function Attribute(
       throw new SymbolKeysNotSupportedError()
 
     getDocumentForContainer(prototype.constructor).decorate('Attribute', {
-      prototype, attribute, typeOrRequiredOrSchemaOrReadersOrFunction, readersArrayOrFunction, writersArrayOrFunction
+      prototype, attribute, typeOrRequiredOrSchemaOrReaders, readersArray, writersArray
     })
   }
 }
