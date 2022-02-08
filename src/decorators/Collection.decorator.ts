@@ -30,9 +30,9 @@ export function Collection(
 
     if(options){
       if(options.roles)
-        col.decorate('Route.roles', {prototype,rolesFn:options.roles})
+        col.decorate('Route.roles', {prototype, rolesFn: options.roles})
       if(options.auth)
-        col.decorate('Route.auth', {prototype,authorizeFn:options.auth})
+        col.decorate('Route.auth', {prototype, authorizeFn: options.auth})
       if(options.routes) {
         const arr = typeof options.routes[0] === 'string' && ROUTE_PRESET[options.routes[0] as RoutePreset]
           ? [...ROUTE_PRESET[options.routes[0] as RoutePreset], ...options.routes.slice(1)] : options.routes

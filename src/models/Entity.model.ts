@@ -41,12 +41,12 @@ export class Entity {
     return Object.keys(this._doc.relation)
   }
 
-  constructor(doc?: DocumentData | string, docIsSync: boolean = false) {
+  constructor(doc?: DocumentData | string, isSync: boolean = false) {
     if(typeof doc === 'string')
       doc = {_key:doc}
 
     if(doc){
-      if(!docIsSync) this._saveKeys = Object.keys(doc).filter(k => (this as any)[k] !== (doc as DocumentData)[k])
+      if(!isSync) this._saveKeys = Object.keys(doc).filter(k => (this as any)[k] !== (doc as DocumentData)[k])
       this.merge(doc)
     }
 
