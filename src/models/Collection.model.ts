@@ -176,11 +176,6 @@ export class Collection {
       if(Task) for(let {
         prototype, attribute, period, offset, id, name, params
       } of Task){
-        if(tasks.find((t: any) => t.id === id)){
-          logger.debug('Unregister previously active task', id)
-          task.unregister(id)
-        }
-
         const opt: any = {
           id,
           offset,
@@ -193,8 +188,15 @@ export class Collection {
         if(period > 0)
           opt.period = period
 
+        if(tasks.find((t: any) => t.id === id)){
+          logger.debug('Unregister previously active task', id)
+          task.unregister(id)
+        }
+
         logger.debug('Register task', opt)
-        task.register(opt)
+        try { task.register(opt) } catch(e){
+          logger.error('Could not register task:', e.message)
+        }
       }
 
 
