@@ -49,6 +49,7 @@ export interface CreateCollectionOptions extends ArangoDB.CreateCollectionOption
   roles?: RouteRoles[] | RouteRoles
   routes?: Array<RouteDecorator | CollectionRoute | CollectionRouteArray>
   relations?: string[] | true
+  cache?: number | string
 }
 export type CollectionRouteArray = [RouteDecorator, string | CollectionRoute | SchemaFn, ...any[]]
 export interface CollectionRoute extends RouteOpt {
@@ -93,6 +94,7 @@ export interface Config {
   unregisterAQLFunctionEntityGroup: boolean
   dasherizeRoutes: boolean
   paramOperatorSeparator: string
+  disableCache: boolean
   defaultLocale: string
   defaultCurrency: string
   defaultListLimit: number
@@ -218,6 +220,7 @@ export interface RouteOpt extends RouteBaseOpt {
   process?: boolean
   handlerName?: string
   handler?: (arg: RouteArg) => any
+  cache?: string | number
   roles?: Roles
   schema?: Schema | SchemaFn
   relations?: string[] | true

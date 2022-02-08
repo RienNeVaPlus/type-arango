@@ -32,6 +32,7 @@ export const config: Config = {
   requiredWriterRolesFallback: ['admin'],
   throwUnauthorized: 'unauthorized',
   throwForbidden: 'forbidden',
+  disableCache: false,
   getUserRoles(req: Foxx.Request): Roles {
     return (req.session && req.session.data && req.session.data.roles || []).concat(config.providedRolesDefault)
   },

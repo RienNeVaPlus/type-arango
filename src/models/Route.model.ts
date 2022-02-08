@@ -69,6 +69,11 @@ export class Route {
       if(!opt.roles.length)
         opt.roles = opt.roles.concat(config.requiredRolesFallback||[])
     }
+
+    // inherit cache from collection
+    if(!opt.cache && col.opt!.cache){
+      opt.cache = col.opt!.cache
+    }
   }
 
   static defaultPath(col: Collection, method: RouteMethod): string {
@@ -154,8 +159,9 @@ export class Route {
       pathParams = [],
       queryParams = [],
       relations,
-      response = {status:'ok', schema:col.doc!.joi, mime} as RouteResponse,
+      response = {status:'ok', schema: col.doc!.joi, mime} as RouteResponse,
       roles,
+      cache,
       summary = '',
       tags
     } = opt as RouteOpt
@@ -187,7 +193,7 @@ export class Route {
       ])
     }
 
-    // `select` query param
+    // `attributes` query param
     if(['get','post','patch','put'].includes(method) || opt.action === 'list'){
       queryParams.push([
         'attributes', Joi.string(),
@@ -272,9 +278,24 @@ export class Route {
       }
     }
 
+    if(cache){
+      if(config.disableCache){
+        cache = 0
+      } else {
+        description = '**✴️ Cache:** `'+(
+          typeof cache === 'string'
+            ? cache
+            : cache < Infinity
+              ? cache + 'min'
+              : 'endless'
+        )+'`<br/><br/>' + description
+        cache = typeof cache === 'number' ? `max-age=${cache*60}, private` : cache
+      }
+    }
+
     if(opt.action !== 'list' && handler){
       const handlerId = col.name+'.'+handlerName+'()'
-      summary = opt.summary || 'Calls '+handlerId
+      summary = opt.summary || 'Calls 👁️️️️️ '+handlerId
       description = '**👁️️️️️ Handler:** `'+handlerId+'`<br/><br/>'
         + (config.exposeRouteFunctionsToSwagger
           ? '<pre>'+col.name+'.'+(handler.toString())+'</pre><br/>' : '')
@@ -309,8 +330,8 @@ export class Route {
     // add body schema keys to `validParams`
     if(body && body[0]) (body[0] as any)._inner.children.forEach((o: any) => validParams.push(o.key))
 
-    return Route.setup(col, router, method, action, path, validParams, pathParams, queryParams, response, errors,
-      summary, description, roles, body, deprecated, tags, resolvable, handler)
+    return Route.setup(col, router, method, action, path, roles, validParams, pathParams, queryParams, response, errors,
+      cache as string, summary, description, body, deprecated, tags, resolvable, handler)
   }
 
   /**
@@ -322,14 +343,15 @@ export class Route {
     method: RouteMethod,
     action: RouteAction,
     path: string,
+    roles: Roles = [],
     validParams: string[],
     pathParams: RoutePathParam[],
     queryParams: RouteQueryParam[],
     response: RouteResponse,
     errors: RouteError[],
+    cache: string,
     summary: string,
     description: string,
-    roles: Roles = [],
     body?: RouteBody,
     deprecated?: boolean,
     tags?: string[],
@@ -357,7 +379,7 @@ export class Route {
       (req: Foxx.Request, res: Foxx.Response) => {
         const { getUserRoles, getAuthorizedRoles, throwForbidden } = config
 
-        info('[client %s] %s %s', req.remoteAddress, req.method.toUpperCase(),req.path)
+        info('[client %s] %s %s', req.remoteAddress, req.method.toUpperCase(), req.path)
         debug('Required roles %o', roles)
 
         // authorize by route/collection roles
@@ -446,6 +468,10 @@ export class Route {
           json: Route.json.bind(null, req, res, doc, body ? body[0] : null, stripAttributesWrite),
           deprecated, tags, summary, description
         })
+
+        if(cache){
+          res.setHeader('cache-control', cache)
+        }
 
         debug('Call route handler for %o %o', method.toUpperCase(), path)
 
