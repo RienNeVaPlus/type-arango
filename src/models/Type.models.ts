@@ -13,7 +13,7 @@ export namespace Type {
       const param = req.param('locale')
       if(param === '*') return val
       const locale = param || (sess.data ? sess.data.locale || config.defaultLocale : config.defaultLocale)
-      return val[locale] || val[locale.split('-')[0]] || val[config.defaultLocale] || null
+      return !val ? null : val[locale] || val[locale.split('-')[0]] || val[config.defaultLocale] || null
     }
   }
 
