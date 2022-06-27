@@ -149,6 +149,8 @@ export class Route {
 
   setup(router: Foxx.Router): Foxx.Endpoint {
     const { isCustom, method, path, col, opt } = this
+
+    let response = {status: 'ok', schema: col.doc!.joi, mime, ...(opt.response||{})} as RouteResponse
     let {
       body,
       deprecated,
@@ -159,7 +161,6 @@ export class Route {
       pathParams = [],
       queryParams = [],
       relations,
-      response = {status:'ok', schema: col.doc!.joi, mime} as RouteResponse,
       roles,
       cache,
       summary = '',
@@ -504,7 +505,7 @@ export class Route {
 
     // add body
     if(body){
-      route.body(body[0], mime, body[1])
+      route.body(body[0], response.mime, body[1])
     }
     // else route.body(null) // seems like a bug?
 

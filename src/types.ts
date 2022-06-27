@@ -214,7 +214,7 @@ export interface RouteOpt extends RouteBaseOpt {
   body?: RouteBody
   pathParams?: RoutePathParam[]
   queryParams?: RouteQueryParam[]
-  response?: RouteResponse
+  response?: Partial<RouteResponse>
   errors?: RouteError[]
   path?: string
   process?: boolean
