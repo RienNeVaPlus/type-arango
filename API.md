@@ -59,7 +59,7 @@ A collection contains documents and provides routes and other utilities.
 - [@Route.groups](#routegroupscreators-readers-updaters-deleters) - defines roles for CRUD routes
 - [@Route.roles](#routerolesrolefunctions) - creates roles for requests by utilizing the client session
 - [@Route.auth](#routeauthauthorizefunctions) - authorizes a request depending on a document 
-- [@Route.LIST]() - initializes a special route for fetching a list
+- [@Route.LIST](#routelistschema-roles-summary-options) - initializes a special route for fetching a list
 
 #### `ClassAndMethodDecorator`
   - [@Route.GET](#routegetpath-schema-roles-summary-options)
@@ -103,109 +103,109 @@ const complete = typeArango({
     /**
      * Available log levels are `Error`, `Warn`, `Info` & `Debug`
      */
-    logLevel: LogLevel = LogLevel.Warn,
+    logLevel: LogLevel.Warn,
     
     /**
      * Prefix the collection name by applying `module.context.collectionName` to it
      */
-    prefixCollectionName: boolean = false,
+    prefixCollectionName: false,
     
     /**
      * Display the source of your routes in Swagger
      */
-    exposeRouteFunctionsToSwagger: boolean = true,
+    exposeRouteFunctionsToSwagger: true,
     
     /**
      * Dasherize endpoints (eg `UserProfiles` becomes `user-profiles`)
      */
-    dasherizeRoutes: boolean = true,
+    dasherizeRoutes: = true,
     
     /**
      * Separator used to split a parameter value (ie /?x=LIKE|y)
      */
-    paramOperatorSeparator: string = '|',
+    paramOperatorSeparator: '|',
     
     /**
      * Always add field writer roles to field reader roles
      * By default an `@Authorized(readers => ['user'], writers => ['admin'])`
      * evaluates to `readers = ['users','admin'], writers = ['admin']`
      */
-    addAttributeWritersToFieldReaders: boolean = true,
+    addAttributeWritersToFieldReaders: true,
     
     /**
      * When using Type.I18n the defaultLocale is used when other locales do not match
      */
-    defaultLocale: string = 'en',
+    defaultLocale: 'en',
     
     /**
      * Whether to strip the `_id` key from documents
      */
-    stripDocumentId: boolean = true,
+    stripDocumentId: true,
     
     /**
      * Whether to strip the `_rev` key from documents
      */
-    stripDocumentRev: boolean = true,
+    stripDocumentRev true,
     
     /**
      * Whether to strip the `_key` key from documents
      */
-    stripDocumentKey: boolean = false,
+    stripDocumentKey: false,
     
     /**
      * Whether to execute aqlfunctions.unregisterGroup for every collection
      * Set to false when using custom AQL functions outside of type-arango
      */
-    unregisterAQLFunctionEntityGroup: boolean = true,
+    unregisterAQLFunctionEntityGroup: true,
     
     /**
      * List of roles that are available for every request
      */
-    providedRolesDefault: string[] = ['guest'],
+    providedRolesDefault: ['guest'],
     
     /**
      * List of required roles for a route when no other roles are defined
      */
-    requiredRolesFallback: string[] = ['user'],
+    requiredRolesFallback: ['user'],
     
     /**
      * List of required writer roles for a route when no other roles are defined
      */
-    requiredWriterRolesFallback: string[] = ['admin'],
+    requiredWriterRolesFallback: ['admin'],
     
     /**
      * Returns the roles of the current viewer user
      */
-    getUserRoles = function(req: Foxx.Request): string[] {
+    getUserRoles: (req: Foxx.Request) => {
         return (req.session && req.session.data && req.session.data.roles || []).concat('guest')
     },
     
     /**
      * Returns all authorized roles for a request
      */
-    getAuthorizedRoles = function(providedRoles: string[], requiredRoles: string[]): string[] {
+    getAuthorizedRoles: function(providedRoles: string[], requiredRoles: string[]): string[] {
         return providedRoles.filter((role: string) => requiredRoles.includes(role))
     },
     
     /**
      * HTTP Status to return when an unauthorized (no auth provided) request occurs
      */
-    throwUnauthorized: ArangoDB.HttpStatus = 'unauthorized',
+    throwUnauthorized: 'unauthorized',
     
     /**
      * HTTP Status to return when an forbidden (invalid auth provided) request occurs
      */
-    throwForbidden: ArangoDB.HttpStatus = 'unauthorized',
+    throwForbidden: 'unauthorized',
     
     /**
      * Applied on client data when using `json()` inside a route
      */
-    fromClient?: (doc: DocumentData, opt: RequestInfo) => DocumentData,
+    fromClient: (doc: DocumentData, opt: RequestInfo) => DocumentData,
     
     /**
      * Applied on response data when using `send()` inside a route
      */
-    forClient?: (doc: DocumentData, opt: RequestInfo) => DocumentData
+    forClient: (doc: DocumentData, opt: RequestInfo) => DocumentData
 })
 
 // initialize documents and collection after calling typeArango
@@ -788,6 +788,7 @@ Decorates a class that has been extended by `Entities`. Collections consume `@Do
   - **roles** `string[]` - Alias for [@Route.roles](./API.md#routerolesrolefunctions).
   - **routes** `Array<Route | string>` - List of default routes to use - see [@Route.*](#route--get-post-put-patch-delete--list).
   - **relations** `string[] | true` - List of related attributes that can be read from client request to any route of the collection. Can also be set to `true` to expose all related attributes.
+  - **cache** `number | string` - Adds the`Cache-Control` header to all responses of child routes. Numbers can be used to indicate minutes and generate a generic header value of `max-age=cache*60, private`
   - **waitForSync**? `boolean`
   - **journalSize**? `number`
   - **isVolatile**? `boolean`
@@ -977,6 +978,7 @@ Routes can be further configured by using the following options.
 - **handlerName**? `string`
 - **handler**? `(arg: RouteArg) => any` - Handler of the current request.
 - **roles**? `string[]` - List of required roles for accessing the current request.
+- **cache**? `string | number` - Adds the`Cache-Control` header to the response. Numbers can be used to indicate minutes and generate a generic header value of `max-age=cache*60, private`
   
 ![divider](./assets/divider.small.png)
 
