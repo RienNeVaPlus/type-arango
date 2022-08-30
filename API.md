@@ -740,8 +740,8 @@ static route(){
 Returns a list of entity instances.
 
 - **options** `FilterOptions`
-  - **filter**? `QueryFilter` - Object of values to filter the collection.
-    - **value**? `value | [operator, value]` - Filter value can be an array with an operator like `!=` or `>` etc.
+  - **filter**? `QueryFilter | QueryFilter[]` - Object of values to filter the collection. When multiple attributes are provided, the logical operator `OR` is used. Provide an array of objects to use multiple filter statements and thus the the `AND` operator.
+    - **value**? `value | [operator, value]` - Filter value can be an array with a comparison operator like `!=` or `>` and [more](https://www.arangodb.com/docs/stable/aql/operators.html#comparison-operators). Supports the usage of array `[HAS, value]`.
   - **sort**? `string[]` - Sorts the results AQL style, i.e. `['email DESC','name ASC']`.
   - **limit?** `number | [offset, count]` - Limits the results AQL style i.e. `[10, 2]`.
   - **keep?** `string[]` - List of attributes to load from collection
@@ -750,8 +750,8 @@ Returns a list of entity instances.
 **Example**
 ```ts
 static route(){
-    // returns a single User instance
-    const user: User[] = Users.find({filter:{email:['LIKE', '%@gmail.com']})
+    // returns a list of User instances of (type == user) AND (email ending with @gmail.com OR name == "Bill")
+    const user: User[] = Users.find({filter:[{type:'user'},{email:['LIKE','%@gmail.com'],name:'Bill'}]})
 }
 ```
 ![divider](./assets/divider.small.png)

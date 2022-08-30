@@ -1,4 +1,4 @@
-import {isFoxx} from '../utils'
+import {isFoxx, toArray} from '../utils'
 import {QueryOpt} from '../types'
 import {logger} from '../index'
 
@@ -36,27 +36,27 @@ function clean(val: any): any {
 export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}: QueryOpt){
   let q = ['FOR i IN '+collection]
   if(filter){
-    Object.entries(filter).forEach(
-      ([key, value]) => value !== undefined && q.push(
-        'FILTER '+
-        (
-          // ['HAS', value] => FILTER value IN TO_ARRAY(i.key)
-          Array.isArray(value) && value[0] === 'HAS'
-          ? escape(value[1])+' IN TO_ARRAY(i.'+clean(key)+')'
+    for(const f of toArray(filter)){
+      q.push(
+        `FILTER (${Object.entries(f).map(([key, value]: any) => (
+            // ['HAS', value] => FILTER value IN TO_ARRAY(i.key)
+            Array.isArray(value) && value[0] === 'HAS'
+            ? escape(value[1])+' IN TO_ARRAY(i.'+clean(key)+')'
 
-          // ['!=', value] => FILTER i.key != value
-          : Array.isArray(value) && operators.includes(value[0])
-          ? 'i.' + clean(key) + ' ' + value[0] + ' ' + escape(value[1])
+            // ['!=', value] => FILTER i.key != value
+            : Array.isArray(value) && operators.includes(value[0])
+              ? 'i.' + clean(key) + ' ' + value[0] + ' ' + escape(value[1])
 
-          // ['value1','value2'] => FILTER i.key IN [...values]
-          : Array.isArray(value)
-          ? 'i.' + clean(key) + ' IN ' + escape(value)
+            // ['value1','value2'] => FILTER i.key IN [...values]
+            : Array.isArray(value)
+              ? 'i.' + clean(key) + ' IN ' + escape(value)
 
-          // value => FILTER i.key == value
-          : 'i.' + clean(key) + ' == ' + escape(value)
-        )
+            // value => FILTER i.key == value
+              : 'i.' + clean(key) + ' == ' + escape(value)
+            )
+        ).join(' || ')})`
       )
-    )
+    }
   }
 
   if(sort){
