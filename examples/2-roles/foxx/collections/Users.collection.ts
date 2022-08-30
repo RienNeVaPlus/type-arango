@@ -44,7 +44,7 @@ export class Users extends Entities {
   }))
   static LOGIN({json,error,session}: RouteArg){
     const { email, password } = json()
-    const user = Users.findOne({filter:{email}, keep:['_key', 'auth', 'roles']})
+    const user = Users.find({filter:{email}, keep:['_key', 'auth', 'roles']})
 
     // authenticate
     const auth = require('@arangodb/foxx/auth')()

@@ -22,17 +22,17 @@ export class Entities {
     return mapToInstances(this._col.doc!.Class, results)
   }
 
-  static find(options: QueryOpt = {}): any[] {
+  static filter(options: QueryOpt = {}): any[] {
     return this._mapToInstances(this._col.query(options).toArray())
   }
 
-  static findOne(keyOrOptions: QueryOpt | string | number, options: QueryOpt = {}): any {
+  static find(keyOrOptions: QueryOpt | string | number, options: QueryOpt = {}): any {
     if(typeof keyOrOptions === 'string' || typeof keyOrOptions === 'number')
       options = Object.assign(options, {filter:{_key:keyOrOptions}})
     else if(keyOrOptions)
       options = keyOrOptions
 
-    return this.find(Object.assign(options, {limit:1}))[0]
+    return this.filter(Object.assign(options, {limit:1}))[0]
   }
 
   // static async save(_key: string, _doc: any){}

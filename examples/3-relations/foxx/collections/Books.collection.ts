@@ -16,7 +16,7 @@ export class Books extends Entities {
   static CREATE({param,error}: RouteArg){
     const { title } = param
 
-    const bookWithSameTitle = Books.findOne({filter:{title}})
+    const bookWithSameTitle = Books.find({filter:{title}})
     if(bookWithSameTitle)
       return error('bad request', 'Title is used by '+bookWithSameTitle.related('author').name)
 

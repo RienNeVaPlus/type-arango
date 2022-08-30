@@ -102,7 +102,7 @@ type-arango provides the method `related` for loading related & exposed entities
 class Books extends Entities {
     @Route.GET('custom', {relations:'author'})
     static GET_CUSTOM({relations}: RouteArg){
-        const book = Books.findOne(1)
+        const book = Books.find(1)
         return relations(book)
     }
 }

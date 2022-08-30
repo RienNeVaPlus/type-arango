@@ -31,7 +31,7 @@ export class User extends Entity {
 export class Users extends Entities {
     @Route.GET('custom/:user=number')
     static GET_CUSTOM({param,error}: RouteArg){
-        const user = Users.findOne(param.user)
+        const user = Users.find(param.user)
         if(!user) return error('not found')
         return user
     }

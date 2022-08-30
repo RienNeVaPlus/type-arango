@@ -98,7 +98,7 @@ export class Users extends Entities {
         roles => ['viewer'],
         summary => 'Returns User Address[]'
     ) static GET({param}: RouteArg){
-        const user = Users.findOne(param.id)
+        const user = Users.find(param.id)
         return user.relation('addresses')
     }
     

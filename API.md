@@ -50,8 +50,8 @@ A collection contains documents and provides routes and other utilities.
 
 #### `Class` 
 - [Entities](#-entities) - provides ORM functions
-  - [entities.find](#entitiesfindoptions) - returns document instances of the collection
-  - [entities.findOne](#entitiesfindoneoptions) - returns single document instance
+  - [entities.filter](#entitiesfilteroptions) - returns document instances of the collection
+  - [entities.find](#entitiesfindoptions) - returns single document instance
 
 #### `ClassDecorator`
 - [@Collection](#collectionofdocument-options) - initializes a collection
@@ -268,7 +268,7 @@ Merges `doc` into the entity, it's as simple as `Object.assign(this, doc)`.
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123')
+const user = Users.find('123')
 // merge request body into entity
 user.merge(json())
 ```
@@ -284,7 +284,7 @@ Replaces the document with the provided object, ignoring `_saveKeys`.
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123')
+const user = Users.find('123')
 user.name = 'This will be ignored'
 // replace the user using Foxx collection._replace
 user.replace({email:'test@example.com'}, {overwrite:true})
@@ -304,7 +304,7 @@ Removes the document from the collection using `collection._remove`
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123')
+const user = Users.find('123')
 // deletes the document from the collection
 user.remove()
 ```
@@ -325,7 +325,7 @@ Saves the values of all changed attributes (`entity._saveKeys`) to the documents
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123')
+const user = Users.find('123')
 // deletes the document from the collection
 user.remove()
 ```
@@ -338,7 +338,7 @@ Returns a list of unsaved / modified properties. Is used by `entity.save` in ord
 **Example** (in route)
 ```ts
 // load an user instance
-const user = Users.findOne('123')
+const user = Users.find('123')
 // modify the user
 user.name = 'RienNeVaPlus'
 // return a list of modified properties
@@ -364,7 +364,7 @@ Some relations have values, but these are mainly used for fetching the related d
 **Example** (in route)
 ```ts
 // in a route
-const user = Users.findOne('1')
+const user = Users.find('1')
 // returns an address entity instance
 const address = user.related('address')
 // returns a profile entity instance limited to the selected attributes
@@ -714,7 +714,7 @@ class User {
 
 ### 🗄 Entities
 
-The Entities class is primarily used to provide the functions `find` and `findOne` to collection instances.
+The Entities class is primarily used to provide the functions `find` and `filter` to collection instances.
 
 Extend all collection from the `Entities` class provided by type-arango:
 ```ts
@@ -728,14 +728,14 @@ When using the collection inside a route, it comes with handy ORM features:
 ```ts
 static route(){
     // returns a single User instance
-    const user: User = Users.findOne('myDocumentKey')
+    const user: User = Users.find('myDocumentKey')
     // returns a list of matching User instances
     const users: User[] = Users.find({filter:{name:'RienNeVaPlus'},limit:10})
 }
 ```
 ![divider](./assets/divider.small.png)
 
-### `entities.find(options)`
+### `entities.filter(options)`
 
 Returns a list of entity instances.
 
@@ -751,22 +751,22 @@ Returns a list of entity instances.
 ```ts
 static route(){
     // returns a list of User instances of (type == user) AND (email ending with @gmail.com OR name == "Bill")
-    const user: User[] = Users.find({filter:[{type:'user'},{email:['LIKE','%@gmail.com'],name:'Bill'}]})
+    const user: User[] = Users.filter({filter:[{type:'user'},{email:['LIKE','%@gmail.com'],name:'Bill'}]})
 }
 ```
 ![divider](./assets/divider.small.png)
 
-### `entities.findOne(options)`
+### `entities.find(options)`
 
-The same as `entities.find` except it returns a single instance instead of an array and `options` can be a string alias for `{filter:{_key:options}`.
+The same as `entities.filter` except it returns a single instance instead of an array and `options` can be a string alias for `{filter:{_key:options}`.
 
-- **options** `FilterOptions | _key` - See [`entities.find`](#entitiesfindoptions).
+- **options** `FilterOptions | _key` - See [`entities.filter`](#entitiesfilteroptions).
 
 **Example**
 ```ts
 static route(){
     // returns a single User instance
-    const user: User = Users.findOne('123')
+    const user: User = Users.find('123')
 }
 ```
 

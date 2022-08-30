@@ -282,8 +282,8 @@ export class Document<T=any> {
     // retrieve document/s
     switch(rel.type){
       default: return null
-      case 'OneToOne': res = entities.findOne(opt); break
-      case 'OneToMany': res = entities.find(opt); break
+      case 'OneToOne': res = entities.find(opt); break
+      case 'OneToMany': res = entities.filter(opt); break
     }
 
     // merge values back into result
