@@ -37,8 +37,10 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
   let q = ['FOR i IN '+collection]
   if(filter){
     for(const f of toArray(filter)){
+      const entries = Object.entries(f)
+      if(!entries.length) continue
       q.push(
-        `FILTER (${Object.entries(f).map(([key, value]: any) => (
+        `FILTER (${entries.map(([key, value]: any) => (
             // ['HAS', value] => FILTER value IN TO_ARRAY(i.key)
             Array.isArray(value) && value[0] === 'HAS'
             ? escape(value[1])+' IN TO_ARRAY(i.'+clean(key)+')'
