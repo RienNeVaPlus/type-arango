@@ -667,7 +667,7 @@ class User {
 @After.remove( (removedDocumentKey: string, {_key, method}) => Passive )
 ```
 
-##### Listener arguments when used as `ClassDecorator`
+##### Listener arguments when used as `PropertyDecorator`
 
 ```ts
 // Before a document will be loaded. Rarely needed, available for the sake of completeness
@@ -740,9 +740,9 @@ static route(){
 Returns a list of entity instances.
 
 - **options** `FilterOptions`
-  - **filter**? `QueryFilter | QueryFilter[]` - Object of values to filter the collection. When multiple attributes are provided, the logical operator `OR` is used. Provide an array of objects to use multiple filter statements and thus the the `AND` operator.
-    - **value**? `value | [operator, value]` - Filter value can be an array with a comparison operator like `!=` or `>` and [more](https://www.arangodb.com/docs/stable/aql/operators.html#comparison-operators). Supports the usage of array `[HAS, value]`.
-  - **sort**? `string[]` - Sorts the results AQL style, i.e. `['email DESC','name ASC']`.
+  - **filter**? `QueryFilter | QueryFilter[]` - Object of values to filter the collection. When multiple attributes are provided, the logical operator `AND` is used. Provide a different operator using the attribute `$` (possible values are `AND`/`&&` and `OR`/`||`). When an array is given, each `QueryFilter` will become a single `FILTER` statement and thus work the same as the `AND` operator.
+    - **value**? `value | [operator, value]` - Filter value can be an array with a comparison operator like `!=` or `>` and [more](https://www.arangodb.com/docs/stable/aql/operators.html#comparison-operators). Supports the usage of array `['HAS', value]`.
+  - **sort**? `string[]` - Sorts the results AQL style, i.e. `['email DESC', 'name ASC']`.
   - **limit?** `number | [offset, count]` - Limits the results AQL style i.e. `[10, 2]`.
   - **keep?** `string[]` - List of attributes to load from collection
   - **unset?** `string[]` - Instead of selecting attributes with `keep`, `unset` returns every other attribute, except the provided ones.
@@ -750,8 +750,13 @@ Returns a list of entity instances.
 **Example**
 ```ts
 static route(){
-    // returns a list of User instances of (type == user) AND (email ending with @gmail.com OR name == "Bill")
-    const user: User[] = Users.filter({filter:[{type:'user'},{email:['LIKE','%@gmail.com'],name:'Bill'}]})
+    // returns a list of User instances of (type == "user" && createdAt > 2022) AND (email starting with "bill" OR name == "Bill")
+    const user: User[] = Users.filter({
+      filter: [
+        {type: 'user', createdAt: ['>', new Date(2022)]},
+        {$: 'OR', email: ['LIKE', 'bill@%'], name: 'Bill'}
+      ]
+    })
 }
 ```
 ![divider](./assets/divider.small.png)

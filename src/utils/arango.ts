@@ -37,26 +37,26 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
   let q = ['FOR i IN '+collection]
   if(filter){
     for(const f of toArray(filter)){
-      const entries = Object.entries(f)
+      const entries = Object.entries(f).filter(([key]) => key !== '$')
       if(!entries.length) continue
       q.push(
         `FILTER (${entries.map(([key, value]: any) => (
             // ['HAS', value] => FILTER value IN TO_ARRAY(i.key)
             Array.isArray(value) && value[0] === 'HAS'
-            ? escape(value[1])+' IN TO_ARRAY(i.'+clean(key)+')'
+            ? `${escape(value[1])} IN TO_ARRAY(i.${clean(key)})`
 
             // ['!=', value] => FILTER i.key != value
             : Array.isArray(value) && operators.includes(value[0])
-              ? 'i.' + clean(key) + ' ' + value[0] + ' ' + escape(value[1])
+              ? `i.${clean(key)} ${value[0]} ${escape(value[1])}`
 
             // ['value1','value2'] => FILTER i.key IN [...values]
             : Array.isArray(value)
-              ? 'i.' + clean(key) + ' IN ' + escape(value)
+              ? `i.${clean(key)} IN ${escape(value)}`
 
             // value => FILTER i.key == value
-              : 'i.' + clean(key) + ' == ' + escape(value)
-            )
-        ).join(' || ')})`
+            : `i.${clean(key)} == ${escape(value)}`
+          )
+        ).join(` ${f.$ || '&&'} `)})`
       )
     }
   }

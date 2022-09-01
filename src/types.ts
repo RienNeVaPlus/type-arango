@@ -323,9 +323,11 @@ export type RouteAuthorize = (doc: DocumentData, method?: RouteMethod, action?: 
 export type DocumentForClient = (doc: DocumentData, opt: any) => DocumentData
 export type DocumentFromClient = (doc: DocumentData, opt: any) => DocumentData
 
+type QueryFilterLogicalOperator = '&&' | '||' | 'AND' | 'OR'
 type QueryFilterComparisonOperator = '==' | '!=' | '<' | '<=' | '>' | '>=' | 'IN' | 'NOT IN' | 'LIKE' | '=~' | '!~' | 'HAS'
-type QueryFilterValue = string | number | boolean | [QueryFilterComparisonOperator, ...(string | number | boolean)[]]
+type QueryFilterValue = undefined | string | number | boolean | [QueryFilterComparisonOperator, ...(string | number | boolean)[]]
 export interface QueryFilter {
+  $?: QueryFilterLogicalOperator
   [key: string]: QueryFilterValue
 }
 
