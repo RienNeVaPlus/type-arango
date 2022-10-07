@@ -573,7 +573,7 @@ Both decorators provide the same methods with a slightly different resolver synt
   - `.document(resolver)` - Document is **loaded**.
   - `.insert(resolver)` - Document is **inserted**.
   - `.update(resolver)` - Document is **updated**.
-  - `.patch(resolver)` - Document is **patched**.
+  - `.replace(resolver)` - Document is **patched**.
   - `.remove(resolver)` - Document is **removed**.
 - **Combined listeners**
   - `.modify(resolver)` - Document is either **updated** or **patched**.

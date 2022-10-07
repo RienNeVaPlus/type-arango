@@ -574,7 +574,7 @@ export class Route {
     dataOrOptions?: DocumentData | ArangoDB.UpdateOptions,
     options?: ArangoDB.UpdateOptions
   ){
-    let k: string | ArangoDB.DocumentLike = key
+    let k: string = key
     let d: DocumentData
     let o: ArangoDB.UpdateOptions
 
@@ -598,8 +598,21 @@ export class Route {
       k),
     k)
 
+    // execute the modification
+    const action = () => {
+      switch(method){
+        case 'replace':
+          // create non-existing documents for "replace"
+          if(!collection.exists(k)){
+            collection.insert({_key:key, ...d}, o)
+          }
+          break
+      }
+      return collection[method](k, d, o)
+    }
+
     return doc.emitAfter('write', doc.emitAfter('modify',
-      doc.emitAfter(method, collection[method](k, d, o), k),
+      doc.emitAfter(method, action(), k),
     k), k)
   }
 
