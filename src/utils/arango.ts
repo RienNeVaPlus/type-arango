@@ -29,7 +29,7 @@ function clean(val: any): any {
     case 'number': return val
     case 'string':
       const indexOf = val.indexOf(' ')
-      return (indexOf > -1 ? val.substr(0, indexOf) : val).replace(/[^a-zA-Z0-9-_.]/g, '')
+      return (indexOf > -1 ? val.substr(0, indexOf) : val).replace(/[^a-zA-Z0-9-_.\[*\]]/g, '')
   }
 }
 
