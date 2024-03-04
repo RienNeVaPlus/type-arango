@@ -33,7 +33,7 @@ function clean(val: any): any {
   }
 }
 
-export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}: QueryOpt){
+export function queryBuilder(collection: string, {filter,sort,limit,aggregate,keep,unset}: QueryOpt){
   let q = ['FOR i IN '+collection]
   if(filter){
     for(const f of toArray(filter)){
@@ -78,16 +78,20 @@ export function queryBuilder(collection: string, {filter,sort,limit,keep,unset}:
     q.push('LIMIT '+(Array.isArray(limit) ? limit.join(',') : limit))
   }
 
+  let ret = 'i'
   if(keep){
     keep = clean(keep)
-    q.push('RETURN KEEP(i, "'+keep!.join('","')+'")')
+    ret = `KEEP(i, "${keep!.join('","')}")`
   } else if(unset){
     unset = clean(unset)
-    q.push('RETURN UNSET(i, "'+unset!.join('","')+'")')
+    ret = `UNSET(i, "${unset!.join('","')}")`
   }
-  else {
-    q.push('RETURN i')
-  }
+
+  if(aggregate){
+    q.push(`COLLECT AGGREGATE sum = SUM(${typeof aggregate === 'string' ? aggregate : 1})`)
+    q.push(`RETURN sum`)
+  } else
+    q.push('RETURN '+ret)
 
   logger.info('Query %o', q.join(' '))
 

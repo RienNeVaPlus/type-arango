@@ -51,6 +51,7 @@ A collection contains documents and provides routes and other utilities.
 #### `Class` 
 - [Entities](#-entities) - provides ORM functions
   - [entities.filter](#entitiesfilteroptions) - returns document instances of the collection
+  - [entities.count](#entitiescountoptions) - returns aggregated number of results
   - [entities.find](#entitiesfindoptions) - returns single document instance
 
 #### `ClassDecorator`
@@ -746,6 +747,7 @@ Returns a list of entity instances.
   - **limit?** `number | [offset, count]` - Limits the results AQL style i.e. `[10, 2]`.
   - **keep?** `string[]` - List of attributes to load from collection
   - **unset?** `string[]` - Instead of selecting attributes with `keep`, `unset` returns every other attribute, except the provided ones.
+  - **aggregate?** `boolean | string` - Return an aggregated total of affected documents instead of the results.
 
 **Example**
 ```ts
@@ -757,6 +759,18 @@ static route(){
         {$: 'OR', email: ['LIKE', 'bill@%'], name: 'Bill'}
       ]
     })
+}
+```
+![divider](./assets/divider.small.png)
+
+### `entities.count(options)`
+
+Returns the length of all results after filters have been applied.
+
+**Example**
+```ts
+static route(){
+  const affectedUsers = Users.count({filter: [{type: 'user'}]})
 }
 ```
 ![divider](./assets/divider.small.png)

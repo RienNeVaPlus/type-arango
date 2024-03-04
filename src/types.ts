@@ -338,6 +338,7 @@ export interface QueryOpt {
   limit?: number | [number, number]
   keep?: string[]
   unset?: string[]
+  aggregate?: string | boolean
 }
 
 export type EventDecorator =

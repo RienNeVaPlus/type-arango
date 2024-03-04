@@ -35,6 +35,11 @@ export class Entities {
     return this.filter(Object.assign(options, {limit:1}))[0]
   }
 
+  static count(options: QueryOpt): number {
+    options.aggregate = true
+    return this._col.query(options).toArray()[0]
+  }
+
   // static async save(_key: string, _doc: any){}
   // static async remove(_key: string){}
 }
