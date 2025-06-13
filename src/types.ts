@@ -92,6 +92,7 @@ export interface Config {
   throwForbidden: ArangoDB.HttpStatus
   throwUnauthorized: ArangoDB.HttpStatus
   unregisterAQLFunctionEntityGroup: boolean
+  header: any
   dasherizeRoutes: boolean
   paramOperatorSeparator: string
   disableCache: boolean
