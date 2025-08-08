@@ -33,6 +33,7 @@ export const config: Config = {
   throwUnauthorized: 'unauthorized',
   throwForbidden: 'forbidden',
   disableCache: false,
+  header: null,
   getUserRoles(req: Foxx.Request): Roles {
     return (req.session && req.session.data && req.session.data.roles || []).concat(config.providedRolesDefault)
   },

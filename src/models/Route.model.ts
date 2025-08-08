@@ -781,8 +781,8 @@ export class Route {
       Object.keys(doc).forEach(k => doc[k] instanceof Entity
         ? doc[k] = doc[k]._doc.forClient(doc[k].toObject(), args)
         : Array.isArray(doc[k]) && doc[k][0] instanceof Entity
-        ? doc[k] = doc[k].map((e: Entity) => e._doc.forClient(e.toObject(), args))
-        : null
+          ? doc[k] = doc[k].map((e: Entity) => e._doc.forClient(e.toObject(), args))
+          : null
       )
 
       if(config.forClient) resp = config.forClient!(resp, args)
@@ -816,8 +816,14 @@ export class Route {
     } else {
       resp = doc
     }
-    logger.debug('Send response %o', resp)
 
+    if(config.header){
+      const headers = typeof config.header === 'function' ? config.header(req, res) : config.header
+      logger.debug('Set response headers %o', headers)
+      res.set(headers)
+    }
+
+    logger.debug('Send response %o', resp)
     return res.send(resp)
   }
 
