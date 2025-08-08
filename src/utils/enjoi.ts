@@ -41,7 +41,7 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
     case 'function': j = Joi.func(); break
 
     case Object:
-    case 'object': j = Joi.object(); break
+    case 'object': j = Joi.any(); break
 
     case null:
     case 'any': j = Joi.any(); break
