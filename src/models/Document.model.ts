@@ -394,6 +394,9 @@ export class Document<T=any> {
       prototype, attribute, typeOrRequiredOrSchemaOrReaders, readersArray, writersArray
     } of Attribute){
       metadata = Reflect.getMetadata('design:type', prototype, attribute!)
+      if(!metadata)
+        throw new MissingTypeError(this.name, attribute!)
+
       const rel = this.relation[attribute!]
       let joi
 
@@ -434,7 +437,7 @@ export class Document<T=any> {
 
       const data: AttributeObject = removeValues({attribute,roles,schema,metadata}, undefined)
 
-      if(metadata && metadata._typeArango){
+      if(metadata?._typeArango){
         if(version < metadata._typeArango){
           logger.error(`Type.${metadata.name} requires type-arango v${metadata._typeArango}`)
         } else {
