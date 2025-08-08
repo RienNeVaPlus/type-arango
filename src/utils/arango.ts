@@ -7,7 +7,7 @@ const orders = ['ASC','DESC']
 export const arango = is ? require('@arangodb') : null
 export const db = is ? arango.db : null
 
-export const operators = ['==', '!=', '<', '<=', '>', '>=', 'IN', 'NOT IN', 'LIKE', '=~', '!~', 'HAS']
+export const operators = ['==', '!=', '<', '<=', '>', '>=', 'IN', 'NOT IN', 'LIKE', 'NOT LIKE', '=~', '!~', 'HAS']
 
 function escape(val: any){
   if(val === 'true') return true
