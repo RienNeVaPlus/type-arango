@@ -1,17 +1,17 @@
 {
   "name": "type-arango",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "ArangoDB Foxx decorators and utilities for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "jsnext:main": "src/index.ts",
   "scripts": {
-    "start": "tsc -w",
+    "dev": "tsc -w",
     "build": "rm -rf ./dist && tsc"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/RienNeVaPlus/type-arango.git"
+    "url": "git+https://github.com/RienNeVaPlus/type-arango.git"
   },
   "ntl": {
     "runner": "yarn"
@@ -36,7 +36,7 @@
     "@types/joi": "^14.3.2",
     "@types/node": "^11.11.7",
     "joi": "^14.3.1",
-    "reflect-metadata": "^0.1.13",
+    "reflect-metadata": "0.1.10",
     "typescript": "^3.7.4"
   },
   "devDependencies": {}
