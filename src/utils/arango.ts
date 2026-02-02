@@ -10,9 +10,9 @@ export const db = is ? arango.db : null
 export const operators = ['==', '!=', '<', '<=', '>', '>=', 'IN', 'NOT IN', 'LIKE', 'NOT LIKE', '=~', '!~', 'HAS']
 
 function escape(val: any){
-  if(val === 'true') return true
-  if(val === 'false') return false
-  if(val === 'null') return null
+  if(['true', true].includes(val)) return true
+  if(['false', false].includes(val)) return false
+  if(['null', null].includes(val)) return null
   if(Array.isArray(val)) return '["'+clean(val).join('","')+'"]'
   switch(typeof val){
     case 'string': return '"'+val+'"'
