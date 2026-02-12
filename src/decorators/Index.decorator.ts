@@ -31,7 +31,7 @@ export function Index(
     else if(typeof options === 'string') options = {type:options}
     else if(Array.isArray(options)) options = {additionalFields:options}
 
-    options.type = options.type || 'hash'
+    options.type = options.type || 'persistent'
 
     // merge additional options
     if(maybeOptions) options = {...maybeOptions, ...options}

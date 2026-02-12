@@ -510,7 +510,7 @@ Creates an index on the attribute.
 **Example**
 ```ts
 ...
-@Index(type => 'hash')
+@Index(type => 'persistent')
 @Attribute()
 name: string
 

@@ -65,7 +65,7 @@ import { Document, Entity, Type, Collection, Entities, Route, Authorized, Index,
 
 // `User` document entity
 @Document() class User extends Entity {
-    @Index(type => 'hash')
+    @Index(type => 'persistent')
     @Attribute(str => str.email())
     email: string
     
