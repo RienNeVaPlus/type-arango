@@ -26,7 +26,18 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
     case 'number': j = Joi.number(); break
 
     case Array:
-    case 'array': j = Joi.array(); break
+    case 'array':
+      const arr = Joi.array().empty('')
+      const origItems = (arr as any).items
+
+      ;(arr as any).items = function (...args: any[]){
+        if(!args.length) return origItems.call(this)
+        const mapped = args.map(a => toJoi(a))
+        return origItems.apply(this, mapped)
+      }
+
+      j = arr
+      break
 
     case Boolean:
     case 'boolean': j = Joi.boolean(); break
@@ -77,6 +88,9 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
   if(presence === 'required'){
     j = j.required()
   }
+  else {
+	  j = j.optional().allow(null)
+  }
 
   return j
 }
@@ -109,8 +123,9 @@ export function joiDefaults(obj: any, override: any = {}){
         override[key] = child.schema._tests.find((t:any) => t.name === 'integer') ? parseInt(override[key], 10) : parseFloat(override[key])
       }
 
-      if(override[key] || child.schema._flags.default)
-        res[key] = override[key] || child.schema._flags.default
+      if(typeof override[key] !== 'undefined' || child.schema._flags.default){
+        res[key] = override[key] ?? child.schema._flags.default
+      }
     }
 
     return res
