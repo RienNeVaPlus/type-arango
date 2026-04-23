@@ -41,20 +41,27 @@ export function queryBuilder(collection: string, {filter,sort,limit,aggregate,ke
       if(!entries.length) continue
       q.push(
         `FILTER (${entries.map(([key, value]: any) => (
+          Array.isArray(value) &&
+          Array.isArray(value[0]) &&
+          value.every((v: any) => Array.isArray(v) && operators.includes(v[0]))
+            ? `(${value
+              .map((v: any) => `i.${clean(key)} ${v[0]} ${escape(v[1])}`)
+              .join(` ${f.$ || '&&'} `)})`
+
             // ['HAS', value] => FILTER value IN TO_ARRAY(i.key)
-            Array.isArray(value) && value[0] === 'HAS'
-            ? `${escape(value[1])} IN TO_ARRAY(i.${clean(key)})`
+            : Array.isArray(value) && value[0] === 'HAS'
+              ? `${escape(value[1])} IN TO_ARRAY(i.${clean(key)})`
 
-            // ['!=', value] => FILTER i.key != value
-            : Array.isArray(value) && operators.includes(value[0])
-              ? `i.${clean(key)} ${value[0]} ${escape(value[1])}`
+              // ['!=', value] => FILTER i.key != value
+              : Array.isArray(value) && operators.includes(value[0])
+                ? `i.${clean(key)} ${value[0]} ${escape(value[1])}`
 
-            // ['value1','value2'] => FILTER i.key IN [...values]
-            : Array.isArray(value)
-              ? `i.${clean(key)} IN ${escape(value)}`
+                // ['value1','value2'] => FILTER i.key IN [...values]
+                : Array.isArray(value)
+                  ? `i.${clean(key)} IN ${escape(value)}`
 
-            // value => FILTER i.key == value
-            : `i.${clean(key)} == ${escape(value)}`
+                  // value => FILTER i.key == value
+                  : `i.${clean(key)} == ${escape(value)}`
           )
         ).join(` ${f.$ || '&&'} `)})`
       )
