@@ -127,7 +127,7 @@ export class Collection {
     }
 
     if(!q.keep){
-      q.unset = []
+      if(!Array.isArray(q.unset)) q.unset = []
       if(config.stripDocumentId) q.unset.push('_id')
       if(config.stripDocumentRev) q.unset.push('_rev')
       if(config.stripDocumentKey) q.unset.push('_key')
