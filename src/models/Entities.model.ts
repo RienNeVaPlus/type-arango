@@ -1,5 +1,6 @@
 import {DocumentData, QueryOpt} from '../types'
 import {getCollectionForContainer} from './Collection.model'
+import {db} from '../utils'
 
 function mapToInstances<T>(Class: new(doc: DocumentData, docIsSync: boolean) => T, results: any[]) {
   return results.map((r: any) => new Class(r, true))
@@ -23,7 +24,7 @@ export class Entities {
   }
 
   static filter(options: QueryOpt = {}): any[] {
-    return this._mapToInstances(this._col.query(options).toArray())
+	  return this._mapToInstances(this._col.query(options).toArray())
   }
 
   static find(keyOrOptions: QueryOpt | string | number, options: QueryOpt = {}): any {
@@ -35,9 +36,15 @@ export class Entities {
     return this.filter(Object.assign(options, {limit:1}))[0]
   }
 
-  static count(options: QueryOpt): number {
-    options.aggregate = true
-    return this._col.query(options).toArray()[0]
+  static count(options: QueryOpt = {}): number {
+	  const {filter = []} = options as any
+	  // use RETURN COUNT(CollectionName) when there is no filter (much faster)
+	  if(!filter.length || !Object.keys(filter[0]).length && Object.keys(filter[1]).length === 1 && filter[1].$ === 'OR'){
+		  const cursor = db._query(`RETURN COUNT(${this._col.name})`)
+		  return cursor.next()
+	  }
+	  options.aggregate = true
+	  return this._col.query(options).toArray()[0]
   }
 
   // static async save(_key: string, _doc: any){}
