@@ -20,7 +20,7 @@ export function toJoi(inp: any, presence: Presence = 'optional'){
 
   switch(inp){
     case String:
-    case 'string': j = Joi.string(); break
+    case 'string': j = Joi.string().allow(''); break
 
     case Number:
     case 'number': j = Joi.number(); break
