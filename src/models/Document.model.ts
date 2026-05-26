@@ -402,8 +402,8 @@ export class Document<T=any> {
 
       if(!rel) joi = toJoi(metadata)
       else switch(rel.type){
-        case 'OneToOne': joi = rel.document.attribute[rel.attribute].schema || Joi.string(); break
-        case 'OneToMany': joi = Joi.array().items(rel.document.attribute[rel.attribute!].schema || Joi.string()); break
+        case 'OneToOne': joi = (rel.document.attribute[rel.attribute].schema || Joi.string()).allow(null, ''); break
+        case 'OneToMany': joi = Joi.array().items(rel.document.attribute[rel.attribute!].schema || Joi.string()).allow(null).empty(''); break
         default: joi = toJoi(metadata); break
       }
 
