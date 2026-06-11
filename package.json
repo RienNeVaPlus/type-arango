@@ -35,7 +35,7 @@
     "@types/arangodb": "^3.5.0",
     "@types/joi": "^14.3.2",
     "@types/node": "^11.11.7",
-    "joi": "^14.3.1",
+    "joi": "^18.2.1",
     "reflect-metadata": "0.1.10",
     "typescript": "^3.7.4"
   },
