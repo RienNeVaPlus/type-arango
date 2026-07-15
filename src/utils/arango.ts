@@ -50,7 +50,7 @@ export function queryBuilder(collection: string, {filter,sort,limit,aggregate,ke
 
             // ['HAS', value] => FILTER value IN TO_ARRAY(i.key)
             : Array.isArray(value) && value[0] === 'HAS'
-              ? `${escape(value[1])} IN TO_ARRAY(i.${clean(key)})`
+              ? `${escape(value[1])} IN ${key.includes('[*]') ? `i.${clean(key)}` : `TO_ARRAY(i.${clean(key)})`}`
 
               // ['!=', value] => FILTER i.key != value
               : Array.isArray(value) && operators.includes(value[0])
