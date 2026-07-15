@@ -25,11 +25,11 @@ export class Scalar {
     }
 
     let isRequired = type.includes('!') || (name && name.includes('!')) ? true
-      : type.includes('?') || (name && name.includes('?')) ? false : false
-    if(isRequired){
-      type = type.replace(/[!?]/g, '')
-      name = name ? name.replace(/[!?]/g, '') : undefined
-    }
+      : type.includes('?') || (name && name.includes('?')) ? false : true
+
+    type = type.replace(/[!?]/g, '')
+    name = name ? name.replace(/[!?]/g, '') : undefined
+
     let isArray = type.endsWith('[]')
     if(isArray)
       type = type.substr(0, type.length-2)
