@@ -21,8 +21,69 @@ import {
 import {Scalar} from './Scalar.model'
 import {MissingKeyError} from '../errors'
 
-const REGEX_PATH_PARAM: RegExp = /:+([^=/?&]+)[=]?([^/?&]+)?/gi
+const REGEX_PATH_PARAM: RegExp = /:+([^=/?&!]+[!?]?)[=]?([^/?&!]+[!?]?)?/gi
 const mime: string[] = ['application/json']
+
+function isArraySchema(schema: any){
+  return schema && (
+    schema._type === 'array' ||
+    schema._queryArray === true
+  )
+}
+
+export function joiQueryParam(schema: any){
+  if(!isArraySchema(schema)) return schema
+
+  const alt = Joi.alternatives().try(
+    schema.single(),
+    Joi.string()
+  )
+
+  ;(alt as any)._queryArray = true
+
+  return alt
+}
+
+function normalizeQueryParams(
+  queryParamsInput: any,
+  queryParamsSchema: RouteQueryParam[] = []
+){
+  const query = {
+    ...queryParamsInput,
+    ...Object.keys(queryParamsInput)
+      .filter(k => k.endsWith('[]'))
+      .reduce((p, n) => ({
+        ...p,
+        [n.replace('[]', '')]: toArray(queryParamsInput[n])
+      }), {})
+  }
+
+  const arrayKeys = queryParamsSchema
+    .filter(([, schema]) => isArraySchema(schema))
+    .map(([name]) => name)
+
+  for(const key of arrayKeys){
+    const value = query[key]
+    if(value === undefined || value === null) continue
+
+    if(Array.isArray(value)){
+      query[key] = value.reduce((res: any[], v: any) => {
+        const values = typeof v === 'string' ? v.split(',') : [v]
+        values.forEach(v => {
+          if(typeof v === 'string') v = v.trim()
+          if(v !== '') res.push(v)
+        })
+        return res
+      }, [])
+    } else if(typeof value === 'string'){
+      query[key] = value.includes(',')
+        ? value.split(',').map(v => v.trim()).filter(v => v !== '')
+        : value
+    }
+  }
+
+  return query
+}
 
 export function getRouteForCollection(method: RouteMethod, opt: RouteOpt = {}, collection: Collection): Route {
   let route = routes.find(route => {
@@ -119,8 +180,10 @@ export class Route {
     let match
     while((match = REGEX_PATH_PARAM.exec(str)) !== null) {
       const scalar = new Scalar(match[2], match[1])
-      scalar.isRequired = true
-      opt.path = opt.path.replace('='+match[2], '')
+      if (match[2]) {
+        opt.path = opt.path.replace('='+match[2], '')
+      }
+      opt.path = opt.path.replace(match[1], scalar.name!)
       opt.pathParams = toArray(opt.pathParams).concat([[
         scalar.name, scalar.joi, scalar.requiredIcon + ' ' + (scalar.isRequired
             ? '**Required'
@@ -388,13 +451,14 @@ export class Route {
         let tmp = {doc:null}
 
         // change array[] to array
-        req.queryParams = {
-          ...req.queryParams, ...Object.keys(req.queryParams)
-          .filter(k => k.endsWith('[]'))
-          .reduce((p, n) => ({
-            ...p, [n.replace('[]','')]: toArray(req.queryParams[n])
-          }), {})
-        }
+        // req.queryParams = {
+        //   ...req.queryParams, ...Object.keys(req.queryParams)
+        //   .filter(k => k.endsWith('[]'))
+        //   .reduce((p, n) => ({
+        //     ...p, [n.replace('[]','')]: toArray(req.queryParams[n])
+        //   }), {})
+        // }
+        req.queryParams = normalizeQueryParams(req.queryParams, queryParams)
 
         const param = validParams.reduce((c: any, n) => {
           c[n] = req.pathParams[n] !== undefined
@@ -489,7 +553,11 @@ export class Route {
     pathParams.forEach(a => route.pathParam(...a))
 
     // add query params
-    queryParams.forEach((a: RouteQueryParam) => route.queryParam(...a))
+    // queryParams.forEach((a: RouteQueryParam) => route.queryParam(...a))
+    queryParams.forEach((a: RouteQueryParam) => {
+      const [name, schema, description] = a
+      route.queryParam(name, joiQueryParam(schema), description)
+    })
 
     // add response information
     if(response){
